@@ -1,0 +1,7 @@
+check,pass,detail
+ex-ante VRP mostly positive,True,76% of months > 0
+short-variance payoff sharply negative in Oct 2008,True,payoff -0.522 (rank 2 of 155 from worst)
+short-variance payoff sharply negative in Mar 2020,True,payoff -0.733 (rank 1 of 155 from worst)
+largest |ex-ante VRP| in a stress period,True,largest at 2008-10-31 (-0.673)
+toy short-variance P&L positive on average,True,"mean 0.0038 var units, 3.43 vol pts; hit rate 82%"
+HAR forecasts positive,True,0 non-positive forecasts

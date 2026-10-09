@@ -1,0 +1,26 @@
+{
+  "DCPF3M": {
+    "bytes": 120052,
+    "downloaded_utc": "2026-09-23T15:14:45+00:00"
+  },
+  "DCPN3M": {
+    "bytes": 114280,
+    "downloaded_utc": "2026-09-23T15:14:46+00:00"
+  },
+  "DTB3": {
+    "bytes": 301077,
+    "downloaded_utc": "2026-09-23T15:14:46+00:00"
+  },
+  "DBAA": {
+    "bytes": 169447,
+    "downloaded_utc": "2026-09-23T15:14:46+00:00"
+  },
+  "DAAA": {
+    "bytes": 181674,
+    "downloaded_utc": "2026-09-23T15:14:46+00:00"
+  },
+  "VIXCLS": {
+    "bytes": 161323,
+    "downloaded_utc": "2026-09-23T15:14:46+00:00"
+  }
+}

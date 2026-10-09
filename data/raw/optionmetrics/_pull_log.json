@@ -1,0 +1,175 @@
+{
+  "options": {
+    "2007": {
+      "rows": 4113,
+      "request_dates": 4,
+      "dates_with_data": 4,
+      "request_dates_without_data": [],
+      "seconds": 1.5
+    },
+    "2008": {
+      "rows": 104186,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 9.9
+    },
+    "2009": {
+      "rows": 141198,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 15.7
+    },
+    "2010": {
+      "rows": 156522,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 17.5
+    },
+    "2011": {
+      "rows": 169336,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 17.6
+    },
+    "2012": {
+      "rows": 217899,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 22.8
+    },
+    "2013": {
+      "rows": 273554,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 27.4
+    },
+    "2014": {
+      "rows": 419174,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 52.2
+    },
+    "2015": {
+      "rows": 657449,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 71.3
+    },
+    "2016": {
+      "rows": 626699,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 74.8
+    },
+    "2017": {
+      "rows": 789070,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 60.7
+    },
+    "2018": {
+      "rows": 1098054,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 90.3
+    },
+    "2019": {
+      "rows": 1190608,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 90.6
+    },
+    "2020": {
+      "rows": 1411371,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 146.1
+    },
+    "2021": {
+      "rows": 1709133,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 128.6
+    },
+    "2022": {
+      "rows": 1663008,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 132.3
+    },
+    "2023": {
+      "rows": 1601488,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 120.0
+    },
+    "2024": {
+      "rows": 1946918,
+      "request_dates": 84,
+      "dates_with_data": 84,
+      "request_dates_without_data": [],
+      "seconds": 173.0
+    },
+    "2025": {
+      "rows": 1366391,
+      "request_dates": 56,
+      "dates_with_data": 56,
+      "request_dates_without_data": [],
+      "seconds": 108.6
+    }
+  },
+  "buffer_days": 3,
+  "columns": [
+    "date",
+    "exdate",
+    "last_date",
+    "optionid",
+    "symbol",
+    "root",
+    "suffix",
+    "expiry_indicator",
+    "am_settlement",
+    "ss_flag",
+    "cp_flag",
+    "strike_price",
+    "best_bid",
+    "best_offer",
+    "volume",
+    "open_interest",
+    "impl_volatility",
+    "delta",
+    "gamma",
+    "vega",
+    "theta",
+    "forward_price",
+    "contract_size",
+    "cfadj"
+  ],
+  "zero_curve": {
+    "rows": 56776,
+    "dates_with_data": 1488,
+    "request_dates": 1488
+  },
+  "index": {
+    "rows": 5529,
+    "first": "2003-09-10",
+    "last": "2025-08-29"
+  },
+  "last_run_utc": "2026-09-23T15:03:50+00:00"
+}

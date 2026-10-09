@@ -1,0 +1,247 @@
+{
+  "years": {
+    "2003": {
+      "year": 2003,
+      "status": "ok",
+      "days_requested": 79,
+      "days_with_data": 79,
+      "days_empty": [],
+      "rows": 6071,
+      "trades": 1752732,
+      "seconds": 30
+    },
+    "2004": {
+      "year": 2004,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19624,
+      "trades": 12298469,
+      "seconds": 100
+    },
+    "2005": {
+      "year": 2005,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19622,
+      "trades": 22527009,
+      "seconds": 117
+    },
+    "2006": {
+      "year": 2006,
+      "status": "ok",
+      "days_requested": 251,
+      "days_with_data": 251,
+      "days_empty": [],
+      "rows": 19514,
+      "trades": 19297649,
+      "seconds": 109
+    },
+    "2007": {
+      "year": 2007,
+      "status": "ok",
+      "days_requested": 251,
+      "days_with_data": 251,
+      "days_empty": [],
+      "rows": 19481,
+      "trades": 49736191,
+      "seconds": 175
+    },
+    "2008": {
+      "year": 2008,
+      "status": "ok",
+      "days_requested": 253,
+      "days_with_data": 253,
+      "days_empty": [],
+      "rows": 19633,
+      "trades": 142547671,
+      "seconds": 361
+    },
+    "2009": {
+      "year": 2009,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19586,
+      "trades": 139686417,
+      "seconds": 350
+    },
+    "2010": {
+      "year": 2010,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19621,
+      "trades": 125331293,
+      "seconds": 325
+    },
+    "2012": {
+      "year": 2012,
+      "status": "ok",
+      "days_requested": 250,
+      "days_with_data": 250,
+      "days_empty": [],
+      "rows": 19395,
+      "trades": 76593989,
+      "seconds": 226
+    },
+    "2011": {
+      "year": 2011,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19621,
+      "trades": 128053738,
+      "seconds": 331
+    },
+    "2013": {
+      "year": 2013,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19551,
+      "trades": 67766906,
+      "seconds": 210
+    },
+    "2014": {
+      "year": 2014,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19546,
+      "trades": 78879805,
+      "seconds": 233
+    },
+    "2016": {
+      "year": 2016,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19621,
+      "trades": 90773712,
+      "seconds": 260
+    },
+    "2015": {
+      "year": 2015,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19586,
+      "trades": 95718011,
+      "seconds": 267
+    },
+    "2017": {
+      "year": 2017,
+      "status": "ok",
+      "days_requested": 251,
+      "days_with_data": 251,
+      "days_empty": [],
+      "rows": 19508,
+      "trades": 52074187,
+      "seconds": 185
+    },
+    "2019": {
+      "year": 2019,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19550,
+      "trades": 76893353,
+      "seconds": 238
+    },
+    "2018": {
+      "year": 2018,
+      "status": "ok",
+      "days_requested": 251,
+      "days_with_data": 251,
+      "days_empty": [],
+      "rows": 19473,
+      "trades": 95362467,
+      "seconds": 270
+    },
+    "2020": {
+      "year": 2020,
+      "status": "ok",
+      "days_requested": 253,
+      "days_with_data": 253,
+      "days_empty": [],
+      "rows": 19656,
+      "trades": 150347481,
+      "seconds": 385
+    },
+    "2021": {
+      "year": 2021,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19621,
+      "trades": 114799303,
+      "seconds": 324
+    },
+    "2022": {
+      "year": 2022,
+      "status": "ok",
+      "days_requested": 251,
+      "days_with_data": 251,
+      "days_empty": [],
+      "rows": 19543,
+      "trades": 184565183,
+      "seconds": 468
+    },
+    "2023": {
+      "year": 2023,
+      "status": "ok",
+      "days_requested": 250,
+      "days_with_data": 250,
+      "days_empty": [],
+      "rows": 19430,
+      "trades": 138210217,
+      "seconds": 373
+    },
+    "2024": {
+      "year": 2024,
+      "status": "ok",
+      "days_requested": 252,
+      "days_with_data": 252,
+      "days_empty": [],
+      "rows": 19551,
+      "trades": 112117633,
+      "seconds": 320
+    },
+    "2025": {
+      "year": 2025,
+      "status": "ok",
+      "days_requested": 165,
+      "days_with_data": 165,
+      "days_empty": [],
+      "rows": 12835,
+      "trades": 108495653,
+      "seconds": 286
+    }
+  },
+  "filters": {
+    "sym_root": "SPY",
+    "sym_suffix": "empty",
+    "tr_corr": "00",
+    "price": "> 0",
+    "size": "> 0",
+    "hours": "[09:30, 16:00)",
+    "tr_scond_allowed_chars": "@EFI "
+  },
+  "bucket_minutes": 5,
+  "start": "2003-09-10",
+  "end": "2025-08-29",
+  "last_run_utc": "2026-09-23T15:43:10+00:00"
+}

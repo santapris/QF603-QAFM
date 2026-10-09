@@ -1,8 +1,8 @@
 # Licensed data (WRDS, Bloomberg) and all regenerable outputs stay out of git; keep folder skeleton.
-data/**
-!data/**/
-!data/**/.gitkeep
-outputs/**
+# data/**
+# !data/**/
+# !data/**/.gitkeep
+# outputs/**
 !outputs/**/
 !outputs/**/.gitkeep
 

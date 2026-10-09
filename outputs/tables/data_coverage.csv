@@ -1,0 +1,22 @@
+series,source,first,last,n_obs,n_missing_in_sample,notes
+SPX options (secid 108105),WRDS optionm.opprcdYYYY,2008-01-02,2025-08-29,4444.0,85,tables 1996-2025; missing month-ends in sample: 4
+Zero curve,WRDS optionm.zerocd,1996-01-02,2025-08-29,7475.0,4,missing month-ends in sample: 4
+SPX index close/open,WRDS optionm.secprd,2008-01-02,2025-08-29,4444.0,85,rows with missing/non-positive open: 0
+"SPY trades (daily TAQ, ctm)",WRDS taqm_2003..taqm_2025,2003-09-10,2025-12-31,5614.0,0,SPY absent on 0 of the yearly first/last-day spot checks; proposed har_burnin_start = 2003-09-10
+DCPF3M,FRED,1997-01-02,2026-09-21,6748.0,799,missing values in sample window (incl. holidays): 799; month-ends with value >7d stale: 8
+DCPN3M,FRED,1997-01-02,2026-09-21,5305.0,1569,missing values in sample window (incl. holidays): 1569; month-ends with value >7d stale: 38
+DTB3,FRED,1954-01-04,2026-09-21,18171.0,195,missing values in sample window (incl. holidays): 195; month-ends with value >7d stale: 0
+DBAA,FRED,1986-01-02,2026-09-21,10216.0,194,missing values in sample window (incl. holidays): 194; month-ends with value >7d stale: 0
+DAAA,FRED,1983-01-03,2026-09-21,10975.0,194,missing values in sample window (incl. holidays): 194; month-ends with value >7d stale: 0
+VIXCLS,FRED,1990-01-02,2026-09-22,9279.0,141,missing values in sample window (incl. holidays): 141; month-ends with value >7d stale: 0
+VIX futures positioning (TFF),"CFTC TFF futures-only, code 1170E1",2006-08-29,2026-09-15,1017.0,11,reports in sample: 912; gaps >7d: 12; null position fields: 0; dataset has as-of dates only — release dates must be inferred (Phase 1f)
+VIX Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected VIX_Index.csv)
+VIX3M Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected VIX3M_Index.csv)
+VVIX Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected VVIX_Index.csv)
+SKEW Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected SKEW_Index.csv)
+SPXT Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected SPXT_Index.csv)
+PUT Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected PUT_Index.csv)
+BXM Index,Bloomberg (🧑 export),,,,0,NOT YET EXPORTED (expected BXM_Index.csv)
+UX1 Index,Bloomberg (🧑 export),,,,0,optional — NOT YET EXPORTED (expected UX1_Index.csv)
+UX2 Index,Bloomberg (🧑 export),,,,0,optional — NOT YET EXPORTED (expected UX2_Index.csv)
+HKM capital ratio,He-Kelly-Manela website (🧑 download),,,,0,NOT YET DOWNLOADED
