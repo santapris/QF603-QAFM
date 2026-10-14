@@ -1,8 +1,11 @@
 # Prediction Market Calibration — Draft Code
 
 Companion code for `Project/Prediction_Markets_Proposal.docx`. Implements
-Stage 1 (measurement: calibration curve) and Stage 2 (significance: logit
-fit) end to end. Stages 3-6 are scoped but not written yet — see
+Stage 1 (measurement: calibration curve), Stage 2 (significance: logit
+fit), and Stage 5 (out-of-sample test) end to end. Stage 5 was pulled
+forward out of order because it's the one that actually answers whether
+this direction is worth pursuing further — see "Stage 5 result so far"
+below. Stages 3, 4, and 6 are scoped but not written yet — see
 `src/models/roadmap_stages_3to6.py`.
 
 ## Setup
@@ -22,9 +25,32 @@ python scripts/pull_polymarket.py --max-pages 2
 # calibration curve + logit fit on whatever's been pulled
 python scripts/run_calibration.py --platform both
 
+# Stage 5: does the correction beat the raw price out of sample?
+python scripts/run_oos.py --platform kalshi --split fraction --train-frac 0.7
+
 # unit tests (no network needed -- pure logic on toy data)
 pytest tests/
 ```
+
+## Stage 5 result so far
+
+On a live pull of ~10k recent settled Kalshi markets (70/30 train/test
+split): the logit-corrected forecast beat the raw market price
+out-of-sample (Brier 0.0695 vs. 0.0776), and both decisively beat the
+base-rate benchmark (0.2444) — so the favorite-longshot correction is
+*not* purely an in-sample artifact, at least on this sample.
+
+**Caveat worth fixing before leaning on this further**: that pull spanned
+under a day of `close_time` — Kalshi's settled-markets feed is dominated
+by very high-frequency crypto and sports micro-markets regardless of how
+far back you ask (see `src/data/kalshi_client.py` and
+`src/models/stage5_oos.py` docstrings for what we found digging into
+this). A 70/30 split on that sample is closer to a random split than a
+real test of generalizing across market regimes or time. Next step:
+pull a category-filtered, longer-horizon sample (e.g. exclude crypto/
+sports series, or paginate much further back) and rerun `run_oos.py`
+with `--split time` before treating this result as more than "promising
+enough to keep building."
 
 Drop `--max-pages` once you're ready to pull full history; a full Kalshi
 settled-markets pull is tens of thousands of markets, so expect it to take
@@ -92,8 +118,9 @@ code is wrong.
 src/data/        kalshi_client.py, polymarket_client.py, align.py
 src/measures/    calibration.py       (Stage 1)
 src/models/      stage2_logit.py      (Stage 2)
-                 roadmap_stages_3to6.py  (TODO, not implemented)
-scripts/         pull_kalshi.py, pull_polymarket.py, run_calibration.py
+                 stage5_oos.py        (Stage 5)
+                 roadmap_stages_3to6.py  (Stages 3, 4, 6 -- TODO, not implemented)
+scripts/         pull_kalshi.py, pull_polymarket.py, run_calibration.py, run_oos.py
 tests/           unit tests, no network required
 data/            gitignored raw pulls land here
 ```

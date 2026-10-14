@@ -62,10 +62,22 @@ def iter_settled_markets(
         time.sleep(0.1)  # be polite -- see rate limit docs
 
 
-def get_settled_markets_df(page_limit: int = 1000, max_pages: int | None = None) -> pd.DataFrame:
-    """Flatten settled markets into a DataFrame with the fields we need downstream."""
+def get_settled_markets_df(
+    page_limit: int = 1000,
+    max_pages: int | None = None,
+    extra_params: dict | None = None,
+) -> pd.DataFrame:
+    """Flatten settled markets into a DataFrame with the fields we need downstream.
+
+    Pass extra_params={"mve_filter": "exclude"} to drop Kalshi's
+    auto-generated multivariate/combinatorial "cross category" markets --
+    in an unfiltered pull these vastly outnumber ordinary single-event
+    markets and are almost all short-duration, which otherwise swamps any
+    date-based sample with one narrow expiry window (confirmed empirically:
+    an unfiltered 15k-market pull spanned about 3 hours of close_time).
+    """
     rows = []
-    for m in iter_settled_markets(page_limit=page_limit, max_pages=max_pages):
+    for m in iter_settled_markets(page_limit=page_limit, max_pages=max_pages, extra_params=extra_params):
         rows.append(
             {
                 "ticker": m.get("ticker"),

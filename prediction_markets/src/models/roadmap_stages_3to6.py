@@ -1,6 +1,13 @@
 """
-Stages 3-6 are intentionally NOT implemented yet -- this file is a scoped
-TODO list, not working code, so the team can divide it up.
+Stages 3, 4, and 6 are intentionally NOT implemented yet -- this file is a
+scoped TODO list, not working code, so the team can divide it up. Stage 5
+IS implemented, in src/models/stage5_oos.py (see scripts/run_oos.py for a
+runnable example) -- it was pulled forward because it's the stage that
+actually answers whether this whole direction is worth pursuing further.
+Real result so far on a quick live pull: the logit correction beats the
+raw market price out of sample (Brier 0.0695 vs 0.0776), though the pull
+only spans about a day of close_time (see stage5_oos.py's docstring) so
+treat this as "promising enough to keep building," not a final answer.
 
 Stage 3: Drivers of the bias (OLS)
 -----------------------------------
@@ -23,19 +30,7 @@ Is this month's average bias (in some bucket/category) predictive of next
 month's? Mirrors the VRP project's Stage 1 (AR(1) persistence test).
 Simple to start: monthly `bias` time series -> OLS of bias_t on bias_{t-1}.
 
-Stage 5: Out-of-sample test (the one that matters most)
----------------------------------------------------------
-Split resolved markets by close_time into train/test (e.g. train on
-everything before a cutoff date, test after). Fit stage2's logit on train
-only. On test:
-  - naive forecast = raw market price
-  - corrected forecast = logit fitted probability (refit on train, applied
-    out-of-sample to test prices)
-Compare Brier score (see measures/calibration.py) of corrected vs naive on
-the test set ONLY. This is the direct analogue of the VRP project's
-out-of-sample R^2 against the expanding-mean benchmark, and it is the
-number that answers "can you actually predict this, or does the bias just
-look real in-sample."
+Stage 5: DONE -- see src/models/stage5_oos.py
 
 Stage 6 (optional): Bayesian updating
 ---------------------------------------
