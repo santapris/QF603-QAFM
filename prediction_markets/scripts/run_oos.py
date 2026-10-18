@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pandas as pd  # noqa: E402
 
-from src.data.align import combine, harmonize_kalshi, harmonize_polymarket  # noqa: E402
+from src.data.align import combine, harmonize_kalshi, harmonize_polymarket, load_panel  # noqa: E402
 from src.models.stage5_oos import run_oos_test, split_by_fraction, split_by_time  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,14 +28,20 @@ if __name__ == "__main__":
     parser.add_argument("--split", choices=["time", "fraction"], default="fraction")
     parser.add_argument("--train-frac", type=float, default=0.7)
     parser.add_argument("--cutoff", type=str, default=None, help="ISO date, required if --split time")
+    parser.add_argument("--panel-path", default=None,
+                        help="load an already common-schema panel directly (e.g. from "
+                             "pull_kalshi_ladder_atm.py), skipping --platform/harmonize/combine")
     args = parser.parse_args()
 
-    frames = []
-    if args.platform in ("both", "kalshi"):
-        frames.append(harmonize_kalshi(pd.read_parquet(ROOT / "data" / "raw_kalshi.parquet")))
-    if args.platform in ("both", "polymarket"):
-        frames.append(harmonize_polymarket(pd.read_parquet(ROOT / "data" / "raw_polymarket.parquet")))
-    panel = combine(*frames)
+    if args.panel_path:
+        panel = load_panel(ROOT / args.panel_path)
+    else:
+        frames = []
+        if args.platform in ("both", "kalshi"):
+            frames.append(harmonize_kalshi(pd.read_parquet(ROOT / "data" / "raw_kalshi.parquet")))
+        if args.platform in ("both", "polymarket"):
+            frames.append(harmonize_polymarket(pd.read_parquet(ROOT / "data" / "raw_polymarket.parquet")))
+        panel = combine(*frames)
 
     span = panel["close_time"].max() - panel["close_time"].min()
     print(f"{len(panel)} usable markets, close_time span = {span}")
