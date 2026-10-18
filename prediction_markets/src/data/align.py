@@ -97,3 +97,16 @@ def combine(*frames: pd.DataFrame) -> pd.DataFrame:
         print(f"[align.combine] dropped {n_dropped}/{n_before} rows "
               f"(missing price/outcome, or non-binary settlement)")
     return combined.reset_index(drop=True)
+
+
+def load_panel(path) -> pd.DataFrame:
+    """Load a parquet that's already in the common schema (platform, market_id,
+    title, category, close_time, outcome, implied_prob, volume) -- e.g. written
+    directly by `pull_kalshi_ladder_atm.py`'s `build_full_ladder_panel`/
+    `build_atm_panel` -- instead of a raw platform pull that still needs
+    `harmonize_kalshi`/`harmonize_polymarket` + `combine`. Scripts that take a
+    `--panel-path` argument use this to skip straight to a ready-to-use panel.
+    """
+    df = pd.read_parquet(path)
+    df["close_time"] = pd.to_datetime(df["close_time"], utc=True, errors="coerce")
+    return df

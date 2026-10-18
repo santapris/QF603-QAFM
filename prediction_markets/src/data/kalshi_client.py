@@ -75,6 +75,13 @@ def get_settled_markets_df(
     markets and are almost all short-duration, which otherwise swamps any
     date-based sample with one narrow expiry window (confirmed empirically:
     an unfiltered 15k-market pull spanned about 3 hours of close_time).
+
+    Includes `floor_strike`/`event_ticker`/`open_time` (None for markets that
+    don't have a numeric strike, e.g. plain binary event markets) -- needed to
+    reconstruct the near-the-money strike per day on a ladder-style series
+    (many threshold strikes settling on the same day/event, e.g. the
+    KXAAAGASDxx gas-price or KXUST*A Treasury-yield series) -- see
+    `src/data/ladder_atm.py`.
     """
     rows = []
     for m in iter_settled_markets(page_limit=page_limit, max_pages=max_pages, extra_params=extra_params):
@@ -82,9 +89,12 @@ def get_settled_markets_df(
             {
                 "ticker": m.get("ticker"),
                 "series_ticker": m.get("series_ticker") or m.get("event_ticker"),
+                "event_ticker": m.get("event_ticker"),
                 "title": m.get("title"),
                 "category": m.get("category"),
                 "close_time": m.get("close_time"),
+                "open_time": m.get("open_time"),
+                "floor_strike": m.get("floor_strike"),
                 "result": m.get("result"),  # "yes" / "no" / "scalar" / ""
                 "last_price_dollars": m.get("last_price_dollars"),
                 "yes_bid_dollars": m.get("yes_bid_dollars"),
@@ -93,6 +103,50 @@ def get_settled_markets_df(
             }
         )
     return pd.DataFrame(rows)
+
+
+def get_candlestick_snapshot(series_ticker: str, ticker: str, open_time, close_time,
+                             frac: float = 0.4) -> dict | None:
+    """Early-life price snapshot for one market, at `frac` of the way between
+    `open_time` and `close_time` (e.g. frac=0.4 -- the point this was tuned
+    against empirically shows real two-sided quotes on a thinly-traded
+    near-the-money ladder strike, well before the outcome has effectively
+    resolved near market close).
+
+    Returns None if there's no candlestick at or before the target time (the
+    market hadn't traded yet) -- callers should skip, not impute, those.
+    Ladder strikes trade thinly (often 0-1 contracts/hour on the strikes that
+    matter most, i.e. the ones nearest the money) -- the midpoint of
+    yes_bid/yes_ask is a real, if noisy, implied-probability estimate, not a
+    volume-weighted trade price; this is a real caveat on the resulting
+    `implied_prob`, not an implementation detail to hide.
+    """
+    open_ts = pd.Timestamp(open_time)
+    close_ts = pd.Timestamp(close_time)
+    target_ts = open_ts + frac * (close_ts - open_ts)
+    data = _get(
+        f"/series/{series_ticker}/markets/{ticker}/candlesticks",
+        params={
+            "start_ts": int(open_ts.timestamp()),
+            "end_ts": int(close_ts.timestamp()),
+            "period_interval": 60,
+        },
+    )
+    candles = data.get("candlesticks", [])
+    if not candles:
+        return None
+    on_or_before = [c for c in candles if pd.Timestamp(c["end_period_ts"], unit="s", tz="UTC") <= target_ts]
+    chosen = on_or_before[-1] if on_or_before else candles[0]
+    bid = (chosen.get("yes_bid") or {}).get("close_dollars")
+    ask = (chosen.get("yes_ask") or {}).get("close_dollars")
+    if bid is None or ask is None:
+        return None
+    bid, ask = float(bid), float(ask)
+    return dict(
+        snapshot_time=pd.Timestamp(chosen["end_period_ts"], unit="s", tz="UTC"),
+        yes_bid=bid, yes_ask=ask, mid=(bid + ask) / 2,
+        volume_fp=float((chosen.get("volume_fp") or 0)),
+    )
 
 
 def get_candlesticks(
