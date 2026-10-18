@@ -4,11 +4,14 @@ scoped TODO list, not working code, so the team can divide it up. Stage 5
 IS implemented, in src/models/stage5_oos.py (see scripts/run_oos.py for a
 runnable example) -- it was pulled forward because it's the stage that
 actually answers whether this whole direction is worth pursuing further.
-Real result so far on a quick live pull: the logit correction beats the
-raw market price out of sample (Brier 0.0695 vs 0.0776), though the pull
-only spans about a day of close_time (see stage5_oos.py's docstring) so
-treat this as "promising enough to keep building," not a final answer.
 Stage 4 is ALSO implemented now -- see below.
+
+Current primary data source and findings: see README.md (current state)
+and DECISIONS.md (the full reasoning trail for how the data source got
+here -- several earlier attempts, including this module's own earlier
+"KXTRUMPAPPROVE" and general-pull results, were tried and retired; see
+DECISIONS.md D001-D007 before reusing any specific number from an older
+version of this docstring).
 
 Stage 3: Drivers of the bias (OLS)
 -----------------------------------
@@ -33,8 +36,10 @@ bias_t on bias_{t-1}") -- instead of assuming AR(1) is the right model,
 it runs the full identify/fit/diagnose cycle and only commits to a model
 once the diagnostics actually support it:
 
-    1. aggregate per-market bias into one monthly series
-       (bias_t = mean(implied_prob) - mean(outcome) that month)
+    1. aggregate per-market bias into one period's series at a chosen
+       `freq` (bias_t = mean(implied_prob) - mean(outcome) that period --
+       `freq` matters: see DECISIONS.md D002 for why monthly never had a
+       chance against Kalshi's general feed, and daily was the fix)
     2. IDENTIFY  -- ACF/PACF, to see what order of memory the series
        actually has, rather than assuming AR(1)
     3. CHECK STATIONARITY -- ADF test on the level series. A trending or
@@ -54,10 +59,22 @@ once the diagnostics actually support it:
        differencing actually fixed it is to re-run the same diagnostics
        on the differenced series, not just assume one difference is
        always enough.
+    7. STRUCTURAL-BREAK CHECK -- Andrews (1993) sup-Wald test for a break
+       in the AR(p) coefficients at an unknown date (Hansen (2000) wild
+       bootstrap for the headline p-value, ported from the VRP side's
+       src/models/stage3.py) -- exists specifically so an eyeballed
+       "exclude this noisy window" cut can be checked against a
+       principled test rather than trusted on sight (see DECISIONS.md D002
+       for the episode that motivated building this: an ad hoc cut that
+       looked like it found a real regime change did NOT survive this
+       test).
 
-Result so far: see README.md's "Stage 4" section for the real-data run
-(a live Kalshi pull) and whether it was long/diverse enough in calendar
-time to produce a trustworthy number, or just a wiring smoke test.
+Result so far: see README.md's "Stage 4" section for the current primary
+result (a 2-series gas-price panel: runs end to end, but residual
+diagnostics on the differenced AR(3) still show leftover structure, and
+the break test finds no significant break) and DECISIONS.md D002-D003 for
+the earlier KXTRUMPAPPROVE result (real persistence finding for Stage 4,
+but discovered to be the wrong population for Stages 1/2/5).
 
 Stage 5: DONE -- see src/models/stage5_oos.py
 
