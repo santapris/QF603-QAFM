@@ -2,31 +2,49 @@
 
 Companion code for `Project/Prediction_Markets_Proposal.docx`. Implements
 Stage 1 (measurement: calibration curve), Stage 2 (significance: logit
-fit), Stage 4 (persistence: does this month's bias predict next month's?),
-and Stage 5 (out-of-sample test) end to end. Stage 5 was pulled forward
-out of order because it's the one that actually answers whether this
-direction is worth pursuing further — see "Stage 5 result so far" below.
-Stages 3 and 6 are scoped but not written yet — see
-`src/models/roadmap_stages_3to6.py`.
+fit), Stage 4 (persistence: does this period's bias predict next period's?),
+and Stage 5 (out-of-sample test) end to end. Stages 3 and 6 are scoped but
+not written yet — see `src/models/roadmap_stages_3to6.py`.
+
+**Full reasoning trail**: this project went through several data sources
+before landing on the current one — see `DECISIONS.md` for the complete,
+append-only history (why the general Kalshi feed doesn't work, why
+`KXTRUMPAPPROVE` was tried and then found to be the wrong population for
+Stages 1/2/5, why Polymarket is currently blocked, and the two ladder-data
+reconstruction attempts, one of which turned out to have a selection-bias
+flaw). This README describes current best understanding only.
 
 ## Current status (read this first)
 
-Stage 1, 2, 4, and 5 all run end to end — but **Stage 4 and the latest
-Stage 5 run are both wiring smoke tests, not results**. Every live pull so
-far has spanned under a day of `close_time`, which isn't enough distinct
-months (Stage 4) or enough time-diversity (Stage 5's `--split time`) for
-either to mean what it's supposed to mean. Concretely: Stage 4 correctly
-refuses to run at all on this data (`ValueError`, not enough months), and
-re-running Stage 5 on a second pull flipped its sign from the
-originally-documented result — both are exactly what you'd expect from a
-same-day-clustered sample, not a contradiction or a bug.
+**Primary dataset: a "full ladder" reconstruction of Kalshi's continuous
+threshold-strike markets (gas prices, commodities, FX, Treasuries), with
+genuinely uncertain early-snapshot prices instead of near-certain
+settlement-time prices** — see `DECISIONS.md` D005-D007 for the full
+diagnosis and `src/data/ladder_atm.py` for the implementation. Validated
+so far on 2 series (`KXAAAGASDIL`, `KXAAAGASDTX` — Illinois and Texas gas
+prices), 2046 observations across 55 days:
 
-**Next step, before trusting either stage's output**: pull a
-category-filtered or longer-horizon sample (e.g. `extra_params =
-{"series_ticker": "..."}` for a slower-resolving category like
-Fed-decision/economics markets, in `kalshi_client.py`) so the sample spans
-enough genuinely distinct months/weeks. See "Stage 4 result so far" and
-"Stage 5 result so far" below for the exact numbers and reasoning.
+- **Stage 1 (calibration)**: a sharp, classic, statistically significant
+  favorite-longshot bias — longshots overpriced, favorites underpriced
+  (details below).
+- **Stage 2 (logit)**: converges cleanly, no quasi-separation. Pseudo
+  R²=0.67.
+- **Stage 5 (OOS)**: the correction beats raw price under *both* a
+  fraction split (+0.024 Brier) and a genuine time split (+0.022 Brier) —
+  consistent in sign and magnitude, unlike every earlier Kalshi pull tried.
+- **Stage 4 (persistence)**: runs end to end (55 daily periods) but isn't
+  a fully clean diagnostic story yet — see "Stage 4" below.
+
+**Caveat carried forward, not hidden**: only 2 series so far, both US gas
+prices (plausibly correlated with each other, not fully independent
+evidence). Scaling the same pull to commodities/FX/Treasuries is the
+natural next step to check whether this generalizes.
+
+**Everything else (the general Kalshi feed, `KXTRUMPAPPROVE`,
+Polymarket, and a first ladder-reconstruction attempt that turned out to
+have a selection-bias flaw) is still in the codebase and still tested, but
+is no longer the basis for this project's headline findings** — see
+`DECISIONS.md` for why each one was tried and retired.
 
 ## Setup
 
@@ -38,64 +56,132 @@ pip install -r requirements.txt
 ## Quickstart
 
 ```bash
-# smoke-test pulls (a couple hundred markets each, fast)
-python scripts/pull_kalshi.py --max-pages 2
-python scripts/pull_polymarket.py --max-pages 2
+# pull the primary dataset (every strike's early price, no selection on
+# the outcome -- see DECISIONS.md D005-D007 for why this is the clean method)
+python scripts/pull_kalshi_ladder_atm.py --mode full \
+    --series KXAAAGASDIL KXAAAGASDTX --out data/raw_kalshi_ladder_full.parquet
 
-# calibration curve + logit fit on whatever's been pulled
-python scripts/run_calibration.py --platform both
+# Stage 1 + 2: calibration curve + logit fit
+python scripts/run_calibration.py --panel-path data/raw_kalshi_ladder_full.parquet
 
 # Stage 5: does the correction beat the raw price out of sample?
-python scripts/run_oos.py --platform kalshi --split fraction --train-frac 0.7
+python scripts/run_oos.py --panel-path data/raw_kalshi_ladder_full.parquet --split fraction --train-frac 0.7
+python scripts/run_oos.py --panel-path data/raw_kalshi_ladder_full.parquet --split time --cutoff 2026-09-25
 
-# Stage 4: is this month's average bias predictive of next month's?
-python scripts/run_stage4.py --platform kalshi
+# Stage 4: is this period's average bias predictive of next period's?
+python scripts/run_stage4.py --panel-path data/raw_kalshi_ladder_full.parquet \
+    --freq D --min-markets-per-period 1 --min-periods 24
+
+# Stage 4 figures (bias series, ACF/PACF, residual diagnostics, break-test profile)
+python scripts/plot_stage4.py --panel-path data/raw_kalshi_ladder_full.parquet \
+    --prefix stage4_ladder_full --label "IL+TX gas price (full ladder)" \
+    --freq D --min-markets-per-period 1
 
 # unit tests (no network needed -- pure logic on toy data)
 pytest tests/
 ```
 
-## Stage 5 result so far
+Every script above also still accepts `--platform`/`--kalshi-path` for the
+older raw-pull-plus-harmonize path (`pull_kalshi.py`, `pull_polymarket.py`)
+if you want to reproduce any of the retired findings in `DECISIONS.md`.
 
-On a live pull of ~10k recent settled Kalshi markets (70/30 train/test
-split): the logit-corrected forecast beat the raw market price
-out-of-sample (Brier 0.0695 vs. 0.0776), and both decisively beat the
-base-rate benchmark (0.2444) — so the favorite-longshot correction is
-*not* purely an in-sample artifact, at least on this sample.
+## Stage 1/2 — calibration & significance: the favorite-longshot bias finding
 
-**Caveat worth fixing before leaning on this further**: that pull spanned
-under a day of `close_time` — Kalshi's settled-markets feed is dominated
-by very high-frequency crypto and sports micro-markets regardless of how
-far back you ask (see `src/data/kalshi_client.py` and
-`src/models/stage5_oos.py` docstrings for what we found digging into
-this). A 70/30 split on that sample is closer to a random split than a
-real test of generalizing across market regimes or time. Next step:
-pull a category-filtered, longer-horizon sample (e.g. exclude crypto/
-sports series, or paginate much further back) and rerun `run_oos.py`
-with `--split time` before treating this result as more than "promising
-enough to keep building."
+### Method
 
-**Addendum, not a correction — a second data point that argues for the
-same caveat rather than against it**: while building Stage 4 (below), this
-exact test was rerun fresh on a new, different ~5k-market live pull and
-came out with the *opposite* sign (correction worse than raw price
-out-of-sample, not better). Both pulls are short, same-day samples, so
-neither should be read as "the" answer — see the Stage 4 section for the
-numbers and why this is expected, not alarming, given the caveat already
-above.
+Stage 1 buckets markets by `implied_prob` and compares `mean_price` to
+`mean_outcome` per bucket (`src/measures/calibration.py::bucket_calibration`)
+— a perfectly calibrated market has every bucket sitting on the 45° line.
+Stage 2 fits `outcome ~ price + price²` by logistic regression
+(`src/models/stage2_logit.py`) as the significance test for whatever bend
+the bucket chart shows.
 
-Drop `--max-pages` once you're ready to pull full history; a full Kalshi
-settled-markets pull is tens of thousands of markets, so expect it to take
-a while and consider narrowing with `extra_params` in `kalshi_client.py`
-(e.g. a `series_ticker` for one category, or `min_settled_ts`/`max_settled_ts`
-for a date range) rather than pulling everything on every run.
+**The hard part wasn't the stats, it was getting `implied_prob` right.**
+Kalshi's continuous-value series (gas prices, FX, commodities, Treasury
+yields) are built as a *ladder* of threshold-strike markets settling on
+the same day — e.g. "will Illinois gas be above $4.6850 today?",
+"above $4.6900?", ... ~15-20 strikes per day. Using the price right before
+settlement (`last_price_dollars`) as `implied_prob` makes almost every
+strike look near-certain, because by settlement time the day's real value
+is already known — that's an artifact of reading the price too late, not
+a property of the market. The fix (`src/data/ladder_atm.py`): pull an
+*early* candlestick snapshot (a fraction of the way between `open_time`
+and `close_time`, before the day's outcome is known) for **every** strike,
+not a subset selected after the fact. See `DECISIONS.md` D005-D007 for how
+this was diagnosed (confirmed via real candlestick data: a near-the-money
+strike's bid moved 0.27 → 0.50 → 0.36 mid-day before settling near 0.98)
+and why an earlier attempt that selected only the 1-2 strikes nearest the
+*realized* value (cheaper, ~1/10th the API calls) had to be discarded — it
+conditions the sample on the outcome, mechanically forcing a ~50/50 base
+rate regardless of what the early price said.
+
+### Result (2 series: `KXAAAGASDIL`, `KXAAAGASDTX`, 2046 observations, 55 days)
+
+| price bucket | mean price | mean outcome | n | bias | se |
+|---|---|---|---|---|---|
+| 0.0–0.1 | 0.035 | 0.018 | 445 | +0.017 | 0.006 |
+| 0.1–0.2 | 0.149 | 0.063 | 143 | +0.086 | 0.020 |
+| 0.2–0.3 | 0.248 | 0.065 | 124 | +0.184 | 0.022 |
+| 0.3–0.4 | 0.354 | 0.088 | 136 | +0.266 | 0.024 |
+| 0.4–0.5 | 0.464 | 0.218 | 188 | +0.246 | 0.030 |
+| 0.5–0.6 | 0.544 | 0.717 | 138 | −0.173 | 0.038 |
+| 0.6–0.7 | 0.648 | 0.838 | 105 | −0.191 | 0.036 |
+| 0.7–0.8 | 0.753 | 0.906 | 85 | −0.153 | 0.032 |
+| 0.8–0.9 | 0.853 | 0.948 | 153 | −0.095 | 0.018 |
+| 0.9–1.0 | 0.974 | 0.996 | 529 | −0.023 | 0.003 |
+
+This is the **classic favorite-longshot bias direction**: low/mid-priced
+("longshot") strikes are *overpriced* relative to how often they actually
+resolve YES (bias at the 0.2-0.5 buckets is +0.18 to +0.27, 7-11 standard
+errors from zero), and higher-priced ("favorite") strikes are
+*underpriced* (bias −0.15 to −0.19 through the 0.5-0.8 range). Only the
+top decile (90-100% priced) is close to perfectly calibrated. Brier score
+on the raw price: 0.081, vs. 0.250 for the base-rate benchmark.
+
+The Stage 2 logit converges cleanly with no quasi-separation warning
+(unlike the earlier `KXTRUMPAPPROVE` attempt — see `DECISIONS.md` D003):
+Pseudo R²=0.669, and `const`, `price`, `price²` are all significant at
+p<0.01 (`run_calibration.py --panel-path data/raw_kalshi_ladder_full.parquet`
+prints the full `statsmodels` summary).
+
+### Next step
+
+Scale the same `--mode full` pull to the other asset classes already
+identified in `DECISIONS.md` D006's series scan (commodities, FX,
+Treasuries) to check whether this pattern generalizes beyond gas-price
+markets specifically, or reflects something particular to how AAA's daily
+gas-price index gets reported and traded.
+
+## Stage 5 — out-of-sample result
+
+Does the Stage 2 correction actually beat trusting the raw market price,
+out of sample? (`src/models/stage5_oos.py`, `scripts/run_oos.py`.)
+
+**Current result (same 2-series panel as Stage 1/2 above)**:
+
+| split | n train | n test | Brier (raw) | Brier (corrected) | improvement |
+|---|---|---|---|---|---|
+| fraction (70/30) | 1432 | 614 | 0.0903 | 0.0665 | **+0.0238** |
+| time (cutoff 2026-09-25) | 1234 | 812 | 0.0819 | 0.0604 | **+0.0216** |
+
+Both splits agree in sign and rough magnitude, and both decisively beat
+the base-rate benchmark (~0.24). This is the first out-of-sample result in
+this project that doesn't flip sign between pulls or depend on a
+same-day/random split being mistaken for a genuine across-time test — see
+`DECISIONS.md` D001 for the earlier general-pull results that *did* flip
+sign (+0.0081 on one ~10k-market pull, −0.0039 on an independent ~5k-market
+pull, both spanning under a day of `close_time`) and D003 for why
+`KXTRUMPAPPROVE`'s version of this test had artificially tiny,
+untrustworthy Brier scores (0.00019 vs. 0.0000316 — both near-zero because
+most of that pull's markets were nearly certain either way, not because
+the correction was unusually effective).
 
 ## Stage 4 — persistence (and the statistical foundations roadmap)
 
 ### Method: the full Box-Jenkins cycle, not just "assume AR(1)"
 
-Stage 4 asks whether this month's average favorite-longshot bias predicts
-next month's — the same question VRP's own Stage 1 asks of the variance
+Stage 4 asks whether this period's average favorite-longshot bias predicts
+next period's — the same question VRP's own Stage 1 asks of the variance
 risk premium. The original one-line idea for this stage was "monthly bias
 series -> OLS of bias_t on bias_{t-1}," i.e. assume AR(1) and fit it. What's
 actually built in `src/models/stage4_persistence.py` goes further, because
@@ -104,13 +190,15 @@ documented problem on the VRP side of this repo (a frozen AR(1) control
 that turned out to be missing a second lag, found only months later by a
 residual diagnostic nobody had run yet). The pipeline, in order:
 
-1. **Aggregate.** Group every resolved market by the calendar month it
-   closed in; `bias_t = mean(implied_prob) - mean(outcome)` that month
-   (same sign convention as Stage 1's `bucket_calibration`: positive means
-   markets were overpriced that month). Months with too few markets are
-   *flagged*, not silently dropped — dropping one would leave a gap in
-   what's supposed to be an evenly-spaced monthly series, which would
-   corrupt every lag computed after it.
+1. **Aggregate.** Group every resolved market by the calendar period it
+   closed in — `freq` is a parameter (`"M"` monthly, `"D"` daily, any
+   pandas period alias), not hardcoded, because the right bucket size
+   depends on how the underlying series actually settles. `bias_t =
+   mean(implied_prob) - mean(outcome)` that period (same sign convention
+   as Stage 1's `bucket_calibration`: positive means markets were
+   overpriced). Periods with too few markets are *flagged*, not silently
+   dropped — dropping one would leave a gap in what's supposed to be an
+   evenly-spaced series, which would corrupt every lag computed after it.
 2. **Identify (ACF/PACF).** Look at the series' own autocorrelation and
    partial autocorrelation before deciding how many lags of memory it
    actually has, instead of assuming AR(1) by default.
@@ -122,62 +210,67 @@ residual diagnostic nobody had run yet). The pipeline, in order:
    `statsmodels.tsa.ar_model.ar_select_order` (the same tool and
    discipline as VRP's own `ar_baseline.py` / `driver_surprises.py`),
    then fit one full-sample OLS regression — not a walk-forward forecast.
-   This stage is descriptive (does memory exist at all?), the same way
-   VRP's Stage 1 is; Stage 5 above already owns the separate
-   out-of-sample question, for the bias-corrected probability forecast.
+   This stage is descriptive (does memory exist at all?); Stage 5 above
+   already owns the separate out-of-sample question.
 5. **Diagnose (Ljung-Box, ARCH-LM).** Check the fitted model's residuals
    for leftover structure (Ljung-Box) and for volatility clustering
-   (ARCH-LM — does how *noisy* the bias is change over time, e.g. does
-   miscalibration get wilder during high-uncertainty periods, the
-   discrete-market analogue of VRP's calm/stress regime interaction?).
+   (ARCH-LM).
 6. **Difference and re-test, if needed.** If step 3 found the level
    series non-stationary, difference it once (`x_t - x_{t-1}`) and repeat
-   steps 2–5 *on the differenced series*. This is the step that's easy to
-   skip and shouldn't be — a model fit on a non-stationary series can
-   look perfectly reasonable and still be spurious, and the only way to
-   know differencing actually fixed it is to re-run the same diagnostics
-   again, not just assume one difference is always enough.
+   steps 2–5 *on the differenced series* — a model fit on a non-stationary
+   series can look perfectly reasonable and still be spurious.
+7. **Structural-break check.** An Andrews (1993) sup-Wald test for a break
+   in the AR(p) coefficients at an unknown date, with a Hansen (2000)
+   fixed-regressor wild bootstrap for the headline p-value (ported from
+   VRP's own `main:src/models/stage3.py` — see `sup_wald`/
+   `ar_structural_break_test`/`supwald_null` in `stage4_persistence.py`).
+   Exists specifically so an eyeballed "exclude this noisy-looking window"
+   cut can be checked against a principled test rather than trusted
+   because it happens to clean up the diagnostics — see `DECISIONS.md` D002
+   for the episode (on `KXTRUMPAPPROVE`) that motivated building this.
 
-Run it: `python scripts/run_stage4.py --platform kalshi` (flags:
-`--min-markets-per-month`, `--max-p`, `--min-months`, `--force-difference`,
-`--drop-flagged` — see the script's docstring).
+Run it: `python scripts/run_stage4.py --panel-path data/raw_kalshi_ladder_full.parquet
+--freq D --min-markets-per-period 1 --min-periods 24` (flags: `--freq`,
+`--min-markets-per-period`, `--max-p`, `--min-periods`, `--force-difference`,
+`--drop-flagged`, `--panel-path`/`--kalshi-path` — see the script's docstring).
+Figures: `python scripts/plot_stage4.py --panel-path
+data/raw_kalshi_ladder_full.parquet --prefix stage4_ladder_full --label
+"IL+TX gas price (full ladder)" --freq D --min-markets-per-period 1`.
 
-### Result so far
+### Result so far (same 2-series panel as Stage 1/2/5 above)
 
-Ran the full chain on a fresh live pull (`pull_kalshi.py --max-pages 5`, 5,000 settled
-markets, 4,932 usable after dropping unresolved/non-binary rows) to check that
-everything wires together end to end. The honest outcome: **this was a wiring
-smoke test, not a trustworthy persistence number** — the pull spanned only
-23 hours and 23 minutes of `close_time`, which is exactly **1 distinct
-calendar month**. `run_stage4_persistence` correctly raised `ValueError`
-("only 1 usable month(s) of bias data (min_months=24)") rather than report an
-AR coefficient computed on a single data point. **That refusal is the
-successful part of this test** — the guard exists specifically to prevent
-exactly this failure mode, and it worked.
+![IL+TX gas price daily bias series](outputs/figures/stage4_ladder_full_bias_series.png)
 
-This also surfaced something worth knowing about the Stage 5 result quoted
-above: running Stage 5 again, fresh, on this new 5,000-market pull (same
-70/30 fraction split) gave **the opposite sign** from the original ~10k-market
-pull — Brier 0.0430 (corrected) vs. 0.0391 (raw price), i.e. the correction
-did *worse* out-of-sample this time (`improvement_vs_naive = -0.0039`),
-not better. Both pulls span under a day of `close_time`, so both are
-closer to a random split of same-day markets than a genuine test of
-generalizing across time — and the fact that the sign of "does the
-correction help" flips between two quick live pulls is itself evidence for
-exactly that caveat, not a contradiction of it. This is the same shape of
-lesson as a much-discussed moment on the VRP side of this repo: a number
-computed on a short, non-representative window can look however you like
-depending on which short window you happen to draw, which is precisely why
-Stage 4's `min_months` guard refuses to run at all rather than report
-something equally fragile.
+- **55 daily periods**, 0 flagged as thin.
+- **Level ADF: borderline non-stationary** (p=0.325) — the series visibly
+  oscillates around a roughly constant level with no obvious trend (see
+  figure above), so this reads more like ADF's known low power at this
+  sample size than a genuine unit root, but it isn't confirmed either way.
+- **AIC selects AR(1)** on the level (φ≈0.22), but since ADF didn't clear
+  the stationarity bar, the orchestrator differenced once: the differenced
+  series is strongly stationary (p≈0.0000), and AIC selects **AR(3)** on
+  it (coefficients ≈ −0.51, −0.32, −0.28).
+- **Not a fully clean diagnostic story**: the differenced AR(3)'s
+  residuals still fail Ljung-Box at some tested lags — there's leftover
+  structure an AR(3) on the differenced series doesn't fully capture.
+- **Structural-break test**: Andrews sup-Wald = 12.96, best candidate
+  break date 2026-10-01, **bootstrap p=0.332 — not significant** (the
+  naive asymptotic p=0.027 would look significant, the same
+  over-rejection pattern already documented for `KXTRUMPAPPROVE` in
+  `DECISIONS.md` D002, which is exactly why the bootstrap is the headline
+  number here, not the asymptotic one).
 
-**Next step, to get a real answer (not a repeat of this)**: pull a
-category-filtered or much longer-horizon sample — e.g. a `series_ticker`
-for a slower-moving category (economics/Fed decisions tend to resolve over
-weeks to months, unlike crypto/sports micro-markets) via `extra_params` in
-`kalshi_client.py` — specifically so the pull spans enough genuinely
-distinct months for both Stage 4's persistence test and Stage 5's
-`--split time` to mean what they're supposed to mean.
+![Andrews sup-Wald profile](outputs/figures/stage4_ladder_full_break_test_profile.png)
+
+**Honest reading**: Stage 4 runs end to end on real, clean (Stage-1/2/5-
+validated) data for the first time, but doesn't yet have a fully resolved
+persistence story — there's genuine leftover structure in the differenced
+residuals that a higher AR order alone doesn't fix, and no evidence of a
+single sharp break to explain it. Worth revisiting once the Stage 1/2/5
+pull is scaled to more series (more data, and pooling the IL+TX day-level
+bias may itself be averaging over two somewhat-different regional
+dynamics, which could be part of what the AR(3) is failing to capture
+cleanly).
 
 ### Statistical foundations roadmap (not implemented this round — a concrete checklist for next time)
 
@@ -191,7 +284,9 @@ of "more could be done":
   calibrated" from "how discriminating" — right now one Brier number
   conflates both. Isotonic regression is worth trying alongside the Stage 2
   logit as a non-parametric alternative calibration correction, since it
-  makes no assumption about the correction curve's shape.
+  makes no assumption about the correction curve's shape. A probit fit
+  alongside the logit would be a cheap robustness check on the link-function
+  choice.
 - **Stage 2 (significance).** The bucket chart in Stage 1 shows the
   calibration curve bending away from the 45° line, but nothing yet tests
   *as a whole* whether that bend is statistically significant beyond the
@@ -207,9 +302,14 @@ of "more could be done":
   too, for the same reason VRP's Q2 needed one across 8 predictors × 3
   horizons.
 - **Stage 4 (this stage).** Plain OLS standard errors were used for the
-  AR(p) fit, not HAC/Newey-West — defensible since this monthly series
-  doesn't have VRP's overlapping-window structure, but worth revisiting
-  alongside the Stage 3 clustering question above.
+  AR(p) fit, not HAC/Newey-West — worth adding given the ARCH-LM/leftover-
+  structure findings above, alongside the Stage 3 clustering question. A
+  Diebold-Mariano test on Stage 5's Brier-loss differential would also turn
+  "the correction beats raw price" into a formal significance test rather
+  than a point-estimate comparison. A variance-specific break test (or a
+  Markov-switching-in-variance model) is the right tool if the ARCH-LM
+  question above is revisited, rather than reaching for GARCH directly at
+  this sample size.
 - **Cross-cutting.** A hierarchical/partial-pooling model for
   platform × category effects (letting each group's calibration curve be
   shrunk toward a shared one, rather than either pooling everything or
@@ -222,18 +322,18 @@ of "more could be done":
 
 ## Kalshi vs. Polymarket — which one, or both?
 
-**Start with one platform to get the pipeline validated end to end, then
-add the second as a robustness check — don't pool blindly from day one.**
-Recommendation: start with **Kalshi**. It's CFTC-regulated with
-unambiguous settlement rules, strong coverage of economic/Fed-decision
-markets (continuity with the original VRP project's macro flavor), and the
-cleanest public API (documented fixed-point dollar fields, a real
-candlestick/history endpoint). Add Polymarket once Stage 1/2 work on
-Kalshi alone, for a larger sample and broader category coverage (politics,
-crypto, sports).
+**Kalshi only, for now** — Polymarket's API (both Gamma and CLOB) returns
+`403 Forbidden` from this development environment (confirmed via direct
+`requests`, raw `curl`, and `WebFetch` — a network security gateway
+blocking the domain, not a code or data problem; Kalshi's API works fine
+from the same environment). See `DECISIONS.md` D004. If Polymarket becomes
+reachable, `harmonize_polymarket` in `src/data/align.py` is already
+wired up except for `implied_prob`, which is still a hardcoded `NaN`
+placeholder — would need `get_price_history()` wired in before any of
+Stage 1/2/5 could run on it.
 
-**Can they be combined?** Yes, but not naively — there are real
-differences to account for, not just a schema mismatch:
+**Can they be combined, if that changes?** Yes, but not naively — there
+are real differences to account for, not just a schema mismatch:
 
 | | Kalshi | Polymarket |
 |---|---|---|
@@ -249,26 +349,26 @@ control for platform (or be run per-platform and compared) rather than
 assuming Kalshi and Polymarket rows are interchangeable draws from the same
 data-generating process. The one thing *not* yet reconciled: `volume` is
 on different scales across platforms (contract counts vs. notional-ish
-dollar volume) — treat it as within-platform-only until that's fixed, e.g.
-by converting to a percentile rank within each platform before using it as
-a liquidity control in Stage 3.
-
-No data discrepancy issue is a blocker — it just means "platform" needs to
-stay a first-class variable in the analysis, not get pooled away.
+dollar volume) — treat it as within-platform-only until that's fixed.
 
 ## API access notes
 
-Both platforms' **market data** endpoints used here are public — no account,
-API key, or auth header required. (An API key would only be needed if you
-later want to place real orders, which this project doesn't do.)
+Kalshi's **market data** endpoints used here are public — no account, API
+key, or auth header required. (An API key would only be needed to place
+real orders, which this project doesn't do.)
 
-- **Kalshi**: `GET https://api.elections.kalshi.com/trade-api/v2/markets`
-  — try it directly in a browser or `curl`, no setup needed. Docs:
+- `GET https://api.elections.kalshi.com/trade-api/v2/markets` — try it
+  directly in a browser or `curl`, no setup needed. Docs:
   https://docs.kalshi.com/api-reference/market/get-markets
-- **Polymarket**: `GET https://gamma-api.polymarket.com/markets?closed=true`
-  for market metadata; `GET https://clob.polymarket.com/prices-history?market=<token_id>`
-  for a price series. Docs: https://docs.polymarket.com/api-spec/gamma-openapi.yaml
-  and .../clob-openapi.yaml
+- `GET https://api.elections.kalshi.com/trade-api/v2/series/{series_ticker}/markets/{ticker}/candlesticks`
+  — used by `src/data/kalshi_client.py::get_candlestick_snapshot` for the
+  early-price reconstruction above. Docs:
+  https://docs.kalshi.com/api-reference/market/get-market-candlesticks
+
+Polymarket's docs (`GET https://gamma-api.polymarket.com/markets?closed=true`,
+`GET https://clob.polymarket.com/prices-history?market=<token_id>`) are at
+https://docs.polymarket.com/api-spec/gamma-openapi.yaml and
+.../clob-openapi.yaml, for whenever network access allows revisiting it.
 
 APIs do change — if a pull script errors on an unexpected field or 404,
 check the live docs link in the relevant client file before assuming the
@@ -277,13 +377,19 @@ code is wrong.
 ## Layout
 
 ```
-src/data/        kalshi_client.py, polymarket_client.py, align.py
+src/data/        kalshi_client.py, polymarket_client.py, align.py,
+                 ladder_atm.py        (full-ladder/ATM panel reconstruction)
 src/measures/    calibration.py       (Stage 1)
 src/models/      stage2_logit.py      (Stage 2)
-                 stage4_persistence.py  (Stage 4)
+                 stage4_persistence.py  (Stage 4, incl. plot_*/sup_wald functions)
                  stage5_oos.py        (Stage 5)
                  roadmap_stages_3to6.py  (Stages 3, 6 -- TODO; Stage 4 implemented)
-scripts/         pull_kalshi.py, pull_polymarket.py, run_calibration.py, run_oos.py, run_stage4.py
+scripts/         pull_kalshi.py, pull_polymarket.py, pull_kalshi_ladder_atm.py,
+                 run_calibration.py, run_oos.py, run_stage4.py, plot_stage4.py
 tests/           unit tests, no network required
 data/            gitignored raw pulls land here
+outputs/figures/  generated PNGs (tracked in git, like the main VRP branch's outputs/figures/ --
+                 regenerate any of them with the corresponding plot_*.py script rather than
+                 editing by hand)
+DECISIONS.md     append-only log of why the data source/methodology changed over time
 ```
