@@ -164,3 +164,72 @@ step is scaling the same `--mode full` pull to the other asset classes
 already identified in D006's scan (commodities, FX, Treasuries) to check
 whether the favorite-longshot pattern found here generalizes, or is
 specific to gas-price markets' particular settlement mechanics.
+
+## D008 — Scaled `--mode full` to 11 series across 4 asset classes: bias and Stage 5 result both generalize; Stage 4 still not fully clean
+
+Ran `pull_kalshi_ladder_atm.py --mode full` on 5 gas-price series
+(`KXAAAGASDIL`, `KXAAAGASDTX`, plus `KXAAAGASDCA`, `KXAAAGASDNY`,
+`KXAAAGASDFL`), 3 commodities (`KXGOLDD`, `KXBRENTD`, `KXSILVERD`), 2 FX
+pairs (`KXGBPUSDAD`, `KXUSDJPYAD`), and 2 Treasury-yield series
+(`KXUST5A`, `KXUST30A`) — chosen from D005/D006's series scan specifically
+to cover every asset class not yet tried, not just more gas states.
+10,229 observations, 66 days of calendar spread (vs. D007's 55 days on 2
+series alone — Treasury series only have ~9 days of settled history so
+far, gas/commodities/FX series go back 28-57 days).
+
+**Result — the bias and Stage 5 pattern hold up across asset classes, not
+just gas prices**:
+- **Stage 1 (calibration)**: same textbook favorite-longshot shape as
+  D007's gas-only finding — low-priced buckets overpriced (e.g. priced
+  35.7%, resolves 24.5% of the time — bias +0.11, se=0.02), high-priced
+  buckets underpriced (priced 54.4%, resolves 70.1% — bias -0.157,
+  se=0.019; priced 65.2%, resolves 76.6% — bias -0.114, se=0.02), both
+  many standard errors from zero.
+- **Stage 2 (logit)**: converges cleanly (no quasi-separation), pseudo
+  R²=0.54. `price` itself is highly significant (coef 7.76, p<0.001);
+  unlike D007's 2-series fit, `price²` is *not* significant here (p=0.36)
+  — plausibly because pooling 4 asset classes with somewhat different
+  calibration-curve shapes partially washes out the quadratic term that
+  was cleaner on gas alone. Worth revisiting with a `category`/`platform`-
+  style control once Stage 3 (drivers of the bias) is built, rather than
+  assuming the quadratic term just isn't real.
+- **Stage 5 (OOS)**: Brier 0.0782 (corrected) vs. 0.0825 (raw), fraction
+  split (+0.0043); Brier 0.0789 vs. 0.0832, genuine time split at a
+  2026-09-30 cutoff (+0.0043) — same sign, almost identical magnitude on
+  both splits, same qualitative pattern as D007 (smaller improvement in
+  absolute Brier terms than D007's 2-series gas-only result, consistent
+  with a real but more modest effect once diluted across assets with
+  somewhat different bias dynamics, not a contradiction).
+- **Stage 4 (persistence)**: runs end-to-end on 64 daily periods. Level
+  series is non-stationary (ADF p=0.288), consistent with D007; after
+  differencing it's stationary (p≈0.0000) and AR(1)-selected with a
+  substantial *negative* coefficient (φ≈-0.57 — day-to-day bias swings
+  tend to partially reverse, not persist), but Ljung-Box still rejects
+  white-noise residuals at some lags, same unresolved diagnostic gap as
+  D007. Andrews sup-Wald break test: no significant break (bootstrap
+  p=0.194, best candidate 2026-10-10) — a third dataset now agreeing with
+  D002 and D007 that this project's break tests don't support a single
+  sharp regime change anywhere tried so far.
+
+**Environment note, not a methodology issue**: `select_ar_order`'s
+`old_names=False` kwarg (deprecated-but-functional on statsmodels 0.14)
+was removed outright in statsmodels 0.15 and raised `TypeError` on a clean
+install from `requirements.txt` (which only pins `>=0.14`) — fixed by
+dropping the kwarg (already a no-op). Separately, `select_boundary_strikes`
+in `ladder_atm.py` raised `ValueError: assignment destination is read-only`
+under pandas 3.0 + numpy 2.5 (newer copy-on-write semantics can hand back a
+read-only array from a boolean-comparison `.to_numpy()`) — fixed with an
+explicit `.copy()`. Neither bug affects any number reported above (both
+are on `--mode atm`/order-selection code paths exercised by the test suite,
+not by this run's `--mode full` pull), but both would have silently broken
+CI/a teammate's clean install without a pinned-down statsmodels/numpy/
+pandas version, so worth tightening `requirements.txt` before the next
+environment reset.
+
+**Caveat carried forward**: Treasury series have much shorter settled
+history (~9 days) than the rest, so they contribute far fewer independent
+days to Stage 4's persistence estimate than gas/commodities/FX do — the
+64-period series is not evenly weighted across asset classes. Scaling
+further (more Treasury history as it accumulates, or more FX pairs/
+commodities) is the natural next step, same spirit as D007's own
+caveat, just one level up.

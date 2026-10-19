@@ -19,32 +19,69 @@ flaw). This README describes current best understanding only.
 **Primary dataset: a "full ladder" reconstruction of Kalshi's continuous
 threshold-strike markets (gas prices, commodities, FX, Treasuries), with
 genuinely uncertain early-snapshot prices instead of near-certain
-settlement-time prices** — see `DECISIONS.md` D005-D007 for the full
+settlement-time prices** — see `DECISIONS.md` D005-D008 for the full
 diagnosis and `src/data/ladder_atm.py` for the implementation. Validated
-so far on 2 series (`KXAAAGASDIL`, `KXAAAGASDTX` — Illinois and Texas gas
-prices), 2046 observations across 55 days:
+on **11 series across 4 asset classes** (5 gas-price states, 3 commodities
+— gold/Brent oil/silver, 2 FX pairs — GBP/JPY, 2 Treasury-yield tenors —
+5Y/30Y), 10,229 observations across 66 days (`data/raw_kalshi_ladder_
+expanded.parquet`; see D008):
 
-- **Stage 1 (calibration)**: a sharp, classic, statistically significant
-  favorite-longshot bias — longshots overpriced, favorites underpriced
-  (details below).
+- **Stage 1 (calibration)**: the same sharp, classic, statistically
+  significant favorite-longshot bias found on gas alone — longshots
+  overpriced, favorites underpriced — holds up pooled across all 4 asset
+  classes (details below).
 - **Stage 2 (logit)**: converges cleanly, no quasi-separation. Pseudo
-  R²=0.67.
+  R²=0.54. `price` itself is highly significant; unlike the 2-series gas
+  result, `price²` is not significant here (p=0.36) — plausibly diluted by
+  pooling asset classes with somewhat different calibration-curve shapes,
+  not yet confirmed either way (see D008).
 - **Stage 5 (OOS)**: the correction beats raw price under *both* a
-  fraction split (+0.024 Brier) and a genuine time split (+0.022 Brier) —
-  consistent in sign and magnitude, unlike every earlier Kalshi pull tried.
-- **Stage 4 (persistence)**: runs end to end (55 daily periods) but isn't
-  a fully clean diagnostic story yet — see "Stage 4" below.
+  fraction split (+0.0043 Brier) and a genuine time split (+0.0043 Brier,
+  cutoff 2026-09-30) — same sign, nearly identical magnitude on both
+  splits, same qualitative pattern as the gas-only result (smaller in
+  absolute Brier terms, consistent with a real but more modest pooled
+  effect, not a contradiction).
+- **Stage 4 (persistence)**: runs end to end on 64 daily periods. Level is
+  non-stationary; differenced series is stationary with a substantial
+  *negative* AR(1) coefficient (day-to-day bias swings partially reverse
+  rather than persist), but residuals still fail Ljung-Box at some lags —
+  not yet a fully clean diagnostic story, same unresolved gap as the
+  gas-only result. Andrews sup-Wald break test: no significant break
+  (bootstrap p=0.194) — a third dataset now agreeing that this project's
+  break tests don't support a single sharp regime change anywhere tried.
 
-**Caveat carried forward, not hidden**: only 2 series so far, both US gas
-prices (plausibly correlated with each other, not fully independent
-evidence). Scaling the same pull to commodities/FX/Treasuries is the
-natural next step to check whether this generalizes.
+**Caveat carried forward, not hidden**: Treasury series have much shorter
+settled history (~9 days) than gas/commodities/FX (28-57 days), so they're
+under-represented in Stage 4's 64-period series relative to the other
+asset classes. More Treasury history (as it accumulates) and more
+FX pairs/commodities are the natural next step — same spirit as before,
+one level up. The original 2-series gas-only result (`DECISIONS.md` D007)
+is kept below for reference since it's the cleaner, higher-R² fit on a
+single asset class; the 11-series result above is the one to trust for
+"does this generalize beyond gas prices."
 
 **Everything else (the general Kalshi feed, `KXTRUMPAPPROVE`,
 Polymarket, and a first ladder-reconstruction attempt that turned out to
 have a selection-bias flaw) is still in the codebase and still tested, but
 is no longer the basis for this project's headline findings** — see
 `DECISIONS.md` for why each one was tried and retired.
+
+## Reproducing the 11-series result
+
+```bash
+python scripts/pull_kalshi_ladder_atm.py --mode full \
+    --series KXAAAGASDIL KXAAAGASDTX KXAAAGASDCA KXAAAGASDNY KXAAAGASDFL \
+             KXGOLDD KXBRENTD KXSILVERD KXGBPUSDAD KXUSDJPYAD KXUST5A KXUST30A \
+    --out data/raw_kalshi_ladder_expanded.parquet
+
+python scripts/run_calibration.py --panel-path data/raw_kalshi_ladder_expanded.parquet
+python scripts/run_oos.py --panel-path data/raw_kalshi_ladder_expanded.parquet --split fraction --train-frac 0.7
+python scripts/run_oos.py --panel-path data/raw_kalshi_ladder_expanded.parquet --split time --cutoff 2026-09-30
+python scripts/run_stage4.py --panel-path data/raw_kalshi_ladder_expanded.parquet --freq D --min-markets-per-period 1 --min-periods 24
+python scripts/plot_stage4.py --panel-path data/raw_kalshi_ladder_expanded.parquet \
+    --prefix stage4_expanded --label "11-series expanded (gas+commodities+FX+treasuries)" \
+    --freq D --min-markets-per-period 1
+```
 
 ## Setup
 

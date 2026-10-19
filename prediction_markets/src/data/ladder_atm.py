@@ -55,7 +55,7 @@ def select_boundary_strikes(day_markets: pd.DataFrame, max_strikes: int = 2) -> 
     results = day["result"].str.lower()
     if results.nunique() != 2 or not set(results.unique()) <= {"yes", "no"}:
         return day.iloc[0:0]
-    flips = (results != results.shift()).to_numpy()
+    flips = (results != results.shift()).to_numpy().copy()  # pandas 3's CoW can hand back a read-only array
     flips[0] = False
     flip_idx = flips.nonzero()[0]
     if len(flip_idx) != 1:

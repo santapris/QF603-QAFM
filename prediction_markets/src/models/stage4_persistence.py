@@ -121,14 +121,19 @@ def adf_test(x: pd.Series, alpha: float = 0.05) -> dict:
 def select_ar_order(x: pd.Series, max_p: int = 3) -> int:
     """AIC-selected AR order over the FULL sample.
 
-    Same `ar_select_order(..., ic="aic", old_names=False)` call as VRP's
+    Same `ar_select_order(..., ic="aic")` call as VRP's
     `exploration/driver_surprises.py`, but with no walk-forward `first_origin`:
     Stage 4 is a single full-sample identification/fit cycle (matching VRP's
     own Stage 1 persistence test), not a walk-forward forecast -- that's
     Stage 5's job in this project, for the bias-corrected probability forecast.
+
+    `old_names` was a deprecated kwarg on `ar_select_order` (no-op once
+    passed `False`, which was already the only non-deprecated behavior) and
+    was removed outright in statsmodels 0.15 -- passing it at all raises
+    TypeError there, which is why this is called with no `old_names` kwarg.
     """
     x = x.dropna()
-    sel = ar_select_order(x.to_numpy(), maxlag=max_p, ic="aic", old_names=False)
+    sel = ar_select_order(x.to_numpy(), maxlag=max_p, ic="aic")
     lags = sel.ar_lags or [1]
     return max(lags)
 
