@@ -1,0 +1,255 @@
+{
+  "source": "spot",
+  "binding": false,
+  "note": "Spot proxy. The binding verdict needs the Bloomberg futures run (PREREGISTRATION.md section 5).",
+  "ladder": {
+    "fixed|crack321|core": {
+      "sharpe": -0.161,
+      "sharpe_t": -0.651,
+      "total": -138586.641,
+      "max_dd": -269556.842,
+      "n_trades": 26.0,
+      "win_rate": 0.538,
+      "time_in_market": 0.183
+    },
+    "fixed|crack321|garch_sizing": {
+      "sharpe": -0.074,
+      "sharpe_t": -0.298,
+      "total": -52958.935,
+      "max_dd": -172248.545,
+      "n_trades": 26.0,
+      "win_rate": 0.538,
+      "time_in_market": 0.183
+    },
+    "fixed|crack321|blackout": {
+      "sharpe": -0.074,
+      "sharpe_t": -0.298,
+      "total": -52958.935,
+      "max_dd": -172248.545,
+      "n_trades": 26.0,
+      "win_rate": 0.538,
+      "time_in_market": 0.183
+    },
+    "fixed|crack321|logit_filter": {
+      "sharpe": -0.022,
+      "sharpe_t": -0.087,
+      "total": -10053.546,
+      "max_dd": -140210.268,
+      "n_trades": 6.0,
+      "win_rate": 0.5,
+      "time_in_market": 0.073
+    },
+    "fixed|brent_wti|core": {
+      "sharpe": 0.041,
+      "sharpe_t": 0.164,
+      "total": 71702.193,
+      "max_dd": -322038.82,
+      "n_trades": 18.0,
+      "win_rate": 0.667,
+      "time_in_market": 0.11
+    },
+    "fixed|brent_wti|garch_sizing": {
+      "sharpe": 0.04,
+      "sharpe_t": 0.163,
+      "total": 33788.999,
+      "max_dd": -126832.129,
+      "n_trades": 18.0,
+      "win_rate": 0.667,
+      "time_in_market": 0.11
+    },
+    "fixed|brent_wti|blackout": {
+      "sharpe": 0.04,
+      "sharpe_t": 0.163,
+      "total": 33788.999,
+      "max_dd": -126832.129,
+      "n_trades": 18.0,
+      "win_rate": 0.667,
+      "time_in_market": 0.11
+    },
+    "fixed|brent_wti|logit_filter": {
+      "sharpe": 0.128,
+      "sharpe_t": 0.517,
+      "total": 32065.552,
+      "max_dd": -28915.039,
+      "n_trades": 2.0,
+      "win_rate": 1.0,
+      "time_in_market": 0.012
+    },
+    "fixed|ho_rb|core": {
+      "sharpe": 0.299,
+      "sharpe_t": 1.204,
+      "total": 305470.561,
+      "max_dd": -141483.205,
+      "n_trades": 33.0,
+      "win_rate": 0.606,
+      "time_in_market": 0.184
+    },
+    "fixed|ho_rb|garch_sizing": {
+      "sharpe": 0.325,
+      "sharpe_t": 1.308,
+      "total": 234287.262,
+      "max_dd": -113895.017,
+      "n_trades": 33.0,
+      "win_rate": 0.606,
+      "time_in_market": 0.184
+    },
+    "fixed|ho_rb|blackout": {
+      "sharpe": 0.27,
+      "sharpe_t": 1.089,
+      "total": 194558.466,
+      "max_dd": -114778.92,
+      "n_trades": 32.0,
+      "win_rate": 0.594,
+      "time_in_market": 0.173
+    },
+    "fixed|ho_rb|logit_filter": {
+      "sharpe": 0.254,
+      "sharpe_t": 1.024,
+      "total": 107336.865,
+      "max_dd": -105628.244,
+      "n_trades": 19.0,
+      "win_rate": 0.684,
+      "time_in_market": 0.057
+    },
+    "johansen|crack321|core": {
+      "sharpe": 0.039,
+      "sharpe_t": 0.155,
+      "total": 18283.189,
+      "max_dd": -79346.918,
+      "n_trades": 20.0,
+      "win_rate": 0.5,
+      "time_in_market": 0.072
+    },
+    "johansen|crack321|garch_sizing": {
+      "sharpe": 0.136,
+      "sharpe_t": 0.546,
+      "total": 63011.247,
+      "max_dd": -86674.458,
+      "n_trades": 20.0,
+      "win_rate": 0.5,
+      "time_in_market": 0.072
+    },
+    "johansen|crack321|blackout": {
+      "sharpe": 0.134,
+      "sharpe_t": 0.539,
+      "total": 62306.891,
+      "max_dd": -86674.458,
+      "n_trades": 20.0,
+      "win_rate": 0.5,
+      "time_in_market": 0.072
+    },
+    "johansen|crack321|logit_filter": {
+      "sharpe": 0.071,
+      "sharpe_t": 0.285,
+      "total": 21239.39,
+      "max_dd": -86674.458,
+      "n_trades": 6.0,
+      "win_rate": 0.333,
+      "time_in_market": 0.022
+    }
+  },
+  "gate_verdicts": {
+    "fixed|crack321": {
+      "G1_sharpe": false,
+      "G1_value": -0.021546359119234297,
+      "G2_trades": false,
+      "G2_value": 6,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "1.5": 0.30133141387289625,
+        "2.0": -0.021546359119234297,
+        "2.5": -0.07972648500304846
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": {
+          "filtered": 0.0,
+          "unfiltered": -85506.0255777183
+        },
+        "hormuz": {
+          "filtered": 0.0,
+          "unfiltered": -55755.16915906631
+        }
+      },
+      "PASS": false
+    },
+    "fixed|brent_wti": {
+      "G1_sharpe": false,
+      "G1_value": 0.12830117929382318,
+      "G2_trades": false,
+      "G2_value": 2,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": false,
+      "G4_value": {
+        "1.5": 0.19181709868202382,
+        "2.0": 0.12830117929382318,
+        "2.5": -0.08304358879722715
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": {
+          "filtered": 0.0,
+          "unfiltered": 0.0
+        },
+        "hormuz": {
+          "filtered": 0.0,
+          "unfiltered": -49555.432870999735
+        }
+      },
+      "PASS": false
+    },
+    "fixed|ho_rb": {
+      "G1_sharpe": false,
+      "G1_value": 0.25415728821359157,
+      "G2_trades": false,
+      "G2_value": 19,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": true,
+      "G4_value": {
+        "1.5": 0.6283592690027818,
+        "2.0": 0.25415728821359157,
+        "2.5": 0.22262971521860667
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": {
+          "filtered": -13451.931874569287,
+          "unfiltered": -44133.254987991626
+        },
+        "hormuz": {
+          "filtered": 0.0,
+          "unfiltered": 46930.81592987877
+        }
+      },
+      "PASS": false
+    }
+  },
+  "integer_book": {
+    "gated": {
+      "final_equity": 2036822.0000000005,
+      "total": 36822.00000000019,
+      "sharpe": 0.07457964064354304,
+      "max_dd_usd": -78945.99999999997,
+      "max_drawdown_pct": 0.0385602405460348,
+      "halted": false,
+      "n_trades": 24,
+      "blocked_by_size": 29,
+      "days_half_size": 0
+    },
+    "no logit": {
+      "final_equity": 2127386.0000000005,
+      "total": 127386.00000000025,
+      "sharpe": 0.09192649900416444,
+      "max_dd_usd": -301442.00000000006,
+      "max_drawdown_pct": 0.1246118307697904,
+      "halted": false,
+      "n_trades": 62,
+      "blocked_by_size": 200,
+      "days_half_size": 1097
+    }
+  }
+}

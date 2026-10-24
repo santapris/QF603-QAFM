@@ -1,0 +1,20 @@
+@page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+html { font-family: "Charter", "Georgia", "Times New Roman", serif; font-size: 10.5pt; line-height: 1.45; color: #111; background: #fff; }
+body { max-width: 175mm; margin: 0 auto; padding: 0; }
+header#title-block-header { text-align: center; margin-bottom: 8mm; }
+h1.title { font-size: 19pt; margin: 0 0 2mm; line-height: 1.2; }
+p.subtitle { font-size: 12pt; margin: 0 0 3mm; color: #333; font-style: italic; }
+p.author, p.date { margin: 0.5mm 0; font-size: 10pt; color: #444; }
+h1 { font-size: 14pt; margin: 7mm 0 2mm; border-bottom: 0.5pt solid #bbb; padding-bottom: 1mm; break-after: avoid; }
+h2 { font-size: 11.5pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+p, li { text-align: justify; hyphens: auto; }
+figure { margin: 4mm 0; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; }
+figcaption { font-size: 9pt; color: #333; margin-top: 1mm; text-align: left; }
+table { border-collapse: collapse; margin: 3mm auto; font-size: 8.8pt; break-inside: avoid; }
+caption { caption-side: bottom; font-size: 9pt; color: #333; text-align: left; padding-top: 1.5mm; }
+th, td { padding: 1.2mm 2mm; border-bottom: 0.4pt solid #ccc; vertical-align: top; }
+thead th { border-bottom: 0.9pt solid #555; text-align: left; }
+code { font-family: "Menlo", monospace; font-size: 8.8pt; }
+pre { background: #f5f5f3; padding: 2.5mm; font-size: 8pt; white-space: pre-wrap; break-inside: avoid; }
+math[display="block"] { margin: 2mm 0; }

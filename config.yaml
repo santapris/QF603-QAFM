@@ -1,96 +1,191 @@
-# Single source of truth for dates, horizons, split points, lag rules and strategy parameters.
-# Every change here must be logged in DECISIONS.md.
+# Oil complex relative value: single source of truth for every parameter.
+# Values follow oil-rv-plan.md and PROJECT_PLAN.md unless noted.
+#
+# PRE-REGISTRATION: the `gates`, `strategy`, `model`, `spreads`, `regime`, `sizing`, `binding_data`
+# and `variants` blocks were fixed on 2026-10-24, BEFORE any data was downloaded or any backtest run.
+# Do not edit them after seeing results. Robustness runs vary parameters via `robustness` instead.
+# tests/test_preregistration.py fails if a registered value changes.
 
-sample:
-  start: 2008-01-31
-  end: 2025-08-29                # last OptionMetrics date on WRDS — D017 (was 2025-12-31)
-  har_burnin_start: 2003-09-10  # first daily TAQ (taqm_2003.ctm_20030910) with SPY trades — D013
-horizons: [1, 3, 6]
-predictors: [vix, vix_ts, vvix, skew, fund_spread, credit_spread, hkm, cftc_pos]   # Holm family = 8 × 3 [F5]
-stage1:
-  lp_horizons: [0, 1, 2, 3, 4, 5, 6]   # local projections of VRP on rv_surprise (D033)
-  persistent_ar1: 0.9                  # flag predictors with AR(1) above this or ADF p > 0.10
-stage2:
-  ridge_log10_alpha: [-3, 3, 25]       # grid: numpy.logspace(min, max, n) (D034)
-  cv_min_train_months: 60              # first expanding-window CV origin needs ≥ 60 usable training rows
-  pca_components_reported: 3
-stage3:
-  break_trim: 0.15                     # Andrews (1993) sup-Wald trimming
-  supwald_sim_reps: 20000              # simulated asymptotic null distribution (D035)
-  supwald_sim_grid: 1000
-  supwald_boot_reps: 499             # Hansen (2000) fixed-regressor wild bootstrap (headline p-value)
-  main_predictors: null                # 🧑 main specification for the break test; null → AR(1) and AR(1) + all predictors
-  exclude_crisis: [2008-01-01, 2009-12-31]
-stage4:
-  min_train_months: 60                 # minimum usable training rows at an OOS origin
-  pca_m: [1, 2, 3]                     # PC counts compared on validation (tuned)
-  bridge_target: vrp_expost            # k = 0 payoff bridge: vrp_expost_t on vrp_exante_t (+ predictors) [F7]
-stage5:
-  predictors: [vrp_trail, vrp_exante]  # BTZ trailing VRP (headline Q5) and the ex-ante extension
-  min_train_months: 60
-vrp_tenor:
-  iv_calendar_days: 30
-  rv_trading_days: 21
-oos:
-  train_end: 2015-12-31
-  validate_end: 2020-12-31
-  holdout_end: 2025-08-29        # D017
-target_observation_lag_months:  # [F2][F3] months after t+k by which the target is known (month-granular fallback;
-  vrp_exante: 0                 # exact per-row observation dates override this when supplied — see DECISIONS.md)
-  vrp_expost: 2                 # 21 trading days after month-end t can end inside month t+2 (e.g. Feb) — conservative
-  excess_return: 0
-max_stale_days:                 # month-end value set to NaN if the latest available obs is older (hard rule 3)
-  fred_daily: 14                # D022: blanks DCPF3M Apr 2020 (not published 2020-03-27 → 2020-05-06)
-  bloomberg: 5                  # daily Bloomberg / VIX closes at month-end
-  cftc: 35                      # D018: blanks Jan–May 2009 (no reports 2008-12-16 → 2009-06-02); holiday gaps pass
-publication_lag:                # [F4]
-  fred_daily_bdays: 1           # H.15 CP / T-bill and Moody's yields posted next business day
-  hkm_months: 3                 # quarterly book debt released with a lag; robustness: 1
-  cftc: release_date            # Tuesday as-of, Friday release
-  bloomberg_bdays: 0
-cftc:
-  contract_code: 1170E1         # Cboe VIX futures, TFF futures-only dataset gpe5-46if (D015)
-  shutdown_release_overrides:   # D025: backlog reports released no later than these dates
-    - {as_of_from: 2013-10-01, as_of_to: 2013-11-04, release: 2013-11-08}
-    - {as_of_from: 2018-12-22, as_of_to: 2019-03-04, release: 2019-03-08}
-rf:
-  series: DTB3                  # [F13] converted to a monthly holding-period return
-har:                            # Phase 2c
-  variants: [level, log, iv]
-  min_train_days: 250
-  iv_daily_source: VIXCLS       # daily VIX close (FRED) for the IV-augmented variant; switch to Bloomberg VIX Index when exported (D030)
-  rv_floor: 1.0e-8              # daily-variance floor before logs (log variant; binds only on zero-return days)
-  headline: log                 # 🧑 chosen by the user 2026-09-23 after the evaluation (D038)
-newey_west:
-  rule: "max(k, floor(4*(T/100)**(2/9)))"
-  expost_rule: "max(k+1, floor(4*(T/100)**(2/9)))"   # [F6]
-bootstrap:
-  method: moving_block          # [F11]
-  block_length: 6
-  reps: 5000
-regimes:
-  high_vol_vix_percentile: 80
-rolling_window_months: 60
-seed: 603
-strategy:                       # Phase 6
-  execution_lag_days: 1
-  risk_budget_stress_loss: 0.20
-  stress_scenario: {spx_move: -0.15, iv_mult: 2.0}
-  cost_hurdle: 1.5
-  multiplier_tiers: [0, 0.5, 1.0, 1.5]
-  wing_delta: 0.10
-  option_spread_theta: {base: 0.5, stress: 1.0}
-  option_fee_per_contract: {base: 1.0, stress: 2.0}   # USD all-in per contract, chosen by the user (D043)
-  hedge_cost_bp: {base: 1, stress: 2}
-  hedge_band_delta: null        # chosen on validation only
-  max_oi_share: 0.05
-  crra_gammas: [3, 5]
-  s2_model: null                # 🧑 Stage 4 bridge model used by S2 (from stage4_selection.csv)
-  cap_high_vol: false           # 🧑 set true if Stage 3 finds unstable slopes in high-VIX months
-  breakeven_cost_multiples: [0, 0.5, 1, 1.5, 2, 3, 4]
-  stress_months: [2008-10, 2011-08, 2015-08, 2018-02, 2020-03, 2022-06, 2025-04]
-frozen:                         # Phase 7 pre-registration — filled only from 🧑-approved validation choices
-  stage4_models: null           # {0: [...bridge models], 1: [...], 3: [...], 6: [...]} evaluated on the holdout
-  stage5_variants: null         # e.g. [unrestricted, slope_restricted, slope_and_premium]
-  strategy_variants: null       # e.g. [S0, S1, S2] — S2 only if it beat S1 on validation
-  n_trials: null                # number of strategy variants / parameter sets tried (deflated Sharpe, rule 4)
+registered_on: "2026-10-24"
+
+data:
+  sample_start: "2007-01-02"     # NYH ULSD spot starts mid-2006; RBOB is the gasoline benchmark
+  sample_end: null               # null = latest available
+  fred_series:
+    wti: DCOILWTICO              # WTI Cushing spot, $/bbl
+    brent: DCOILBRENTEU          # Brent Europe spot, $/bbl
+    rb: DGASNYH                  # NY Harbor conventional gasoline spot, $/gal
+    ovx: OVXCLS                  # CBOE crude oil volatility index
+  eia_spot:
+    ho: EER_EPD2DXL0_PF4_Y35NY_DPG   # NY Harbor ULSD spot, $/gal (EIA daily spot sheet)
+  eia_weekly:                    # Weekly Petroleum Status Report history (ids verified in Part 1)
+    crude_ex_spr: WCESTUS1
+    cushing: W_EPC0_SAX_YCUOK_MBBL
+    gasoline: WGTSTUS1
+    distillate: WDISTUS1
+    refinery_util: WPULEUS3
+  weekly_stock_lag_days: 6       # week ending Friday is usable from the following Thursday close
+  cftc_release_lag_days: 6       # COT as of Tuesday, released Friday 3:30 pm ET (after the 2:30 pm settle):
+                                 # usable from the following Monday close (code review 2026-10-24; was 3)
+  gpr_lag_days: 1
+  ovx_lag_days: 1                # OVX closes 4:15 pm ET, after the 2:30 pm NYMEX settle: use the previous
+                                 # day's value at each decision close (code review 2026-10-24; was 0)
+  gal_per_bbl: 42
+  flag_dates: ["2020-04-20"]     # WTI settled negative; the week is flagged, kept in the core run
+  raw_dir: data/raw
+  clean_dir: data/clean
+  derived_dir: data/derived
+  calendar_dir: data/calendars
+  cache_max_age_days: 1
+  spike_sigma: 5.0               # flag |daily change| > spike_sigma * rolling sd ...
+  spike_reversal_frac: 0.8       # ... that reverses by at least this fraction the next day
+  spike_vol_window: 60
+
+futures:                         # Bloomberg export, used once available (see data/raw/bloomberg/README.md)
+  generics: {cl: [CL, 12], brent: [CO, 12], rb: [XB, 6], ho: [HO, 6]}
+  roll_bdays_before_expiry: 5
+  adjustment: additive           # additive back-adjustment survives negative prices
+  same_delivery_month: true      # Brent is matched to WTI by delivery month, not front vs front
+  contract_bbl: 1000
+
+# The verdict is binding on futures. Spot-data backtests are a proxy, labelled as such.
+binding_data:
+  binding_source: futures
+  proxy_source: spot
+  fallback_if_no_futures: spot_proxy_verdict_labelled
+
+spreads:
+  crack321:
+    legs: {cl: -3, rb: 2, ho: 1}         # contracts per unit; RB and HO converted to $/bbl first
+    divisor: 3                           # spread quoted per barrel of crude
+    usd_per_1bbl_per_unit: 3000
+    seasonal_adjust: true
+    traded: true
+  brent_wti:
+    legs: {brent: 1, cl: -1}
+    divisor: 1
+    usd_per_1bbl_per_unit: 1000
+    seasonal_adjust: false               # tested in Part 3 and reported; this setting does not change
+    traded: true
+  ho_rb:
+    legs: {ho: 1, rb: -1}
+    divisor: 1
+    usd_per_1bbl_per_unit: 1000
+    seasonal_adjust: true
+    traded: true
+  brent_m1m6:                            # futures only; regime-filter input, never traded
+    traded: false
+
+model:
+  window: 756                    # 3-year estimation window, trading days
+  reestimate: monthly            # first trading day of each month, and whenever flat after an exit
+  seasonal: month_of_year_in_window
+  half_life_min: 5
+  half_life_max: 120
+  rolling_adf_window: 756
+  garch: {p: 1, q: 1, dist: t}
+
+strategy:
+  entry_z: 2.0                   # enter when entry_z <= |z| < stop_z
+  exit_z: 0.5                    # take profit when |z| <= exit_z
+  stop_z: 4.0
+  time_stop_halflives: 3.0
+  rearm_z: 2.0                   # |z| must come back inside this after an exit before re-entry
+  entry_gate: [half_life_in_band]
+  model_break_exit: half_life_out_of_band   # checked at the scheduled monthly re-test while in a trade
+  regime_enter_p: 0.6
+  regime_exit_p: 0.4
+  event_blackout_days: 1         # no new entry within this many trading days before a blackout event
+  blackout_event_types: [OPEC, HURRICANE]
+  fill_lag_days: 1               # decide at close t, fill at close t+1
+  cost_usd_per_bbl: 0.05         # $/bbl of spread per unit of position change (x usd_per_1bbl_per_unit)
+  roll_cost_ticks_per_leg: 1     # futures only, per leg rolled
+  tick_usd: {cl: 10.0, brent: 10.0, rb: 4.2, ho: 4.2}
+
+regime:
+  label_revert_z: 1.0            # label 1 if |z| <= 1 within the horizon ...
+  label_stop_z: 4.0              # ... before first touching 4
+  label_horizon_days: 20
+  pooled: true                   # one logit across the traded spreads, with spread dummies
+  refit: monthly_expanding       # fit at each month start on episodes resolved strictly before it
+  min_episodes: 20               # below this, no filter applies
+  core_features: [ovx_pct, garch_vol_pct, rolling_adf_p, gpr, inventory_dev_5y]
+  robustness_features: [cftc_mm_z, hurricane_season, event_within_3d, brent_m1m6_slope_pct]
+  percentile_lookback_days: 756
+  robustness_model: probit
+
+sizing:
+  book_usd: 2000000
+  risk_per_day_usd: 6000         # R
+  max_loss_per_trade_usd: 40000  # L
+  max_units: 3
+  drawdown_halve: 0.10           # integer book: halve sizes after a 10% drawdown ...
+  drawdown_stop: 0.20            # ... stop trading after 20%
+  research_stream: unrounded_vol_target     # units = R / (sigma_hat * usd_per_1bbl_per_unit); used for gates
+  integer_book: min_vol_and_stop_limits_floor_cap
+
+evaluation:
+  backtest_start: null           # null = first month start with a full estimation window
+  sub_periods:
+    - ["2007-01-01", "2013-12-31"]
+    - ["2014-01-01", "2019-12-31"]
+    - ["2020-01-01", null]
+  stress_windows:                # descriptive, except 2022 and 2026 which enter gate G5
+    brent_wti_break: ["2011-01-01", "2013-12-31"]
+    covid: ["2020-01-01", "2020-12-31"]
+    ukraine: ["2022-01-01", "2022-12-31"]
+    hormuz: ["2026-01-01", null]
+  moments_periods:
+    - ["2007-01-01", "2013-12-31"]
+    - ["2014-01-01", "2019-12-31"]
+    - ["2020-01-01", "2020-12-31"]
+    - ["2022-01-01", "2022-12-31"]
+    - ["2026-01-01", null]
+  annualisation: 252
+
+# Pre-committed success gates. A traded spread "passes" only if ALL hold for the `fixed` variant,
+# base parameters, logit filter on, research P&L stream, on the binding data source.
+gates:
+  min_net_sharpe: 0.5            # G1, at strategy.cost_usd_per_bbl
+  min_round_trips: 20            # G2
+  min_positive_subperiods: 2     # G3, of the 3 sub_periods, net P&L > 0
+  entry_grid_stability:          # G4, every entry_z in robustness.entry_z must have net Sharpe > 0
+    min_sharpe_all_grid_points: 0.0
+  stress_filter:                 # G5, in each window: filtered net P&L >= unfiltered AND > -max_loss
+    windows: [ukraine, hormuz]
+    filtered_ge_unfiltered: true
+    max_loss_usd: 40000
+
+robustness:
+  entry_z: [1.5, 2.0, 2.5]
+  exit_z: [0.25, 0.5, 0.75]
+  window: [504, 756, 1008]
+  cost_usd_per_bbl: [0.0, 0.025, 0.05, 0.10, 0.20]
+  label_horizon_days: [10, 20, 40]
+  drop_flagged_dates: true       # re-run without the April 2020 week
+
+# Pre-registered variants. All are backtested with the same code, data and timing and reported side
+# by side. Only `fixed` is judged against the gates. Full rationale: PREREGISTRATION.md.
+variants:
+  fixed:
+    registered_on: "2026-10-24"
+    registered_after: "Part 0 (before any data download or analysis)"
+    description: "Traded fixed weights from `spreads` (3:2:1, 1:1, 1:1); deseasonalised AR(1) z-score."
+    weights: fixed
+    spreads: [crack321, brent_wti, ho_rb]
+    gated: true
+  johansen:
+    registered_on: "2026-10-24"
+    registered_after: "Part 0 (before any data download or analysis)"
+    description: "Crack only: first Johansen vector on (CL, RB, HO), refit monthly, scaled to 3 CL. Robustness."
+    weights: johansen_first_vector
+    spreads: [crack321]
+    gated: false
+    overrides: {}
+
+# Filter ladder, reported for every variant and spread. Each step adds one component.
+ladder:
+  core: {sizing: window_sd, blackout: false, logit: false}
+  garch_sizing: {sizing: garch, blackout: false, logit: false}
+  blackout: {sizing: garch, blackout: true, logit: false}
+  logit_filter: {sizing: garch, blackout: true, logit: true}   # = the gated configuration

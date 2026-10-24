@@ -1,0 +1,4 @@
+,P(revert) >= 0.6,vol percentile < 80%,no Hormuz closure for 28 days,ALL MET,vol series,vol percentile,futures data (not spot),|z| >= 2.0
+fixed|crack321,False,False,False,False,crack321,0.993,,
+fixed|brent_wti,False,,,False,brent_wti,0.782,False,False
+fixed|ho_rb,False,False,False,False,diesel crack (HO − CL),0.99,,

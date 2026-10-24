@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: oilrv
+Version: 0.1.0
+Summary: QF603 Project 3: oil complex relative value (crack, Brent-WTI, HO-RB)
+Requires-Python: >=3.10

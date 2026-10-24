@@ -1,0 +1,90 @@
+{
+  "source": "spot",
+  "first_date": "2007-01-03",
+  "last_date": "2026-10-20",
+  "n_days": 4848,
+  "max_gap_calendar_days": 10,
+  "n_spike_flags": {
+    "spike_crack321": 6,
+    "spike_brent_wti": 3,
+    "spike_ho_rb": 8
+  },
+  "n_days_flag_apr2020": 5,
+  "wti_min": -36.98,
+  "latest": {
+    "crack321": 46.94,
+    "brent_wti": 7.33,
+    "ho_rb": 99.46
+  },
+  "crack321_median": 19.42,
+  "crack321_range": [
+    -1.62,
+    81.86
+  ],
+  "brent_wti_median": 3.76,
+  "brent_wti_range": [
+    -22.18,
+    54.34
+  ],
+  "ho_rb_median": 5.17,
+  "ho_rb_range": [
+    -18.23,
+    99.46
+  ],
+  "feature_first_valid": {
+    "ovx": "2007-05-11",
+    "gpr": "2007-01-03",
+    "crude_ex_spr": "2007-01-03",
+    "cushing": "2007-01-03",
+    "gasoline": "2007-01-03",
+    "distillate": "2007-01-03",
+    "refinery_util": "2007-01-03",
+    "total_stocks": "2007-01-03",
+    "inventory_dev_5y": "2007-01-03",
+    "crude_ex_spr_dev_5y": "2007-01-03",
+    "cushing_dev_5y": "2009-06-18",
+    "gasoline_dev_5y": "2007-01-03",
+    "distillate_dev_5y": "2007-01-03",
+    "mm_net_cl": "2007-01-03",
+    "oi_cl": "2007-01-03",
+    "mm_net_rb": "2007-01-03",
+    "oi_rb": "2007-01-03",
+    "mm_net_ho": "2007-01-03",
+    "oi_ho": "2007-01-03"
+  },
+  "feature_missing_after_2010": {
+    "ovx": 0,
+    "gpr": 0,
+    "crude_ex_spr": 0,
+    "cushing": 0,
+    "gasoline": 0,
+    "distillate": 0,
+    "refinery_util": 0,
+    "total_stocks": 0,
+    "inventory_dev_5y": 0,
+    "crude_ex_spr_dev_5y": 0,
+    "cushing_dev_5y": 0,
+    "gasoline_dev_5y": 0,
+    "distillate_dev_5y": 0,
+    "mm_net_cl": 0,
+    "oi_cl": 0,
+    "mm_net_rb": 0,
+    "oi_rb": 0,
+    "mm_net_ho": 0,
+    "oi_ho": 0
+  },
+  "events": {
+    "OPEC": 98,
+    "HURRICANE": 19,
+    "HORMUZ": 10,
+    "SPR": 6
+  },
+  "opec_events_verified": {
+    "no": 75,
+    "yes": 17,
+    "inferred": 4,
+    "partial": 2
+  },
+  "pct_days_in_event_blackout": 4.5,
+  "futures_available": false
+}

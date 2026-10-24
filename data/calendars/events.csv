@@ -1,0 +1,134 @@
+date,type,name,scheduled,verified,source
+2007-03-15,OPEC,144th OPEC Conference,True,no,recall; check opec.org press releases
+2007-09-11,OPEC,145th OPEC Conference,True,no,recall; check opec.org press releases
+2007-09-13,HURRICANE,"Humberto (landfall 29.6N 94.3W, 80 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2007-12-05,OPEC,146th (Extraordinary) OPEC Conference Abu Dhabi,True,no,recall; check opec.org press releases
+2008-02-01,OPEC,147th (Extraordinary) OPEC Conference,True,no,recall; check opec.org press releases
+2008-03-05,OPEC,148th OPEC Conference,True,no,recall; check opec.org press releases
+2008-07-23,HURRICANE,"Dolly (landfall 26.4N 97.2W, 75 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2008-09-01,HURRICANE,"Gustav (landfall 29.2N 90.7W, 90 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2008-09-09,OPEC,149th OPEC Conference,True,no,recall; check opec.org press releases
+2008-09-13,HURRICANE,"Ike (landfall 29.3N 94.7W, 95 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2008-10-24,OPEC,150th (Extraordinary) OPEC Conference,True,no,recall; check opec.org press releases
+2008-12-17,OPEC,151st (Extraordinary) OPEC Conference Oran,True,no,recall; check opec.org press releases
+2009-03-15,OPEC,152nd OPEC Conference,True,no,recall; check opec.org press releases
+2009-05-28,OPEC,153rd OPEC Conference,True,no,recall; check opec.org press releases
+2009-09-09,OPEC,154th OPEC Conference,True,no,recall; check opec.org press releases
+2009-12-22,OPEC,155th OPEC Conference Luanda,True,no,recall; check opec.org press releases
+2010-03-17,OPEC,156th OPEC Conference,True,no,recall; check opec.org press releases
+2010-10-14,OPEC,157th OPEC Conference,True,no,recall; check opec.org press releases
+2010-12-11,OPEC,158th (Extraordinary) OPEC Conference Quito,True,no,recall; check opec.org press releases
+2011-06-08,OPEC,159th OPEC Conference,True,no,recall; check opec.org press releases
+2011-06-23,SPR,IEA collective action (Libya),False,no,recall; check iea.org
+2011-12-14,OPEC,160th OPEC Conference,True,no,recall; check opec.org press releases
+2012-06-14,OPEC,161st OPEC Conference,True,no,recall; check opec.org press releases
+2012-08-29,HURRICANE,"Isaac (landfall 28.9N 89.4W, 70 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2012-12-12,OPEC,162nd OPEC Conference,True,no,recall; check opec.org press releases
+2013-05-31,OPEC,163rd OPEC Conference,True,no,recall; check opec.org press releases
+2013-12-04,OPEC,164th OPEC Conference,True,no,recall; check opec.org press releases
+2014-06-11,OPEC,165th OPEC Conference,True,no,recall; check opec.org press releases
+2014-11-27,OPEC,166th OPEC Conference,True,yes,https://en.wikipedia.org/wiki/OPEC%2B
+2015-06-05,OPEC,167th OPEC Conference,True,no,recall; check opec.org press releases
+2015-12-04,OPEC,168th OPEC Conference,True,yes,https://en.wikipedia.org/wiki/OPEC%2B
+2016-06-02,OPEC,169th OPEC Conference,True,no,recall; check opec.org press releases
+2016-09-28,OPEC,170th (Extraordinary) OPEC Conference Algiers,True,no,recall; check opec.org press releases
+2016-11-30,OPEC,171st OPEC Conference,True,no,recall; check opec.org press releases
+2016-12-10,OPEC,1st OPEC and non-OPEC Ministerial Meeting,True,no,recall; check opec.org press releases
+2017-05-25,OPEC,172nd OPEC Conference and 2nd ONOMM,True,no,recall; check opec.org press releases
+2017-08-26,HURRICANE,"Harvey (landfall 28.0N 96.9W, 115 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2017-10-08,HURRICANE,"Nate (landfall 29.1N 89.2W, 75 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2017-11-30,OPEC,173rd OPEC Conference and 3rd ONOMM,True,no,recall; check opec.org press releases
+2018-06-22,OPEC,174th OPEC Conference,True,no,recall; check opec.org press releases
+2018-06-23,OPEC,4th ONOMM,True,no,recall; check opec.org press releases
+2018-10-10,HURRICANE,"Michael (landfall 30.0N 85.5W, 140 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2018-12-06,OPEC,175th OPEC Conference,True,no,recall; check opec.org press releases
+2018-12-07,OPEC,5th ONOMM,True,no,recall; check opec.org press releases
+2019-07-01,OPEC,176th OPEC Conference,True,yes,https://www.aa.com.tr/en/energy/finance/opec-reschedules-176th-meeting-to-beginning-of-july/25817
+2019-07-02,OPEC,6th ONOMM,True,yes,https://www.aa.com.tr/en/energy/finance/opec-reschedules-176th-meeting-to-beginning-of-july/25817
+2019-07-13,HURRICANE,"Barry (landfall 29.6N 92.2W, 65 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2019-12-05,OPEC,177th OPEC Conference,True,no,recall; check opec.org press releases
+2019-12-06,OPEC,7th ONOMM,True,no,recall; check opec.org press releases
+2020-03-05,OPEC,178th (Extraordinary) OPEC Conference,True,no,recall; check opec.org press releases
+2020-03-06,OPEC,8th ONOMM,True,no,recall; check opec.org press releases
+2020-04-09,OPEC,9th (Extraordinary) ONOMM,True,no,recall; check opec.org press releases
+2020-04-12,OPEC,10th (Extraordinary) ONOMM,True,no,recall; check opec.org press releases
+2020-06-06,OPEC,179th OPEC Conference and 11th ONOMM,True,no,recall; check opec.org press releases
+2020-07-25,HURRICANE,"Hanna (landfall 26.8N 97.3W, 80 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2020-08-27,HURRICANE,"Laura (landfall 29.8N 93.3W, 130 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2020-09-16,HURRICANE,"Sally (landfall 30.3N 87.7W, 95 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2020-10-09,HURRICANE,"Delta (landfall 29.8N 93.1W, 85 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2020-10-28,HURRICANE,"Zeta (landfall 29.2N 90.6W, 100 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2020-11-30,OPEC,180th OPEC Conference,True,no,recall; check opec.org press releases
+2020-12-03,OPEC,12th ONOMM,True,no,recall; check opec.org press releases
+2021-01-05,OPEC,13th ONOMM,True,no,recall; check opec.org press releases
+2021-03-04,OPEC,14th ONOMM,True,no,recall; check opec.org press releases
+2021-04-01,OPEC,15th ONOMM,True,no,recall; check opec.org press releases
+2021-04-28,OPEC,ONOMM/JMMC,True,no,recall; check opec.org press releases
+2021-06-01,OPEC,17th ONOMM,True,no,recall; check opec.org press releases
+2021-07-01,OPEC,18th ONOMM (adjourned without agreement),True,no,recall; check opec.org press releases
+2021-07-18,OPEC,19th ONOMM,True,no,recall; check opec.org press releases
+2021-08-29,HURRICANE,"Ida (landfall 29.1N 90.2W, 130 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2021-09-01,OPEC,20th ONOMM,True,no,recall; check opec.org press releases
+2021-09-14,HURRICANE,"Nicholas (landfall 28.7N 95.7W, 65 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2021-10-04,OPEC,21st ONOMM,True,no,recall; check opec.org press releases
+2021-11-04,OPEC,22nd ONOMM,True,no,recall; check opec.org press releases
+2021-11-23,SPR,US SPR release announcement,False,no,recall; check energy.gov
+2021-12-02,OPEC,23rd ONOMM,True,no,recall; check opec.org press releases
+2022-01-04,OPEC,24th ONOMM,True,no,recall; check opec.org press releases
+2022-02-02,OPEC,25th ONOMM,True,no,recall; check opec.org press releases
+2022-03-01,SPR,IEA collective action (Russia-Ukraine),False,no,recall; check iea.org
+2022-03-02,OPEC,26th ONOMM,True,no,recall; check opec.org press releases
+2022-03-31,OPEC,27th ONOMM,True,no,recall; check opec.org press releases
+2022-03-31,SPR,US 180 mb SPR release announcement,False,no,recall; check energy.gov
+2022-05-05,OPEC,28th ONOMM,True,no,recall; check opec.org press releases
+2022-06-02,OPEC,29th ONOMM,True,no,recall; check opec.org press releases
+2022-06-30,OPEC,30th ONOMM,True,no,recall; check opec.org press releases
+2022-08-03,OPEC,31st ONOMM,True,no,recall; check opec.org press releases
+2022-09-05,OPEC,32nd ONOMM,True,no,recall; check opec.org press releases
+2022-10-05,OPEC,33rd ONOMM,True,yes,https://www.opec.org/pr-detail/73-05-oct-2022.html
+2022-12-04,OPEC,34th ONOMM,True,no,recall; check opec.org press releases
+2023-04-02,OPEC,Surprise voluntary cuts announced by OPEC+ members,False,no,recall; check opec.org press releases
+2023-06-04,OPEC,35th ONOMM,True,no,recall; check opec.org press releases
+2023-11-30,OPEC,187th OPEC Conference and 36th ONOMM,True,yes,https://en.shana.ir/news/633876/Shana
+2024-06-02,OPEC,188th OPEC Conference and 37th ONOMM,True,yes,https://english.aaj.tv/news/10451695
+2024-07-08,HURRICANE,"Beryl (landfall 28.6N 96.0W, 80 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2024-09-05,OPEC,Eight countries delay unwinding of voluntary cuts,False,no,recall; check opec.org press releases
+2024-09-11,HURRICANE,"Francine (landfall 29.3N 91.3W, 90 kt)",False,yes,NHC HURDAT2 hurdat2-1851-2025-092326.txt
+2024-11-03,OPEC,Eight countries extend voluntary cuts by one month,False,no,recall; check opec.org press releases
+2024-12-05,OPEC,38th ONOMM,True,partial,web search summary citing the 5 Dec 2024 decision (qcintel timeline is paywalled)
+2024-12-10,OPEC,189th OPEC Conference,True,yes,https://www.opec.org/pr-detail/32-10-dec-2024.html
+2025-03-03,OPEC,Eight countries confirm April start of unwinding,False,no,recall; check opec.org press releases
+2025-04-03,OPEC,Eight-country meeting,True,no,recall; check opec.org press releases
+2025-05-03,OPEC,Eight-country meeting,True,no,recall; check opec.org press releases
+2025-05-28,OPEC,39th ONOMM,True,no,recall; check opec.org press releases
+2025-05-31,OPEC,Eight-country meeting,True,no,https://www.tribuneindia.com/news/world/opec-countries-agree-production-adjustment-of-411000-barrels-per-day-in-july-2025/
+2025-07-05,OPEC,Eight-country meeting,True,partial,https://www.qcintel.com/article/timeline-of-key-opec-decisions-2020-2025-44226.html (548 kb/d for August reported 2025-07-07)
+2025-08-03,OPEC,Eight-country meeting,True,yes,https://www.euronews.com/business/2025/08/03/opec-agrees-to-boost-oil-production-by-548000-barrels-per-day-from-september
+2025-09-07,OPEC,Eight-country meeting,True,no,recall; check opec.org press releases
+2025-10-05,OPEC,Eight-country meeting,True,no,recall; check opec.org press releases
+2025-11-02,OPEC,Eight-country meeting,True,no,recall; check opec.org press releases
+2025-11-30,OPEC,40th ONOMM and eight-country meeting,True,yes,https://www.opec.org/pr-detail/243582-30-november-2025.html
+2026-01-04,OPEC,Eight-country meeting,True,yes,https://www.hcob-bank.com/en/media/well-supplied-oil-market-in-2026/
+2026-02-01,OPEC,Eight-country meeting,True,inferred,first-Sunday monthly pattern; check opec.org press releases
+2026-02-28,HORMUZ,closure: US-Israel strikes; IRGC bars passage,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-03-01,OPEC,Eight-country meeting,True,yes,https://anasalhajjieoa.substack.com/p/opec-v8-agreed-to-increase-production
+2026-03-02,HORMUZ,closure: IRGC officially confirms,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-03-11,SPR,IEA 400 mb collective action,False,yes,https://www.iea.org/news/iea-member-countries-to-carry-out-largest-ever-oil-stock-release-amid-market-disruptions-from-middle-east-conflict
+2026-04-05,OPEC,Eight-country meeting,True,yes,https://anasalhajjieoa.substack.com/p/opec-v8-agreed-to-increase-production (scheduled)
+2026-04-08,HORMUZ,reopening: ceasefire agreed (not implemented),False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-04-13,HORMUZ,closure: US naval blockade of Iranian ports,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-04-17,HORMUZ,reopening: Iran declares strait open,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-04-18,HORMUZ,closure: Iran closes strait again,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-05-03,OPEC,Eight-country meeting,True,inferred,first-Sunday monthly pattern; check opec.org press releases
+2026-06-07,OPEC,Eight-country meeting,True,inferred,first-Sunday monthly pattern; check opec.org press releases
+2026-06-17,HORMUZ,reopening: Islamabad memorandum,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-06-20,HORMUZ,closure: Iran closes strait again,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-07-05,OPEC,Seven-country meeting,True,yes,https://www.aljazeera.com/economy/2026/7/6/opec-countries-say-they-will-expand-monthly-oil-production
+2026-07-12,HORMUZ,closure: IRGC Navy declares strait closed,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-08-02,OPEC,Seven-country meeting,True,yes,https://energiesmedia.com/opec-plus-production-cut-2026-oil-energy/ (scheduled)
+2026-09-06,OPEC,Seven-country meeting,True,inferred,first-Sunday monthly pattern; check opec.org press releases
+2026-09-27,HORMUZ,closure: IRGC closes strait to unauthorized access,False,yes,https://en.wikipedia.org/wiki/2026_Strait_of_Hormuz_crisis
+2026-10-02,SPR,G7 100 mb release (diesel front-loaded),False,yes,https://www.euronews.com/2026/10/08/exclusive-g7s-100-million-barrel-pledge-tied-to-unfinished-march-emergency-oil-release
+2026-10-04,OPEC,Seven-country meeting,True,yes,https://newsonair.gov.in/opec-seven-countries-decide-to-maintain-september-2026-oil-production-quotas-for-november/
+2026-10-10,HURRICANE,Isaias (landfall near Destin FL; not yet in HURDAT2),False,yes,https://en.wikipedia.org/wiki/2026_Atlantic_hurricane_season
+2026-11-01,OPEC,Seven-country meeting,True,yes,https://www.forexfactory.com/news/1429804-opec-keeps-output-quotas-unchanged (scheduled)

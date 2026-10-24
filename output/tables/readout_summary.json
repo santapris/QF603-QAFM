@@ -1,0 +1,127 @@
+{
+  "source": "spot",
+  "data_as_of": "2026-10-20",
+  "today": "2026-10-24",
+  "last_hormuz_closure": "2026-09-27",
+  "days_since_hormuz_closure_today": 27.0,
+  "diesel_crack": {
+    "level": 113.24,
+    "sigma_next": 8.033875720624271,
+    "sigma_pct_history": 0.9904668785138108
+  },
+  "state": {
+    "fixed|crack321": {
+      "as_of": "2026-10-20",
+      "S": 46.936,
+      "z": 1.7580012094362534,
+      "sigma_next": 5.217260284755633,
+      "sigma_pct_history": 0.9929112686384747,
+      "half_life": 64.91591144353657,
+      "adf_p": 0.9804104109497102,
+      "gate_open": true,
+      "p_revert": 0.1409561640535327,
+      "armed": true,
+      "in_trade": false,
+      "entry_pending": false,
+      "blackout_today": false,
+      "integer_vol_limit": 0.38334295987566896,
+      "integer_stop_limit_at_max_z_entry": 0.5145701498784454,
+      "integer_units_at_max_z_entry": 0,
+      "research_units": 0.38334295987566896
+    },
+    "fixed|brent_wti": {
+      "as_of": "2026-10-20",
+      "S": 7.329999999999998,
+      "z": 0.5507732291954337,
+      "sigma_next": 1.5410464795431567,
+      "sigma_pct_history": 0.781715961867514,
+      "half_life": 10.3473543913781,
+      "adf_p": 0.0461352797934313,
+      "gate_open": true,
+      "p_revert": 0.5038458370983798,
+      "armed": true,
+      "in_trade": false,
+      "entry_pending": false,
+      "blackout_today": false,
+      "integer_vol_limit": 3.8934581660241037,
+      "integer_stop_limit_at_max_z_entry": 4.9024773649001645,
+      "integer_units_at_max_z_entry": 3,
+      "research_units": 3.8934581660241037
+    },
+    "fixed|ho_rb": {
+      "as_of": "2026-10-20",
+      "S": 99.45599999999999,
+      "z": 6.179544938710821,
+      "sigma_next": 7.73215868332389,
+      "sigma_pct_history": 0.9860669762894158,
+      "half_life": 34.471235896932946,
+      "adf_p": 0.5861694475679929,
+      "gate_open": true,
+      "p_revert": 0.3831132388237115,
+      "armed": true,
+      "in_trade": false,
+      "entry_pending": false,
+      "blackout_today": false,
+      "integer_vol_limit": 0.7759799359705754,
+      "integer_stop_limit_at_max_z_entry": NaN,
+      "integer_units_at_max_z_entry": 0,
+      "research_units": 0.7759799359705754
+    },
+    "johansen|crack321": {
+      "as_of": "2026-10-20",
+      "S": -51.66825611681181,
+      "z": -6.892050648756122,
+      "sigma_next": 5.215250072039954,
+      "sigma_pct_history": 0.9932059447983015,
+      "half_life": 6.160720818017156,
+      "adf_p": 4.7090677542430585e-05,
+      "gate_open": true,
+      "p_revert": 0.3121479006008725,
+      "armed": true,
+      "in_trade": false,
+      "entry_pending": false,
+      "blackout_today": false,
+      "integer_vol_limit": 0.3834907190208229,
+      "integer_stop_limit_at_max_z_entry": NaN,
+      "integer_units_at_max_z_entry": 0,
+      "research_units": 0.3834907190208229
+    }
+  },
+  "triggers": {
+    "fixed|crack321": {
+      "conditions": {
+        "P(revert) >= 0.6": false,
+        "vol percentile < 80%": false,
+        "no Hormuz closure for 28 days": false
+      },
+      "all_met": false,
+      "relevant_vol": "crack321",
+      "relevant_vol_pct": 0.9929112686384747
+    },
+    "fixed|brent_wti": {
+      "conditions": {
+        "futures data (not spot)": false,
+        "|z| >= 2.0": false,
+        "P(revert) >= 0.6": false
+      },
+      "all_met": false,
+      "relevant_vol": "brent_wti",
+      "relevant_vol_pct": 0.781715961867514
+    },
+    "fixed|ho_rb": {
+      "conditions": {
+        "P(revert) >= 0.6": false,
+        "vol percentile < 80%": false,
+        "no Hormuz closure for 28 days": false
+      },
+      "all_met": false,
+      "relevant_vol": "diesel crack (HO \u2212 CL)",
+      "relevant_vol_pct": 0.9904668785138108
+    }
+  },
+  "spot_proxy_gate_verdicts": {
+    "fixed|crack321": false,
+    "fixed|brent_wti": false,
+    "fixed|ho_rb": false
+  }
+}

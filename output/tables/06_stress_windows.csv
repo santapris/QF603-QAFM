@@ -1,0 +1,17 @@
+window,key,filtered,unfiltered,filtered_trades,unfiltered_trades
+brent_wti_break,fixed|crack321,-58850.76173748507,-58850.76173748507,4.0,4.0
+brent_wti_break,fixed|brent_wti,9322.632789462004,9322.632789462004,1.0,1.0
+brent_wti_break,fixed|ho_rb,163344.9990401711,163344.9990401711,8.0,8.0
+brent_wti_break,johansen|crack321,-16518.776957626138,-16518.776957626138,5.0,5.0
+covid,fixed|crack321,0.0,-23300.907898265745,0.0,4.0
+covid,fixed|brent_wti,0.0,6321.530200892175,0.0,3.0
+covid,fixed|ho_rb,-48155.334934059036,37143.0279143301,1.0,3.0
+covid,johansen|crack321,0.0,0.0,0.0,0.0
+ukraine,fixed|crack321,0.0,-85506.0255777183,0.0,2.0
+ukraine,fixed|brent_wti,0.0,0.0,0.0,0.0
+ukraine,fixed|ho_rb,-13451.931874569287,-44133.254987991626,2.0,6.0
+ukraine,johansen|crack321,0.0,0.0,0.0,0.0
+hormuz,fixed|crack321,0.0,-55755.16915906631,0.0,3.0
+hormuz,fixed|brent_wti,0.0,-49555.432870999735,0.0,4.0
+hormuz,fixed|ho_rb,0.0,46930.81592987877,0.0,2.0
+hormuz,johansen|crack321,0.0,14723.460212623608,0.0,5.0
