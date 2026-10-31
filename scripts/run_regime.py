@@ -1,13 +1,15 @@
 """Part 5: regime filter -> data/derived/regime_*.csv, output/tables/05_*, output/figures/05_*.
 
-Usage:  .venv/bin/python scripts/run_regime.py
-Requires scripts/build_data.py and scripts/run_model.py. All results are on spot data (a spot proxy).
+Usage:  .venv/bin/python scripts/run_regime.py [--source futures|spot]
+Requires scripts/build_data.py and scripts/run_model.py (same source). Futures (binding) by default
+once the Bloomberg export is in place; --source spot gives the spot proxy.
 
 The gated configuration uses the pre-registered core features, the logit, and the 20-day label.
 Probit, the robustness features and the 10/40-day labels are reported as robustness only.
 """
 from __future__ import annotations
 
+import argparse
 import json
 
 import matplotlib.pyplot as plt
@@ -15,9 +17,9 @@ import numpy as np
 import pandas as pd
 
 from oilrv import regime as R
-from oilrv.config import load_config, path
-from oilrv.data import load_clean, load_features
-from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TAB_DIR, save, save_table, use_style
+from oilrv.config import load_config, path, set_source
+from oilrv.data import load_source
+from oilrv.plotting import CRITICAL, REF_LINE, SERIES, save, save_table, tab_dir, use_style
 
 LABELS = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
 
@@ -59,22 +61,22 @@ def stress_table(ep, cfg, enter_p):
     return pd.DataFrame(rows).T.rename_axis(["window", "key"])
 
 
-def main() -> dict:
+def main(source: str | None = None) -> dict:
     use_style()
     cfg = load_config()
     enter_p, exit_p = cfg["strategy"]["regime_enter_p"], cfg["strategy"]["regime_exit_p"]
-    _, sp = load_clean()
-    feats = load_features()
-    cal = pd.read_csv(path("clean_dir") / "event_features.csv", index_col=0, parse_dates=True)
+    source = set_source(source)
+    src = load_source()
+    sp, legs, feats, cal = src.frame, src.legs, src.feats, src.cal
     model = load_model()
 
-    ep, daily, p_daily, coefs = build(cfg, sp, feats, cal, model)
+    ep, daily, p_daily, coefs = build(cfg, legs, feats, cal, model)
     ep.to_csv(path("derived_dir") / "regime_episodes.csv")
     pd.concat({k: daily[k].join(p_daily[k]) for k in daily}, names=["key", "date"]).to_csv(
         path("derived_dir") / "regime_probability.csv")
     coefs.to_csv(path("derived_dir") / "regime_coefficients.csv")
 
-    out = {"source": "spot", "features": R.model_features(cfg)}
+    out = {"source": source, "features": R.model_features(cfg)}
     summ = ep.groupby("key").agg(episodes=("reverted", "size"), share_reverted=("reverted", "mean"),
                                  share_gate_open=("gate", "mean"), median_days=("days", "median"))
     oc = pd.crosstab(ep["key"].to_numpy(), ep["outcome"].to_numpy(), normalize="index").rename_axis("key")
@@ -95,6 +97,10 @@ def main() -> dict:
         out["last_coefficients"] = coefs.iloc[-1].round(4).to_dict()
         out["first_month_with_filter"] = str(coefs.index[0].date())
         out["months_with_filter"] = len(coefs)
+    else:                                   # no month fit (e.g. futures): drop any table left by an earlier run
+        (tab_dir() / "05_coefficients_by_month.csv").unlink(missing_ok=True)
+        out["first_month_with_filter"] = None
+        out["months_with_filter"] = 0
 
     # Robustness (reported, never gated): probit, robustness features, label horizons
     rob = {}
@@ -105,7 +111,7 @@ def main() -> dict:
         if h != cfg["regime"]["label_horizon_days"]:
             variants[f"label horizon {h}d"] = dict(horizon=h)
     for lab, kw in variants.items():
-        e2, *_ = build(cfg, sp, feats, cal, model, **kw)
+        e2, *_ = build(cfg, legs, feats, cal, model, **kw)
         r = R.evaluate_filter(e2[e2["key"].str.startswith("fixed|")], enter_p)
         rob[lab] = r
     rob["logit core (gated config)"] = ev.loc["pooled (fixed)"].to_dict()
@@ -120,6 +126,8 @@ def main() -> dict:
         desc = pd.DataFrame({"coef": full.params, "se": full.bse, "z": full.tvalues, "p": full.pvalues})
         save_table(desc, "05_logit_full_sample_descriptive.csv")
         out["full_sample_logit_descriptive"] = desc.round(4).to_dict("index")
+    else:
+        (tab_dir() / "05_logit_full_sample_descriptive.csv").unlink(missing_ok=True)
 
     # Figures
     last = sp.index[-1]
@@ -161,10 +169,13 @@ def main() -> dict:
     fig.tight_layout()
     save(fig, "05_calibration_and_coefficients.png")
 
-    TAB_DIR.mkdir(parents=True, exist_ok=True)
-    (TAB_DIR / "regime_summary.json").write_text(json.dumps(out, indent=2, default=float))
+    tab_dir().mkdir(parents=True, exist_ok=True)
+    (tab_dir() / "regime_summary.json").write_text(json.dumps(out, indent=2, default=float))
     return out
 
 
 if __name__ == "__main__":
-    print(json.dumps(main(), indent=2, default=float))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", choices=["futures", "spot"], default=None,
+                    help="default: futures once the Bloomberg export is in place, else spot")
+    print(json.dumps(main(ap.parse_args().source), indent=2, default=float))

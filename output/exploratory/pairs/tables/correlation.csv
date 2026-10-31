@@ -1,0 +1,4 @@
+,pairs,mean_reversion,trend_carry
+pairs,1.0,0.017,-0.127
+mean_reversion,0.017,1.0,-0.098
+trend_carry,-0.127,-0.098,1.0

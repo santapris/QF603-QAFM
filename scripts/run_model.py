@@ -1,10 +1,12 @@
 """Part 4: model formation -> data/derived/rolling_fits.csv, model_path.csv, output/tables/04_*, figures.
 
-Usage:  .venv/bin/python scripts/run_model.py
-Requires scripts/build_data.py. All results are on spot data (a spot proxy).
+Usage:  .venv/bin/python scripts/run_model.py [--source futures|spot]
+Requires scripts/build_data.py. Futures (binding) by default once the Bloomberg export is in place;
+--source spot gives the spot proxy (written under output/spot_proxy/).
 """
 from __future__ import annotations
 
+import argparse
 import json
 
 import matplotlib.pyplot as plt
@@ -12,9 +14,9 @@ import numpy as np
 import pandas as pd
 
 from oilrv import model as M
-from oilrv.config import load_config, path
-from oilrv.data import load_clean
-from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TAB_DIR, save, save_table, use_style
+from oilrv.config import load_config, path, set_source
+from oilrv.data import load_source
+from oilrv.plotting import CRITICAL, REF_LINE, SERIES, save, save_table, tab_dir, use_style
 
 LABELS = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
 
@@ -33,11 +35,13 @@ def period_medians(fits: pd.DataFrame, periods: list, cols: list[str]) -> pd.Dat
     return pd.DataFrame(rows).T
 
 
-def main() -> dict:
+def main(source: str | None = None) -> dict:
     use_style()
     cfg = load_config()
-    _, sp = load_clean()
-    res = M.build_model(sp, cfg)
+    source = set_source(source)
+    src = load_source()
+    sp = src.frame
+    res = M.build_model(src.legs, cfg)
     last = sp.index[-1]
 
     fits_all = pd.concat({f"{v}|{s}": f for (v, s), (f, _) in res.items()}, names=["key", "date"])
@@ -45,7 +49,7 @@ def main() -> dict:
     fits_all.to_csv(path("derived_dir") / "rolling_fits.csv")
     paths_all.to_csv(path("derived_dir") / "model_path.csv")
 
-    out = {"source": "spot"}
+    out = {"source": source}
     cols = ["mean", "sd", "half_life", "adf_p", "dS_sd", "garch_a", "garch_b", "garch_nu", "vecm_spread_speed"]
     med = pd.concat({k: period_medians(f, cfg["evaluation"]["sub_periods"], cols)
                      for k, (f, _) in [(f"{v}|{s}", r) for (v, s), r in res.items()]}, names=["key", "period"])
@@ -82,7 +86,7 @@ def main() -> dict:
                   **{f"share_t_gt_2_{k}": float((f[f"vecm_t_{k}"] > 2).mean()) for k in legs},
                   "spread_speed": float(f["vecm_spread_speed"].median())}
     out["vecm_known_vector"] = vec
-    free = M.fit_vecm_free(sp)
+    free = M.fit_vecm_free(src.legs["crack321"])
     save_table(pd.concat({"alpha": free["alpha"], "alpha_t": free["alpha_t"], "beta": free["beta"]}),
                "04_vecm_free_full_sample.csv")
     out["vecm_free_full_sample"] = {k: v.round(4).to_dict() for k, v in free.items()}
@@ -153,10 +157,13 @@ def main() -> dict:
     fig.tight_layout()
     save(fig, "04_seasonal_effects.png")
 
-    TAB_DIR.mkdir(parents=True, exist_ok=True)
-    (TAB_DIR / "model_summary.json").write_text(json.dumps(out, indent=2, default=float))
+    tab_dir().mkdir(parents=True, exist_ok=True)
+    (tab_dir() / "model_summary.json").write_text(json.dumps(out, indent=2, default=float))
     return out
 
 
 if __name__ == "__main__":
-    print(json.dumps(main(), indent=2, default=float))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", choices=["futures", "spot"], default=None,
+                    help="default: futures once the Bloomberg export is in place, else spot")
+    print(json.dumps(main(ap.parse_args().source), indent=2, default=float))

@@ -86,5 +86,62 @@
     "partial": 2
   },
   "pct_days_in_event_blackout": 4.5,
-  "futures_available": false
+  "futures_available": true,
+  "futures_export": "oil_futures_bdh_2007-01-01_2026-10-27.xlsx",
+  "futures_first_date": "2007-01-03",
+  "futures_last_date": "2026-10-26",
+  "futures_n_days": 4987,
+  "futures_rolls": {
+    "rolled_crack321": 238,
+    "rolled_brent_wti": 239,
+    "rolled_ho_rb": 238
+  },
+  "futures_stale_leg_days": {
+    "stale_crack321": 0,
+    "stale_brent_wti": 0,
+    "stale_ho_rb": 0
+  },
+  "futures_latest_unadj": {
+    "crack321": 52.23,
+    "brent_wti": 11.25,
+    "ho_rb": 67.32
+  },
+  "futures_median_unadj": {
+    "crack321": 19.03,
+    "brent_wti": 4.05,
+    "ho_rb": 4.45
+  },
+  "futures_range_unadj": {
+    "crack321": [
+      2.0,
+      69.72
+    ],
+    "brent_wti": [
+      -5.4,
+      26.87
+    ],
+    "ho_rb": [
+      -21.0,
+      75.93
+    ]
+  },
+  "futures_range_adjusted": {
+    "crack321": [
+      -162.84,
+      65.22
+    ],
+    "brent_wti": [
+      -86.87,
+      11.25
+    ],
+    "ho_rb": [
+      -58.26,
+      75.04
+    ]
+  },
+  "futures_vs_spot_daily_change_corr": {
+    "crack321": 0.538,
+    "brent_wti": 0.266,
+    "ho_rb": 0.661
+  }
 }

@@ -1,7 +1,9 @@
 """Part 7: current-regime readout -> output/tables/07_*, readout_summary.json, output/figures/07_*.
 
-Usage:  .venv/bin/python scripts/run_readout.py [--today YYYY-MM-DD]
-Requires build_data.py, run_model.py and run_regime.py. Descriptive only; spot proxy.
+Usage:  .venv/bin/python scripts/run_readout.py [--today YYYY-MM-DD] [--source futures|spot]
+Requires build_data.py, run_model.py, run_regime.py and run_backtest.py (same source). Descriptive only.
+On futures the levels shown are the held contracts' market levels (unadjusted); z, sigma and the
+GARCH paths use the back-adjusted series, as in the backtest.
 """
 from __future__ import annotations
 
@@ -21,9 +23,9 @@ from oilrv import backtest as B  # noqa: E402
 from oilrv import readout as RO  # noqa: E402
 from oilrv import sizing as SZ  # noqa: E402
 from oilrv.calendars import load_events  # noqa: E402
-from oilrv.config import load_config, path  # noqa: E402
-from oilrv.data import load_clean, load_features  # noqa: E402
-from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TAB_DIR, save, save_table, use_style  # noqa: E402
+from oilrv.config import load_config, set_source  # noqa: E402
+from oilrv.data import load_source  # noqa: E402
+from oilrv.plotting import CRITICAL, REF_LINE, SERIES, save, save_table, tab_dir, use_style  # noqa: E402
 
 LABELS = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
 PLAN_DATES = [
@@ -37,21 +39,26 @@ PLAN_DATES = [
 ]
 
 
-def main(today: str | None = None) -> dict:
+def main(today: str | None = None, source: str | None = None) -> dict:
     use_style()
     cfg = load_config()
     today = pd.Timestamp(today) if today else pd.Timestamp.today().normalize()
-    _, sp = load_clean()
-    feats = load_features()
-    cal = pd.read_csv(path("clean_dir") / "event_features.csv", index_col=0, parse_dates=True)
+    source = set_source(source)
+    src = load_source()
+    sp = src.frame
+    TAB_DIR = tab_dir()
     events = load_events()
-    W0 = RB.load_base_world(sp, feats, cal, cfg)
+    W0 = RB.load_base_world(src, cfg)
     asof = sp.index[-1]
     window = cfg["model"]["window"]
+    # market levels: the held contracts on futures (unadjusted), the spot legs otherwise
+    lvl = (lambda c: sp[f"{c}_unadj"]) if source == "futures" else (lambda c: sp[c])
+    crack = src.legs["crack321"]                      # on futures the cracks use the crack's delivery month
 
     # volatility percentiles: each spread's own GARCH path, plus the diesel crack (HO - CL)
     vol_pct = {k: RO.expanding_pct(W0.model[k][1]["sigma_next"]) for k in W0.model}
-    diesel = (sp["ho_bbl"] - sp["cl_bbl"]).rename("diesel_crack")
+    diesel = (crack["ho_bbl"] - crack["cl_bbl"]).rename("diesel_crack")
+    diesel_level = (crack["ho_bbl_unadj"] - crack["cl_bbl_unadj"]) if source == "futures" else diesel
     diesel_sig = RO.garch_path(diesel, window)
     diesel_pct = RO.expanding_pct(diesel_sig)
 
@@ -81,6 +88,7 @@ def main(today: str | None = None) -> dict:
         rel_pct = float(diesel_pct.iloc[-1]) if name == "ho_rb" else vp
         state[key] = {
             "as_of": str(asof.date()), "S": float(sim.S(fit, len(sim.idx) - 1)) if RB.B._ok(fit) else np.nan,
+            "market_level": float(lvl(name).iloc[-1]),
             "z": float(last["z"]), "sigma_next": float(last["sigma_next"]), "sigma_pct_history": vp,
             "half_life": float(fit.get("half_life", np.nan)), "adf_p": float(fit.get("adf_p", np.nan)),
             "gate_open": bool(last["gate_open"]), "p_revert": float(last["p_hat"]), "armed": bool(sim.armed),
@@ -90,7 +98,7 @@ def main(today: str | None = None) -> dict:
             "integer_units_at_max_z_entry": int(isz["units"]), "research_units": float(SZ.research_units(last["sigma_next"], M, cfg)),
         }
         if key.startswith("fixed|"):
-            trig[key] = RO.triggers(name, last["p_hat"], rel_pct, days_closure_today, last["z"], "spot", cfg)
+            trig[key] = RO.triggers(name, last["p_hat"], rel_pct, days_closure_today, last["z"], source, cfg)
             trig[key]["relevant_vol"] = "diesel crack (HO − CL)" if name == "ho_rb" else name
             trig[key]["relevant_vol_pct"] = rel_pct
     st = pd.DataFrame(state).T
@@ -101,13 +109,13 @@ def main(today: str | None = None) -> dict:
     wl = RO.watch_list(events, today, PLAN_DATES)
     save_table(wl.set_index("date"), "07_watch_list.csv")
 
-    out = {"source": "spot", "data_as_of": str(asof.date()), "today": str(today.date()),
+    out = {"source": source, "data_as_of": str(asof.date()), "today": str(today.date()),
            "last_hormuz_closure": str(last_closure.date()), "days_since_hormuz_closure_today": days_closure_today,
-           "diesel_crack": {"level": float(diesel.iloc[-1]), "sigma_next": float(diesel_sig.iloc[-1]),
+           "diesel_crack": {"level": float(diesel_level.iloc[-1]), "sigma_next": float(diesel_sig.iloc[-1]),
                             "sigma_pct_history": float(diesel_pct.iloc[-1])},
            "state": state, "triggers": trig,
-           "spot_proxy_gate_verdicts": {k: v["PASS"] for k, v in
-                                        json.loads((TAB_DIR / "backtest_summary.json").read_text())["gate_verdicts"].items()}}
+           ("gate_verdicts" if source == "futures" else "spot_proxy_gate_verdicts"):
+               {k: v["PASS"] for k, v in json.loads((TAB_DIR / "backtest_summary.json").read_text())["gate_verdicts"].items()}}
 
     # figure: the last ~16 months
     start = pd.Timestamp("2025-07-01")
@@ -135,14 +143,17 @@ def main(today: str | None = None) -> dict:
         h1, l1 = a.get_legend_handles_labels()
         h2, l2 = a2.get_legend_handles_labels()
         a.legend(h1 + h2, l1 + l2, loc="upper left", ncols=3, fontsize=7)
-    ax[3].plot(diesel.loc[start:].index, diesel.loc[start:], color=SERIES[0], lw=0.9, label="Diesel crack HO − CL ($/bbl)")
-    ax[3].plot(sp.loc[start:].index, sp.loc[start:, "crack321"], color=SERIES[1], lw=0.9, label="3-2-1 crack")
-    ax[3].plot(sp.loc[start:].index, sp.loc[start:, "rb_bbl"] - sp.loc[start:, "cl_bbl"], color=SERIES[2], lw=0.9,
-               label="Gasoline crack RB − CL")
+    sfx = "_unadj" if source == "futures" else ""
+    ax[3].plot(diesel_level.loc[start:].index, diesel_level.loc[start:], color=SERIES[0], lw=0.9,
+               label="Diesel crack HO − CL ($/bbl)")
+    ax[3].plot(sp.loc[start:].index, lvl("crack321").loc[start:], color=SERIES[1], lw=0.9, label="3-2-1 crack")
+    ax[3].plot(crack.loc[start:].index, crack.loc[start:, f"rb_bbl{sfx}"] - crack.loc[start:, f"cl_bbl{sfx}"],
+               color=SERIES[2], lw=0.9, label="Gasoline crack RB − CL")
     for c in closures[closures >= start]:
         ax[3].axvline(c, color=CRITICAL, lw=0.6, alpha=0.6)
     ax[3].set_ylabel("$/bbl")
-    ax[3].set_title("Spot cracks since July 2025")
+    ax[3].set_title("Futures cracks since July 2025 (held contracts, market level)" if source == "futures"
+                    else "Spot cracks since July 2025")
     ax[3].legend(loc="upper left", ncols=3, fontsize=7.5)
     fig.tight_layout()
     save(fig, "07_current_regime.png")
@@ -155,4 +166,7 @@ def main(today: str | None = None) -> dict:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--today", default=None)
-    print(json.dumps(main(ap.parse_args().today), indent=2, default=float))
+    ap.add_argument("--source", choices=["futures", "spot"], default=None,
+                    help="default: futures once the Bloomberg export is in place, else spot")
+    a = ap.parse_args()
+    print(json.dumps(main(a.today, a.source), indent=2, default=float))

@@ -162,7 +162,9 @@ class SpreadSim:
             self.entry["gross_bbl"] += pnl_bbl
             self.entry["gross_usd"] += pnl_usd
             if self.rolled is not None and self.rolled[i]:
-                roll_usd = self.units * sum(abs(self.frozen.get(f"w_{k}", 0.0)) * t for k, t in self.roll_tick.items())
+                # legs not in this spread carry NaN weights when fits of several spreads share one table
+                roll_usd = self.units * sum(abs(w) * t for k, t in self.roll_tick.items()
+                                            if np.isfinite(w := self.frozen.get(f"w_{k}", np.nan)))
                 roll_bbl = roll_usd / (self.units * self.M)
                 cost_usd += roll_usd
                 cost_bbl += roll_bbl

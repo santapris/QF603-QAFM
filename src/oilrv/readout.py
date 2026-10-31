@@ -13,7 +13,7 @@ Implementation choice: "under its 80th percentile" is measured against the full 
 of the volatility forecast since the first fit (an expanding percentile), i.e. "back to normal",
 not against the trailing window.
 
-Nothing here is a trade recommendation; it reports the state of pre-registered rules on spot data.
+Nothing here is a trade recommendation; it reports the state of pre-registered rules on the run's data (futures or spot).
 """
 from __future__ import annotations
 

@@ -1,0 +1,399 @@
+{
+  "source": "spot",
+  "features": [
+    "ovx_pct",
+    "garch_vol_pct",
+    "rolling_adf_p",
+    "gpr",
+    "inventory_dev_5y",
+    "d_brent_wti",
+    "d_ho_rb"
+  ],
+  "episodes": {
+    "fixed|brent_wti": {
+      "episodes": 32.0,
+      "share_reverted": 0.469,
+      "share_gate_open": 0.594,
+      "median_days": 10.5,
+      "reverted": 0.469,
+      "stopped": 0.125,
+      "timed_out": 0.406
+    },
+    "fixed|crack321": {
+      "episodes": 42.0,
+      "share_reverted": 0.238,
+      "share_gate_open": 0.714,
+      "median_days": 20.0,
+      "reverted": 0.238,
+      "stopped": 0.214,
+      "timed_out": 0.548
+    },
+    "fixed|ho_rb": {
+      "episodes": 41.0,
+      "share_reverted": 0.463,
+      "share_gate_open": 1.0,
+      "median_days": 13.0,
+      "reverted": 0.463,
+      "stopped": 0.244,
+      "timed_out": 0.293
+    },
+    "johansen|crack321": {
+      "episodes": 33.0,
+      "share_reverted": 0.545,
+      "share_gate_open": 0.576,
+      "median_days": 10.0,
+      "reverted": 0.545,
+      "stopped": 0.152,
+      "timed_out": 0.303
+    }
+  },
+  "filter_eval": {
+    "pooled (fixed)": {
+      "episodes_total": 115.0,
+      "episodes_with_p": 92.0,
+      "success_all_oos": 0.37,
+      "n_pass_filter": 9.0,
+      "success_pass_filter": 0.333,
+      "success_rejected": 0.373,
+      "auc": 0.506,
+      "brier_model": 0.279,
+      "brier_base_rate": 0.237
+    },
+    "fixed|brent_wti": {
+      "episodes_total": 32.0,
+      "episodes_with_p": 27.0,
+      "success_all_oos": 0.481,
+      "n_pass_filter": 0.0,
+      "success_pass_filter": NaN,
+      "success_rejected": 0.481,
+      "auc": 0.456,
+      "brier_model": 0.294,
+      "brier_base_rate": 0.268
+    },
+    "fixed|crack321": {
+      "episodes_total": 42.0,
+      "episodes_with_p": 33.0,
+      "success_all_oos": 0.242,
+      "n_pass_filter": 0.0,
+      "success_pass_filter": NaN,
+      "success_rejected": 0.242,
+      "auc": 0.465,
+      "brier_model": 0.209,
+      "brier_base_rate": 0.192
+    },
+    "fixed|ho_rb": {
+      "episodes_total": 41.0,
+      "episodes_with_p": 32.0,
+      "success_all_oos": 0.406,
+      "n_pass_filter": 9.0,
+      "success_pass_filter": 0.333,
+      "success_rejected": 0.435,
+      "auc": 0.437,
+      "brier_model": 0.337,
+      "brier_base_rate": 0.268
+    },
+    "johansen|crack321": {
+      "episodes_total": 33.0,
+      "episodes_with_p": 25.0,
+      "success_all_oos": 0.52,
+      "n_pass_filter": 0.0,
+      "success_pass_filter": NaN,
+      "success_rejected": 0.52,
+      "auc": 0.66,
+      "brier_model": 0.297,
+      "brier_base_rate": 0.267
+    },
+    "pooled, gate open only": {
+      "episodes_total": 90.0,
+      "episodes_with_p": 73.0,
+      "success_all_oos": 0.342,
+      "n_pass_filter": 9.0,
+      "success_pass_filter": 0.333,
+      "success_rejected": 0.344,
+      "auc": 0.48,
+      "brier_model": 0.287,
+      "brier_base_rate": 0.233
+    }
+  },
+  "stress_windows": {
+    "brent_wti_break|fixed|brent_wti": {
+      "episodes": 2.0,
+      "success_all": 0.0,
+      "with_p": 0.0,
+      "passed": 0.0,
+      "blocked": 0.0,
+      "success_passed": NaN,
+      "success_blocked": NaN,
+      "mean_p": NaN
+    },
+    "brent_wti_break|fixed|crack321": {
+      "episodes": 5.0,
+      "success_all": 0.0,
+      "with_p": 0.0,
+      "passed": 0.0,
+      "blocked": 0.0,
+      "success_passed": NaN,
+      "success_blocked": NaN,
+      "mean_p": NaN
+    },
+    "brent_wti_break|fixed|ho_rb": {
+      "episodes": 8.0,
+      "success_all": 0.75,
+      "with_p": 0.0,
+      "passed": 0.0,
+      "blocked": 0.0,
+      "success_passed": NaN,
+      "success_blocked": NaN,
+      "mean_p": NaN
+    },
+    "brent_wti_break|johansen|crack321": {
+      "episodes": 5.0,
+      "success_all": 0.4,
+      "with_p": 0.0,
+      "passed": 0.0,
+      "blocked": 0.0,
+      "success_passed": NaN,
+      "success_blocked": NaN,
+      "mean_p": NaN
+    },
+    "covid|fixed|brent_wti": {
+      "episodes": 3.0,
+      "success_all": 0.333,
+      "with_p": 3.0,
+      "passed": 0.0,
+      "blocked": 3.0,
+      "success_passed": NaN,
+      "success_blocked": 0.333,
+      "mean_p": 0.309
+    },
+    "covid|fixed|crack321": {
+      "episodes": 9.0,
+      "success_all": 0.0,
+      "with_p": 9.0,
+      "passed": 0.0,
+      "blocked": 9.0,
+      "success_passed": NaN,
+      "success_blocked": 0.0,
+      "mean_p": 0.241
+    },
+    "covid|fixed|ho_rb": {
+      "episodes": 3.0,
+      "success_all": 0.333,
+      "with_p": 3.0,
+      "passed": 0.0,
+      "blocked": 3.0,
+      "success_passed": NaN,
+      "success_blocked": 0.333,
+      "mean_p": 0.52
+    },
+    "covid|johansen|crack321": {
+      "episodes": 2.0,
+      "success_all": 0.0,
+      "with_p": 2.0,
+      "passed": 0.0,
+      "blocked": 2.0,
+      "success_passed": NaN,
+      "success_blocked": 0.0,
+      "mean_p": 0.183
+    },
+    "ukraine|fixed|brent_wti": {
+      "episodes": 4.0,
+      "success_all": 0.75,
+      "with_p": 4.0,
+      "passed": 0.0,
+      "blocked": 4.0,
+      "success_passed": NaN,
+      "success_blocked": 0.75,
+      "mean_p": 0.398
+    },
+    "ukraine|fixed|crack321": {
+      "episodes": 5.0,
+      "success_all": 0.2,
+      "with_p": 5.0,
+      "passed": 0.0,
+      "blocked": 5.0,
+      "success_passed": NaN,
+      "success_blocked": 0.2,
+      "mean_p": 0.318
+    },
+    "ukraine|fixed|ho_rb": {
+      "episodes": 7.0,
+      "success_all": 0.286,
+      "with_p": 7.0,
+      "passed": 2.0,
+      "blocked": 5.0,
+      "success_passed": 0.0,
+      "success_blocked": 0.4,
+      "mean_p": 0.567
+    },
+    "ukraine|johansen|crack321": {
+      "episodes": 7.0,
+      "success_all": 0.857,
+      "with_p": 7.0,
+      "passed": 0.0,
+      "blocked": 7.0,
+      "success_passed": NaN,
+      "success_blocked": 0.857,
+      "mean_p": 0.336
+    },
+    "hormuz|fixed|brent_wti": {
+      "episodes": 8.0,
+      "success_all": 0.625,
+      "with_p": 8.0,
+      "passed": 0.0,
+      "blocked": 8.0,
+      "success_passed": NaN,
+      "success_blocked": 0.625,
+      "mean_p": 0.394
+    },
+    "hormuz|fixed|crack321": {
+      "episodes": 4.0,
+      "success_all": 0.25,
+      "with_p": 4.0,
+      "passed": 0.0,
+      "blocked": 4.0,
+      "success_passed": NaN,
+      "success_blocked": 0.25,
+      "mean_p": 0.202
+    },
+    "hormuz|fixed|ho_rb": {
+      "episodes": 5.0,
+      "success_all": 0.4,
+      "with_p": 5.0,
+      "passed": 0.0,
+      "blocked": 5.0,
+      "success_passed": NaN,
+      "success_blocked": 0.4,
+      "mean_p": 0.478
+    },
+    "hormuz|johansen|crack321": {
+      "episodes": 6.0,
+      "success_all": 0.667,
+      "with_p": 6.0,
+      "passed": 0.0,
+      "blocked": 6.0,
+      "success_passed": NaN,
+      "success_blocked": 0.667,
+      "mean_p": 0.298
+    }
+  },
+  "last_coefficients": {
+    "const": -1.6592,
+    "ovx_pct": -0.6755,
+    "garch_vol_pct": -0.0129,
+    "rolling_adf_p": -1.0347,
+    "gpr": 0.237,
+    "inventory_dev_5y": -0.0276,
+    "d_brent_wti": 0.8556,
+    "d_ho_rb": 0.9229
+  },
+  "first_month_with_filter": "2014-09-02",
+  "months_with_filter": 146,
+  "robustness": {
+    "probit": {
+      "episodes_total": 115.0,
+      "episodes_with_p": 92.0,
+      "success_all_oos": 0.37,
+      "n_pass_filter": 9.0,
+      "success_pass_filter": 0.333,
+      "success_rejected": 0.373,
+      "auc": 0.507,
+      "brier_model": 0.278,
+      "brier_base_rate": 0.237
+    },
+    "core + robustness features": {
+      "episodes_total": 115.0,
+      "episodes_with_p": 35.0,
+      "success_all_oos": 0.429,
+      "n_pass_filter": 5.0,
+      "success_pass_filter": 0.4,
+      "success_rejected": 0.433,
+      "auc": 0.467,
+      "brier_model": 0.304,
+      "brier_base_rate": 0.25
+    },
+    "label horizon 10d": {
+      "episodes_total": 134.0,
+      "episodes_with_p": 90.0,
+      "success_all_oos": 0.222,
+      "n_pass_filter": 0.0,
+      "success_pass_filter": NaN,
+      "success_rejected": 0.222,
+      "auc": 0.539,
+      "brier_model": 0.188,
+      "brier_base_rate": 0.175
+    },
+    "label horizon 40d": {
+      "episodes_total": 106.0,
+      "episodes_with_p": 83.0,
+      "success_all_oos": 0.554,
+      "n_pass_filter": 32.0,
+      "success_pass_filter": 0.531,
+      "success_rejected": 0.569,
+      "auc": 0.481,
+      "brier_model": 0.312,
+      "brier_base_rate": 0.252
+    },
+    "logit core (gated config)": {
+      "episodes_total": 115.0,
+      "episodes_with_p": 92.0,
+      "success_all_oos": 0.37,
+      "n_pass_filter": 9.0,
+      "success_pass_filter": 0.333,
+      "success_rejected": 0.373,
+      "auc": 0.506,
+      "brier_model": 0.279,
+      "brier_base_rate": 0.237
+    }
+  },
+  "full_sample_logit_descriptive": {
+    "const": {
+      "coef": -1.6592,
+      "se": 1.9747,
+      "z": -0.8402,
+      "p": 0.4008
+    },
+    "ovx_pct": {
+      "coef": -0.6755,
+      "se": 0.6484,
+      "z": -1.0419,
+      "p": 0.2974
+    },
+    "garch_vol_pct": {
+      "coef": -0.0129,
+      "se": 0.7089,
+      "z": -0.0183,
+      "p": 0.9854
+    },
+    "rolling_adf_p": {
+      "coef": -1.0347,
+      "se": 1.1005,
+      "z": -0.9403,
+      "p": 0.3471
+    },
+    "gpr": {
+      "coef": 0.237,
+      "se": 0.3806,
+      "z": 0.6227,
+      "p": 0.5335
+    },
+    "inventory_dev_5y": {
+      "coef": -0.0276,
+      "se": 0.0267,
+      "z": -1.0359,
+      "p": 0.3003
+    },
+    "d_brent_wti": {
+      "coef": 0.8556,
+      "se": 0.569,
+      "z": 1.5035,
+      "p": 0.1327
+    },
+    "d_ho_rb": {
+      "coef": 0.9229,
+      "se": 0.5381,
+      "z": 1.7151,
+      "p": 0.0863
+    }
+  }
+}

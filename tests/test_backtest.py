@@ -8,6 +8,7 @@ from oilrv import backtest as B
 from oilrv import metrics as MT
 from oilrv import sizing as SZ
 from oilrv.config import load_config
+from oilrv.diagnostics import month_starts
 
 W = 300
 
@@ -141,6 +142,29 @@ def test_roll_cost_charged_only_in_position():
     extra = (d0["pnl_usd"] - d1["pnl_usd"])
     assert (extra[~in_pos].abs() < 1e-9).all()
     assert (extra[in_pos] > 0).all()
+
+
+def test_roll_cost_ignores_legs_outside_the_spread():
+    """Fits seeded from the shared rolling_fits table carry NaN weights for other spreads' legs
+    (w_rb, w_ho for Brent-WTI). The roll cost must use only the spread's own legs: 1 tick each."""
+    cfg = load_config()
+    legs = legs_ar1()
+    rules = B.Rules(window=W, use_blackout=False, use_logit=False)
+    cache = B.FitCache(legs, "brent_wti", "fixed", cfg)
+    fits = pd.DataFrame([{**cache.get(s, W), "w_rb": np.nan, "w_ho": np.nan}
+                         for s in month_starts(legs.index) if s >= W])
+    seeded = B.FitCache(legs, "brent_wti", "fixed", cfg)
+    seeded.seed(fits, W)
+    p, bo = pd.Series(np.nan, index=legs.index), pd.Series(False, index=legs.index)
+    rolled = pd.Series(True, index=legs.index)
+    d, t = B.run_backtest("brent_wti", legs, seeded, p, bo, rules, cfg, "research", rolled)
+    assert d["pnl_usd"].notna().all() and t["net_usd"].notna().all()
+    d0, _ = B.run_backtest("brent_wti", legs, seeded, p, bo, rules, cfg, "research")
+    in_pos = (d0["side"].shift(1).fillna(0) != 0)
+    tick = cfg["strategy"]["tick_usd"]
+    roll = (d0["pnl_usd"] - d["pnl_usd"])[in_pos]
+    units_held = d0["units"].shift(1)[in_pos]
+    assert np.allclose(roll, units_held * (tick["brent"] + tick["cl"]))
 
 
 def test_integer_book_equity_and_halt():

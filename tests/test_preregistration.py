@@ -101,3 +101,46 @@ def test_gate_windows_exist():
     assert set(cfg["gates"]["stress_filter"]["windows"]) <= set(cfg["evaluation"]["stress_windows"])
     assert cfg["evaluation"]["stress_windows"]["ukraine"] == ["2022-01-01", "2022-12-31"]
     assert cfg["evaluation"]["stress_windows"]["hormuz"] == ["2026-01-01", None]
+
+
+REGISTERED_TREND_CARRY = {
+    "registered_on": "2026-10-28",
+    "trend": {"instruments": ["cl", "brent", "rb", "ho", "crack321", "brent_wti", "ho_rb"],
+              "lookback_days": 252, "lookback_grid": [126, 252, 504]},
+    "carry": {"instruments": ["cl", "brent"], "slope": "m1_m2", "slope_grid": ["m1_m2", "m1_m3", "m1_m6"]},
+    "sleeve_weights": {"trend": 0.5, "carry": 0.5},
+    "risk_per_day_usd": 6000, "usd_per_1bbl_per_unit_outright": 1000, "sigma": "garch",
+    "cost_usd_per_bbl": 0.05, "roll_cost_ticks_per_leg": 1,
+    "gates": {"min_net_sharpe": 0.5, "min_position_changes": 20, "min_positive_subperiods": 2,
+              "grid_min_sharpe": 0.0, "stress_windows": ["ukraine", "hormuz"], "stress_max_loss_usd": 40000},
+}
+
+
+def test_exploratory_trend_carry_unchanged():
+    """Exploratory addendum (PREREGISTRATION_TREND_CARRY.md), registered before any trend/carry result."""
+    assert load_config()["exploratory_trend_carry"] == REGISTERED_TREND_CARRY
+
+
+REGISTERED_PAIRS = {
+    "registered_on": "2026-10-31",
+    "pairs": [{"y": "brent", "x": "cl", "seasonal_adjust": False},
+              {"y": "ho", "x": "rb", "seasonal_adjust": True},
+              {"y": "rb", "x": "cl", "seasonal_adjust": True},
+              {"y": "ho", "x": "cl", "seasonal_adjust": True},
+              {"y": "rb", "x": "brent", "seasonal_adjust": True},
+              {"y": "ho", "x": "brent", "seasonal_adjust": True}],
+    "new_pairs": ["rb/cl", "ho/cl", "rb/brent", "ho/brent"],
+    "signal": "adjusted_with_trend", "gross_contracts_per_unit": 2, "usd_per_1bbl_per_unit": 1000,
+    "eg_p_max": 0.10, "risk_per_day_usd": 6000,
+    "grid": {"entry_z": [1.5, 2.0, 2.5], "eg_p_max": [0.05, 0.10]},
+    "comparisons": ["adjusted", "market", "no_gate"],
+    "robustness": {"window": [504, 1008], "cost_usd_per_bbl": [0.0, 0.025, 0.10, 0.20]},
+    "gates": {"min_net_sharpe": 0.5, "min_round_trips": 20, "min_positive_subperiods": 2,
+              "grid_min_sharpe": 0.0, "stress_windows": ["ukraine", "hormuz"], "stress_max_loss_usd": 40000},
+    "single_pair_min_t": 2.64,
+}
+
+
+def test_exploratory_pairs_unchanged():
+    """Exploratory addendum (PREREGISTRATION_PAIRS.md), registered before any pairs signal or P&L."""
+    assert load_config()["exploratory_pairs"] == REGISTERED_PAIRS

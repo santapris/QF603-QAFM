@@ -20,14 +20,16 @@ from __future__ import annotations
 import io
 import time
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import requests
 
-from .config import load_config, path
-from .spreads import build_spreads
+from . import futures
+from .config import get_source, load_config, path
+from .spreads import build_spreads, traded_spreads
 
 FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
 EIA_XLS_URL = "https://www.eia.gov/dnav/pet/hist_xls/{key}{freq}.xls"
@@ -209,21 +211,25 @@ def build_clean(refresh: bool = False, save: bool = True) -> tuple[pd.DataFrame,
     for name in ["crack321", "brent_wti", "ho_rb"]:
         sp[f"spike_{name}"] = flag_spikes(sp[name], cfg["spike_sigma"], cfg["spike_reversal_frac"],
                                           cfg["spike_vol_window"])
-    sp["flag_apr2020"] = False
-    for d in cfg["flag_dates"]:
-        wk = pd.Timestamp(d).to_period("W-FRI")
-        sp.loc[sp.index.to_period("W-FRI") == wk, "flag_apr2020"] = True
+    sp["flag_apr2020"] = flag_weeks(sp.index)
     if save:
         px.to_csv(path("clean_dir") / "spot_prices.csv")
         sp.to_csv(path("clean_dir") / "spreads.csv")
     return px, sp
 
 
-def build_features(index: pd.DatetimeIndex, refresh: bool = False, save: bool = True) -> pd.DataFrame:
+def flag_weeks(index: pd.DatetimeIndex) -> np.ndarray:
+    """True in the weeks (Mon-Fri) of `data.flag_dates` (the week WTI settled negative)."""
+    wk = pd.DatetimeIndex(index).to_period("W-FRI")
+    return np.isin(wk, [pd.Timestamp(d).to_period("W-FRI") for d in load_config()["data"]["flag_dates"]])
+
+
+def build_features(index: pd.DatetimeIndex, refresh: bool = False, save: bool = True,
+                   name: str = "features.csv") -> pd.DataFrame:
     """Raw daily filter inputs, each stamped on its availability date and carried onto `index`.
 
     Percentiles, z-scores and GARCH-based features are built in the model and regime steps,
-    because they need rolling windows.
+    because they need rolling windows. The futures run saves its own copy on the futures dates.
     """
     cfg = load_config()["data"]
     feats = pd.DataFrame(index=index)
@@ -246,7 +252,7 @@ def build_features(index: pd.DatetimeIndex, refresh: bool = False, save: bool = 
     feats = feats.join(asof_daily(cot, cot.index + pd.Timedelta(days=cfg["cftc_release_lag_days"]), index))
 
     if save:
-        feats.to_csv(path("clean_dir") / "features.csv")
+        feats.to_csv(path("clean_dir") / name)
         weekly.to_csv(path("clean_dir") / "weekly_stocks.csv")
     return feats
 
@@ -259,6 +265,52 @@ def load_clean() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def load_features() -> pd.DataFrame:
     return pd.read_csv(path("clean_dir") / "features.csv", index_col=0, parse_dates=True)
+
+
+@dataclass
+class SourceData:
+    """Everything Parts 2-7 read, for one data source (PREREGISTRATION.md section 5).
+
+    frame: one table with the traded spreads ($/bbl), legs `<leg>_bbl` and `flag_apr2020` (Parts 2-3).
+    legs:  {spread: table with that spread's own legs `<leg>_bbl`}. On spot data every spread shares
+           `frame`. On futures each spread holds its own delivery month, so its legs differ (the crack's
+           CL is not Brent-WTI's CL), and each table also has `rolled` (roll-cost days).
+    feats, cal: filter inputs and event calendar on the same dates.
+    """
+    name: str
+    frame: pd.DataFrame
+    legs: dict[str, pd.DataFrame]
+    feats: pd.DataFrame
+    cal: pd.DataFrame
+
+    @property
+    def index(self) -> pd.DatetimeIndex:
+        return self.frame.index
+
+    def rolled(self, name: str) -> pd.Series | None:
+        return self.legs[name]["rolled"] if "rolled" in self.legs[name] else None
+
+
+def load_source(name: str | None = None) -> SourceData:
+    """Clean data for `name` ('futures' or 'spot'; default: the current run's source)."""
+    name = name or get_source()
+    d = path("clean_dir")
+    read = lambda n: pd.read_csv(d / n, index_col=0, parse_dates=True)
+    if name == "spot":
+        _, sp = load_clean()
+        return SourceData("spot", sp, {n: sp for n in traded_spreads()}, load_features(),
+                          read("event_features.csv"))
+    fut = futures.load_futures()
+    legs = futures.spread_frames(fut)
+    flag = flag_weeks(fut.index)
+    for f in legs.values():
+        f["flag_apr2020"] = flag
+    frame = fut[list(legs) + [f"{n}_unadj" for n in legs]].copy()
+    for leg, src in [("cl", "crack321"), ("rb", "crack321"), ("ho", "crack321"), ("brent", "brent_wti")]:
+        frame[f"{leg}_bbl"] = legs[src][f"{leg}_bbl"]
+        frame[f"{leg}_bbl_unadj"] = legs[src][f"{leg}_bbl_unadj"]
+    frame["flag_apr2020"] = flag
+    return SourceData("futures", frame, legs, read("features_futures.csv"), read("event_features_futures.csv"))
 
 
 def data_report(px: pd.DataFrame, sp: pd.DataFrame, feats: pd.DataFrame) -> dict:

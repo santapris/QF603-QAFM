@@ -6,6 +6,15 @@
 !outputs/**/
 !outputs/**/.gitkeep
 
+# Bloomberg settles and the daily price series built from them (the repo is public). Rebuild locally with
+# scripts/build_data.py, run_model.py and run_trend_carry.py. The spot-data equivalents stay tracked.
+data/raw/bloomberg/*.xlsx
+data/raw/bloomberg/*.csv
+data/clean/futures_spreads.csv
+data/clean/features_futures.csv
+data/derived/model_path.csv
+data/derived/exploratory/trend_carry_daily.csv
+
 # Credentials
 .pgpass
 *.pgpass

@@ -13,17 +13,21 @@ Register the notebook kernel:
 ```
 
 ## Run
+Parts 2–7 take `--source futures|spot`. The default is `futures` (the binding run) once the Bloomberg workbook named in `config.yaml` → `futures.export_file` is in `data/raw/bloomberg/`. `--source spot` reruns the spot proxy, which writes to `output/spot_proxy/` and `data/derived/spot_proxy/` instead of `output/` and `data/derived/`. Run Parts 2–7 in order for one source before switching to the other.
+
 | Part | Command | Output |
 |---|---|---|
-| 1 · Data | `.venv/bin/python scripts/build_data.py [--refresh]` (~1 min first run, CFTC history) | `data/clean/` (`spot_prices`, `spreads`, `features`, `weekly_stocks`, `event_features`; `futures_spreads` once Bloomberg files exist), `data/calendars/events.csv`, `output/tables/data_summary.json`, `output/figures/01_*.png` |
+| 1 · Data | `.venv/bin/python scripts/build_data.py [--refresh]` (~1 min first run, CFTC history) | `data/clean/` (`spot_prices`, `spreads`, `features`, `weekly_stocks`, `event_features`; with the Bloomberg workbook also `futures_spreads`, `features_futures`, `event_features_futures`), `data/calendars/events.csv`, `output/tables/data_summary.json`, `output/figures/01_*.png` |
 | 2–3 · Analysis | `.venv/bin/python scripts/run_analysis.py [--skip-slow]` (~40 s) | `output/tables/02_*`, `03_*`, `analysis_summary.json`; `output/figures/02_*`, `03_*`; `data/derived/` (`rolling_stationarity`, `rolling_eg`, `rolling_johansen`, `sarima_forecasts_*`) |
 | 4 · Model | `.venv/bin/python scripts/run_model.py` (~20 s) | `data/derived/rolling_fits.csv`, `model_path.csv` (keyed `variant\|spread`), `output/tables/04_*`, `model_summary.json`, `output/figures/04_*` |
 | 5 · Regime filter | `.venv/bin/python scripts/run_regime.py` (~10 s; needs `run_model.py` first) | `data/derived/regime_episodes.csv`, `regime_probability.csv`, `regime_coefficients.csv`, `output/tables/05_*`, `regime_summary.json`, `output/figures/05_*` |
 | 6 · Backtest | `.venv/bin/python scripts/run_backtest.py` (~70 s; needs `run_model.py` and `run_regime.py`) | `output/tables/06_*` (ladder, gate verdicts, sub-periods, stress windows, grid, cost sweep, robustness, integer book, trades), `backtest_summary.json`, `output/figures/06_*`, `data/derived/backtest_daily_*`, `integer_book_*` |
 | 7 · Current regime | `.venv/bin/python scripts/run_readout.py [--today YYYY-MM-DD]` (~6 s; needs Parts 4–6) | `output/tables/07_state.csv`, `07_triggers.csv`, `07_watch_list.csv`, `readout_summary.json`, `output/figures/07_current_regime.png` |
+| Exploratory · Trend & carry | `.venv/bin/python scripts/run_trend_carry.py` (~25 s; needs `build_data.py` with futures and `run_backtest.py --source futures`) | `output/exploratory/trend_carry/` (`tables/`: gate verdicts, books, instruments, sub-periods, stress, grid, annual, drawdowns, costs, current book, `summary.json`; `figures/`: `cumulative_pnl`, `diagnostics`, `signals`), `data/derived/exploratory/trend_carry_daily.csv`. Rules: `PREREGISTRATION_TREND_CARRY.md`; findings: `report/exploratory_trend_carry.md` |
+| Exploratory · Pairs | `.venv/bin/python scripts/run_pairs.py` (~2.5 min; needs `build_data.py` with futures, `run_backtest.py --source futures` and `run_trend_carry.py`) | `output/exploratory/pairs/` (`tables/`: gate verdicts, pairs, grid, comparisons, robustness, sub-periods, stress, annual, drawdowns, trades, direction, exits, carry split, gate rates, latest state, `summary.json`; `figures/`: `cumulative_pnl`, `pairs`, `attribution`), `data/derived/exploratory/pairs_daily.csv`. Rules: `PREREGISTRATION_PAIRS.md`; findings: `report/exploratory_pairs.md` |
 | 10 · Report | `scripts/build_report.sh` then `.venv/bin/python scripts/check_report.py` | `report/report.pdf`, `report/report.docx` (source `report/report.md`; needs Homebrew `pandoc` and Google Chrome). The check confirms that every quoted number matches `output/` |
 | Tests | `.venv/bin/python -m pytest -q` | |
-| Notebooks | `notebooks/01_data` … `07_current_regime` (kernel "Python (oilrv)") | |
+| Notebooks | `notebooks/01_data` … `07_current_regime`, `08_trend_carry` (exploratory) (kernel "Python (oilrv)") | |
 
 ## Pre-registration
 - `PREREGISTRATION.md` and `config.yaml` fix the following, all registered on 2026-10-24 before any data was downloaded:
@@ -53,6 +57,8 @@ Register the notebook kernel:
   - `regime.py`: filter features, episodes and frozen-parameter labels, the pooled point-in-time logit/probit, AUC/Brier/calibration
   - `model.py`: `fit_window` (in-window seasonal fair value, AR(1) half-life, ADF, GARCH-t, VECM with the traded vector), Johansen weights, rolling fits, the point-in-time daily path, the volatility-forecast test
   - `plotting.py`
+  - `trend_carry.py`: exploratory trend and carry (instruments, signals, `simulate`, sleeves, G1–G5 verdicts, descriptive drawdowns/annual/current book)
+  - `pairs.py`: exploratory cointegration pairs (same-delivery-month legs, `fit_pair`, `PairSim` on top of `SpreadSim`, the six-pair book, G1–G5 verdicts, carry split, latest state)
   
   The other modules are added part by part, following `PROJECT_PLAN.md`.
 - `data/raw/`: downloads exactly as received, never edited. Subfolders: `fred`, `eia`, `gpr`, `cftc`, `bloomberg`. See `data/raw/bloomberg/README.md` for the export format.
@@ -117,7 +123,8 @@ These were decided in Part 1, before any model or backtest was run.
   - Back-adjustment is additive.
 
 ## Data caveats
-- **The futures run is not wired in yet.** `futures.build_futures()` builds the per-spread series, but `model`, `regime` and `backtest` still take one shared set of spot legs. Futures need per-spread legs (each spread holds its own delivery month) and the `rolled` flags (for roll costs) passed through. This has to be done before the binding run.
+- **Back-adjusted levels drift.** Additive back-adjustment (pre-registered) makes the spread's daily change exact, but its level accumulates every roll gap: the adjusted crack runs from −\$163 to +\$65/bbl against \$2–\$70 for the market level. The signals use the adjusted level, as registered, so the in-window mean and z carry this trend. That explains why |z| ≥ 2 holds on about twice as many days as on spot, and why episodes rarely revert. The readout shows market levels (unadjusted).
+- **The futures logit never fits.** Only 10 of 72 fixed-variant episodes revert, and Brent–WTI reverts in none of 13, so its dummy separates the data and the logit never converges. Under the registered rule (a failed fit means no filter), the gated run equals the blackout step on futures.
 - **GPR timing.** The pre-registered spec lags daily GPR by one day, but the published file is updated only periodically, so in real time yesterday's value is not always available.
 - **OPEC dates need checking.** 75 of the 98 OPEC events were compiled from memory (`verified=no`), because opec.org blocks automated access. Check them against the opec.org press-release archive. They only move the 1-day entry blackout.
 - **Gasoline grade switches.** NYH spot gasoline changes grade (RVP) around 1 Feb and 1 Mar, which shows up as reversing spikes in the spot crack and HO−RB. They are flagged, not dropped. Futures avoid this.
@@ -173,6 +180,27 @@ A line-by-line review with independent re-computations found and fixed three tim
 - **2026-10-24:** Part 10 is done: the written report (`report/report.pdf`, `.docx`), labelled throughout as a spot proxy. `check_report.py` confirms all 92 quoted numbers match the outputs.
   - Open: the author line is still a placeholder.
   - Open: the binding futures rerun, once the Bloomberg export arrives.
+
+- **2026-10-28:** Bloomberg export in (`data/raw/bloomberg/oil_futures_bdh_2007-01-01_2026-10-27.xlsx`, renamed from the file as received). Futures are wired through Parts 2–7 (`--source`), and Parts 1–7 were rerun. **Binding verdict on futures: all three spreads FAIL G1–G5.**
+  - **Crack:** Sharpe 0.32 on 18 trades; passes G3 and G4, fails G1, G2 and G5 (−\$73k in 2026).
+  - **Brent–WTI:** Sharpe −0.42 on 9 trades; fails every gate (−\$151k in 2022, −\$77k in 2026).
+  - **HO−RB:** Sharpe 0.06 on 18 trades; passes G3 only.
+  - **Filter:** the logit never converges on futures (see Data caveats), so no filter applies and G5 cannot be passed by filtering.
+  - **Integer book:** \$2m → \$2.07m, max drawdown 9.4%.
+  - **Spot proxy:** rerun with the refactored code; it reproduces the committed spot outputs exactly. It is now in `output/spot_proxy/`.
+  - **Fix:** a roll-cost bug turned every futures trade held through a roll into NaN (legs outside the spread carried NaN weights). Fixed in `backtest.py`, with a test.
+  - **Open:** `report/report.md` and the notebooks' commentary still describe the spot proxy, so `check_report.py` fails until the report is rewritten for the futures results.
+- **2026-10-28, exploratory:** trend and carry on futures (`PREREGISTRATION_TREND_CARRY.md`, registered before any result; `scripts/run_trend_carry.py`). **FAIL, as a near miss:** the combined book reaches a net Sharpe of 0.45 (G1 needs > 0.5) and passes G2–G5, making money in 2022 and 2026. Findings: `report/exploratory_trend_carry.md`. It does not change the binding verdict.
+- **2026-10-29, exploratory:** trend and carry rerun from a clean state. **It reproduces every table of the 28 Oct run byte for byte.** Added:
+  - the per-instrument daily paths (`data/derived/exploratory/trend_carry_daily.csv`)
+  - descriptive tables and figures: calendar years, drawdowns, costs by sleeve, today's book, signals
+  - `notebooks/08_trend_carry.ipynb`, with a reconciliation of the books from the daily paths
+  - tests for the new helpers
+  - New findings: the combined book lost in each of 2023–25 (−\$145k) and was below its June 2022 peak for 1,089 trading days. Trend costs take 39% of gross (carry 10%). At the 26 Oct close all nine positions are long.
+- **2026-10-31, exploratory:** cointegration pairs on futures (`PREREGISTRATION_PAIRS.md`, registered before any signal or P&L; `scripts/run_pairs.py`). **FAIL:** the six-pair book has a net Sharpe of −0.19 (t = −0.78) on 80 trades and passes only G2. No pair passes or counts as evidence (largest t = 0.35). Findings: `report/exploratory_pairs.md`. It does not change the binding verdict.
+  - **Costs are not the cause:** Sharpe is −0.14 at zero cost.
+  - **The gate did not add value:** without it Sharpe is 0.17 (t = 0.70, not gated), which still fails G1 and G5.
+  - **Convergence lost money:** −\$294k against +\$129k of fitted carry, at full R per pair. Shorts lost \$290k and longs made \$54k.
 
 ## Note
 This is an educational research project, not investment advice. Paper trading only. Check your employer's personal-dealing policy before trading futures in a personal account.

@@ -192,6 +192,12 @@ def legs_frame(sp: pd.DataFrame) -> pd.DataFrame:
     return sp[[c for c in sp.columns if c.endswith("_bbl")]]
 
 
+def by_spread(data: pd.DataFrame | dict[str, pd.DataFrame], names) -> dict[str, pd.DataFrame]:
+    """{spread: frame of its legs}. One frame (spot) is shared by every spread; futures pass a dict,
+    because each spread holds its own delivery month."""
+    return data if isinstance(data, dict) else {n: data for n in names}
+
+
 def rolling_fits(sp: pd.DataFrame, name: str, variant: str = "fixed", window: int | None = None,
                  cfg: dict | None = None) -> pd.DataFrame:
     """fit_window at every month start on the `window` days strictly before it. Indexed by month start.
@@ -289,17 +295,19 @@ def vol_forecast_test(path: pd.DataFrame, hac_lags: int = 10) -> dict:
             "n": int(ok.sum())}
 
 
-def build_model(sp: pd.DataFrame, cfg: dict | None = None, window: int | None = None) -> dict:
+def build_model(sp: pd.DataFrame | dict[str, pd.DataFrame], cfg: dict | None = None,
+                window: int | None = None) -> dict:
     """Rolling fits and daily paths for every traded spread (fixed) plus the crack's johansen variant.
 
-    Returns {(variant, spread): (fits, path)}.
+    `sp` is one frame of legs or {spread: frame} (see by_spread). Returns {(variant, spread): (fits, path)}.
     """
     cfg = cfg or load_config()
+    data = by_spread(sp, [n for v in cfg["variants"].values() for n in v["spreads"]])
     out = {}
     for variant, vspec in cfg["variants"].items():
         for name in vspec["spreads"]:
-            fits = rolling_fits(sp, name, vspec["weights"] if vspec["weights"] == "fixed" else "johansen",
+            fits = rolling_fits(data[name], name, vspec["weights"] if vspec["weights"] == "fixed" else "johansen",
                                 window, cfg)
-            out[(variant, name)] = (fits, model_path(sp, fits, name, cfg))
+            out[(variant, name)] = (fits, model_path(data[name], fits, name, cfg))
     return out
 

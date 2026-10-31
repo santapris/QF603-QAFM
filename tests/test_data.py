@@ -191,6 +191,32 @@ def test_read_bloomberg_two_row_header(tmp_path):
     assert panel.loc["2026-10-21", pd.Period("2026-12", "M")] == 105.00   # same contract, now CL1
 
 
+def test_read_bloomberg_workbook_na_tickers(tmp_path):
+    """The SMU workbook: one sheet per root, ' .NA.' where no contract maps, blank unsettled rows."""
+    f = tmp_path / "export.xlsx"
+    cols = pd.MultiIndex.from_tuples([("XB1 Comdty", "PX_SETTLE"), ("XB1 Comdty", "FUT_CUR_GEN_TICKER"),
+                                      ("XB2 Comdty", "PX_SETTLE"), ("XB2 Comdty", "FUT_CUR_GEN_TICKER")])
+    df = pd.DataFrame([[np.nan, " .NA.", np.nan, " .NA."], [154.89, "XBG07", 159.24, "XBH07"],
+                       [148.70, " .NA.", 152.95, "XBH07"], [np.nan, "XBG07", np.nan, "XBH07"]],
+                      index=pd.DatetimeIndex(["2007-01-02", "2007-01-03", "2007-01-04", "2007-01-05"], name="Dates"),
+                      columns=cols)
+    with pd.ExcelWriter(f) as w:
+        df.to_excel(w, sheet_name="XB")
+    panel, root = futures.contract_panel(futures.read_bloomberg(f, "XB"))
+    assert root == "XB"
+    assert list(panel.index) == [pd.Timestamp("2007-01-03"), pd.Timestamp("2007-01-04")]
+    assert panel.loc["2007-01-03", pd.Period("2007-02", "M")] == 154.89
+    assert np.isnan(panel.loc["2007-01-04", pd.Period("2007-02", "M")])   # no ticker, no price
+    assert panel.loc["2007-01-04", pd.Period("2007-03", "M")] == 152.95
+
+
+def test_rolls_on_dropped_dates_move_to_next_common_date():
+    flags = pd.Series([False, True, False, True, False],
+                      index=pd.DatetimeIndex(["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"]))
+    common = pd.DatetimeIndex(["2026-01-05", "2026-01-07", "2026-01-09"])
+    assert futures._to_common(flags, common).tolist() == [False, True, True]
+
+
 # ------------------------------------------------------------------ calendars
 HURDAT_SNIPPET = """AL092008,                IKE,     3,
 20080913, 0000,  , HU, 29.0N,  94.5W,  95,  952,

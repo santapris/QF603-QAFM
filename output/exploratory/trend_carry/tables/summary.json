@@ -1,0 +1,230 @@
+{
+  "status": "EXPLORATORY (PREREGISTRATION_TREND_CARRY.md); does not change the binding verdict",
+  "source": "futures",
+  "start": "2010-02-01",
+  "end": "2026-10-26",
+  "verdicts": {
+    "combined": {
+      "G1_sharpe": false,
+      "G1_value": 0.44709075118598873,
+      "G2_changes": true,
+      "G2_value": 1150,
+      "G3_subperiods": true,
+      "G3_value": 3,
+      "G4_grid": true,
+      "G4_value": {
+        "trend lookback=126": 0.33228150183389793,
+        "trend lookback=252": 0.44709075118598873,
+        "trend lookback=504": 0.51644389662309,
+        "carry slope=m1_m2": 0.44709075118598873,
+        "carry slope=m1_m3": 0.4609158602635842,
+        "carry slope=m1_m6": 0.45160933756818855
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 116612.56089537428,
+        "hormuz": 222778.4950941955
+      },
+      "PASS": false
+    },
+    "trend": {
+      "G1_sharpe": false,
+      "G1_value": 0.28852135103719284,
+      "G2_changes": true,
+      "G2_value": 971,
+      "G3_subperiods": true,
+      "G3_value": 3,
+      "G4_grid": true,
+      "G4_value": {
+        "lookback=126": 0.0528875512772171,
+        "lookback=252": 0.28852135103719284,
+        "lookback=504": 0.4721125533352256
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 150209.9296305706,
+        "hormuz": 233571.80484642112
+      },
+      "PASS": false
+    },
+    "carry": {
+      "G1_sharpe": false,
+      "G1_value": 0.4446456353977912,
+      "G2_changes": true,
+      "G2_value": 179,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": true,
+      "G4_value": {
+        "slope=m1_m2": 0.4446456353977912,
+        "slope=m1_m3": 0.4644484055444226,
+        "slope=m1_m6": 0.44557239321483927
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 83015.19216017796,
+        "hormuz": 211985.18534196986
+      },
+      "PASS": false
+    }
+  },
+  "books": {
+    "trend": {
+      "sharpe": 0.289,
+      "sharpe_t": 1.18,
+      "total": 292686.653,
+      "ann_mean": 17507.011,
+      "ann_sd": 60678.389,
+      "max_dd": -228821.495,
+      "years": 16.718
+    },
+    "carry": {
+      "sharpe": 0.445,
+      "sharpe_t": 1.818,
+      "total": 627376.501,
+      "ann_mean": 37526.437,
+      "ann_sd": 84396.278,
+      "max_dd": -237135.068,
+      "years": 16.718
+    },
+    "combined": {
+      "sharpe": 0.447,
+      "sharpe_t": 1.828,
+      "total": 460031.577,
+      "ann_mean": 27516.724,
+      "ann_sd": 61546.171,
+      "max_dd": -209246.925,
+      "years": 16.718
+    }
+  },
+  "instruments": {
+    "trend|cl": {
+      "sharpe": -0.051,
+      "total": -83316.205,
+      "max_dd": -423822.584,
+      "position_changes": 150.0
+    },
+    "trend|brent": {
+      "sharpe": 0.301,
+      "total": 494114.613,
+      "max_dd": -400977.974,
+      "position_changes": 151.0
+    },
+    "trend|rb": {
+      "sharpe": 0.175,
+      "total": 301108.872,
+      "max_dd": -320101.843,
+      "position_changes": 143.0
+    },
+    "trend|ho": {
+      "sharpe": 0.32,
+      "total": 534740.272,
+      "max_dd": -321736.9,
+      "position_changes": 119.0
+    },
+    "trend|crack321": {
+      "sharpe": 0.387,
+      "total": 622372.848,
+      "max_dd": -524132.896,
+      "position_changes": 123.0
+    },
+    "trend|brent_wti": {
+      "sharpe": 0.276,
+      "total": 462397.986,
+      "max_dd": -525589.361,
+      "position_changes": 117.0
+    },
+    "trend|ho_rb": {
+      "sharpe": -0.171,
+      "total": -282611.817,
+      "max_dd": -729113.038,
+      "position_changes": 168.0
+    },
+    "carry|cl": {
+      "sharpe": 0.382,
+      "total": 625759.147,
+      "max_dd": -221290.449,
+      "position_changes": 74.0
+    },
+    "carry|brent": {
+      "sharpe": 0.383,
+      "total": 628993.854,
+      "max_dd": -261453.586,
+      "position_changes": 105.0
+    }
+  },
+  "subperiods": {
+    "trend|2007\u20132013": {
+      "net": 92948.6,
+      "sharpe": 0.4,
+      "days": 988.0
+    },
+    "trend|2014\u20132019": {
+      "net": 37325.6,
+      "sharpe": 0.1,
+      "days": 1511.0
+    },
+    "trend|2020\u20132026": {
+      "net": 162412.5,
+      "sharpe": 0.4,
+      "days": 1714.0
+    },
+    "carry|2007\u20132013": {
+      "net": -14514.0,
+      "sharpe": -0.1,
+      "days": 988.0
+    },
+    "carry|2014\u20132019": {
+      "net": 353279.2,
+      "sharpe": 0.7,
+      "days": 1511.0
+    },
+    "carry|2020\u20132026": {
+      "net": 288611.3,
+      "sharpe": 0.4,
+      "days": 1714.0
+    },
+    "combined|2007\u20132013": {
+      "net": 39217.3,
+      "sharpe": 0.2,
+      "days": 988.0
+    },
+    "combined|2014\u20132019": {
+      "net": 195302.4,
+      "sharpe": 0.5,
+      "days": 1511.0
+    },
+    "combined|2020\u20132026": {
+      "net": 225511.9,
+      "sharpe": 0.5,
+      "days": 1714.0
+    }
+  },
+  "stress_windows": {
+    "brent_wti_break": {
+      "trend": 43625.7,
+      "carry": 14685.4,
+      "combined": 29155.6
+    },
+    "covid": {
+      "trend": -49211.0,
+      "carry": -4377.0,
+      "combined": -26794.0
+    },
+    "ukraine": {
+      "trend": 150209.9,
+      "carry": 83015.2,
+      "combined": 116612.6
+    },
+    "hormuz": {
+      "trend": 233571.8,
+      "carry": 211985.2,
+      "combined": 222778.5
+    }
+  },
+  "corr_with_mean_reversion": {
+    "trend": -0.218,
+    "carry": 0.013,
+    "combined": -0.098
+  }
+}

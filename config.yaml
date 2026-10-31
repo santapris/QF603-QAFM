@@ -42,7 +42,9 @@ data:
   spike_vol_window: 60
 
 futures:                         # Bloomberg export, used once available (see data/raw/bloomberg/README.md)
+  export_file: data/raw/bloomberg/oil_futures_bdh_2007-01-01_2026-10-27.xlsx   # one sheet per root
   generics: {cl: [CL, 12], brent: [CO, 12], rb: [XB, 6], ho: [HO, 6]}
+  price_divisor: {XB: 100, HO: 100}   # Bloomberg settles RBOB and ULSD in cents/gal; legs use $/gal
   roll_bdays_before_expiry: 5
   adjustment: additive           # additive back-adjustment survives negative prices
   same_delivery_month: true      # Brent is matched to WTI by delivery month, not front vs front
@@ -189,3 +191,64 @@ ladder:
   garch_sizing: {sizing: garch, blackout: false, logit: false}
   blackout: {sizing: garch, blackout: true, logit: false}
   logit_filter: {sizing: garch, blackout: true, logit: true}   # = the gated configuration
+
+# EXPLORATORY strategies, registered 2026-10-28 AFTER the binding mean-reversion verdict was seen, and
+# BEFORE any trend or carry result was computed. They never change that verdict. Rationale and rules:
+# PREREGISTRATION_TREND_CARRY.md. tests/test_preregistration.py guards this block.
+exploratory_trend_carry:
+  registered_on: "2026-10-28"
+  trend:                          # strategy 1: time-series momentum (Moskowitz, Ooi & Pedersen 2012)
+    instruments: [cl, brent, rb, ho, crack321, brent_wti, ho_rb]
+    lookback_days: 252            # sign of the back-adjusted change over the past 252 trading days
+    lookback_grid: [126, 252, 504]
+  carry:                          # strategy 2: curve carry (Koijen, Moskowitz, Pedersen & Vrugt 2018)
+    instruments: [cl, brent]      # RBOB and ULSD curves are seasonal, so their slope is not carry
+    slope: m1_m2                  # long if the held month M1 > the next month M2 (backwardation)
+    slope_grid: [m1_m2, m1_m3, m1_m6]
+  sleeve_weights: {trend: 0.5, carry: 0.5}   # each sleeve = equal-risk average of its instruments
+  risk_per_day_usd: 6000          # R per instrument: units = R / (sigma_hat * M), unrounded
+  usd_per_1bbl_per_unit_outright: 1000       # one contract = 1,000 bbl (RBOB/ULSD converted to $/bbl)
+  sigma: garch                    # point-in-time GARCH(1,1)-t on daily changes, refit monthly on 756 days
+  cost_usd_per_bbl: 0.05          # per unit of position change, as in strategy.cost_usd_per_bbl
+  roll_cost_ticks_per_leg: 1      # per contract leg held through a roll
+  gates:                          # judged on the combined book (primary) and reported per sleeve
+    min_net_sharpe: 0.5           # G1
+    min_position_changes: 20      # G2: entries and sign flips, summed over instruments
+    min_positive_subperiods: 2    # G3: of evaluation.sub_periods
+    grid_min_sharpe: 0.0          # G4: every lookback and slope in the grids
+    stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
+    stress_max_loss_usd: 40000
+
+# EXPLORATORY strategy, registered 2026-10-31 AFTER the binding verdict and the trend and carry result, and
+# BEFORE any signal or P&L of this strategy was computed. It never changes that verdict. Rationale and rules:
+# PREREGISTRATION_PAIRS.md. tests/test_preregistration.py guards this block.
+exploratory_pairs:
+  registered_on: "2026-10-31"
+  pairs:                          # y on x, same delivery month; seasonal month effects as registered
+    - {y: brent, x: cl, seasonal_adjust: false}
+    - {y: ho, x: rb, seasonal_adjust: true}
+    - {y: rb, x: cl, seasonal_adjust: true}
+    - {y: ho, x: cl, seasonal_adjust: true}
+    - {y: rb, x: brent, seasonal_adjust: true}
+    - {y: ho, x: brent, seasonal_adjust: true}
+  new_pairs: [rb/cl, ho/cl, rb/brent, ho/brent]   # the legs of the others are already registered spreads
+  signal: adjusted_with_trend     # OLS y ~ const + x + t on back-adjusted levels
+  gross_contracts_per_unit: 2     # with M below, $0.05/bbl = $25 per contract, as in the registered spreads
+  usd_per_1bbl_per_unit: 1000
+  eg_p_max: 0.10                  # Engle-Granger coint(trend="ct"), autolag aic; half-life band from `model`
+  risk_per_day_usd: 6000          # R per pair; the book is the equal-risk average of the pairs
+  grid:                           # G4
+    entry_z: [1.5, 2.0, 2.5]
+    eg_p_max: [0.05, 0.10]
+  comparisons: [adjusted, market, no_gate]     # reported, not gated
+  robustness:                     # reported, not gated
+    window: [504, 1008]
+    cost_usd_per_bbl: [0.0, 0.025, 0.10, 0.20]
+  gates:                          # judged on the book; reported per pair too
+    min_net_sharpe: 0.5           # G1
+    min_round_trips: 20           # G2: summed over pairs
+    min_positive_subperiods: 2    # G3: of evaluation.sub_periods
+    grid_min_sharpe: 0.0          # G4
+    stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
+    stress_max_loss_usd: 40000
+  single_pair_min_t: 2.64         # Bonferroni: two-sided 5% over six tests

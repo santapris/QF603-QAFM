@@ -1,14 +1,17 @@
 """Part 6: walk-forward backtest, robustness, integer book and the pre-registered gate verdicts.
 
-Usage:  .venv/bin/python scripts/run_backtest.py
-Requires build_data.py, run_model.py and run_regime.py. About 3-5 minutes.
+Usage:  .venv/bin/python scripts/run_backtest.py [--source futures|spot]
+Requires build_data.py, run_model.py and run_regime.py (same source). About 3-5 minutes.
 
-Every result here is a SPOT PROXY (PREREGISTRATION.md section 5): the binding verdict needs the
-Bloomberg futures run. Gated configuration = `fixed` variant, ladder step `logit_filter`, research
-P&L stream, base parameters, $0.05/bbl per side.
+The verdict is binding on the Bloomberg futures run (the default once the export is in place).
+With --source spot every result is a SPOT PROXY (PREREGISTRATION.md section 5). Gated configuration
+= `fixed` variant, ladder step `logit_filter`, research P&L stream, base parameters, $0.05/bbl per
+side, plus 1 tick per leg on each roll (futures only).
 """
 from __future__ import annotations
 
+import argparse
+import dataclasses
 import json
 
 import matplotlib.pyplot as plt
@@ -18,33 +21,38 @@ import pandas as pd
 from oilrv import backtest as B
 from oilrv import metrics as MT
 from oilrv import regime as R
-from oilrv.config import load_config, path
-from oilrv.data import load_clean, load_features
+from oilrv.config import load_config, path, set_source
+from oilrv.data import SourceData, load_source
 from oilrv.model import build_model, legs_frame
-from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TAB_DIR, save, save_table, use_style
+from oilrv.plotting import CRITICAL, REF_LINE, SERIES, save, save_table, tab_dir, use_style
 
 LABELS = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
+SOURCE_TAG = {"futures": "futures (binding)", "spot": "spot proxy"}
 COL = "pnl_usd"
 
 
 class World:
-    """Model fits, caches and daily P(revert) for one data set and one estimation window."""
+    """Model fits, caches and daily P(revert) for one data set and one estimation window.
 
-    def __init__(self, sp, feats, cal, cfg, window, model=None, p_daily=None, horizon=None):
-        self.sp, self.cfg, self.window = sp, cfg, window
-        self.legs = legs_frame(sp)
-        self.blackout = cal["event_blackout"].reindex(sp.index).fillna(False)
+    Each spread trades its own legs (on futures, its own delivery month) and pays roll costs on its
+    own `rolled` days."""
+
+    def __init__(self, src: SourceData, cfg, window, model=None, p_daily=None, horizon=None):
+        self.src, self.cfg, self.window = src, cfg, window
+        self.legs = {n: legs_frame(f) for n, f in src.legs.items()}
+        self.rolled = {n: src.rolled(n) for n in src.legs}
+        self.blackout = src.cal["event_blackout"].reindex(src.index).fillna(False)
         if model is None:
-            built = build_model(sp, cfg, window)
+            built = build_model(src.legs, cfg, window)
             model = {f"{v}|{s}": fp for (v, s), fp in built.items()}
         self.model = model
         if p_daily is None:
-            _, _, p_daily, _ = R.build_regime(sp, feats, cal, model, cfg, horizon)
+            _, _, p_daily, _ = R.build_regime(src.legs, src.feats, src.cal, model, cfg, horizon)
         self.p = {k: v["p_hat"] for k, v in p_daily.items()}
         self.caches = {}
         for key, (fits, _) in model.items():
             v, s = key.split("|")
-            c = B.FitCache(self.legs, s, cfg["variants"][v]["weights"] if v == "fixed" else "johansen", cfg)
+            c = B.FitCache(self.legs[s], s, cfg["variants"][v]["weights"] if v == "fixed" else "johansen", cfg)
             c.seed(fits, window)
             self.caches[key] = c
 
@@ -52,36 +60,49 @@ class World:
         name = key.split("|")[1]
         rules.window = self.window
         rules.variant = key.split("|")[0]
-        return B.run_backtest(name, self.legs, self.caches[key], self.p[key], self.blackout, rules, self.cfg, mode)
+        return B.run_backtest(name, self.legs[name], self.caches[key], self.p[key], self.blackout, rules, self.cfg,
+                              mode, self.rolled[name])
 
     def sim(self, key, rules: B.Rules):
         name = key.split("|")[1]
         rules.window, rules.variant = self.window, key.split("|")[0]
-        return B.SpreadSim(name, self.legs, self.caches[key], self.p[key], self.blackout, rules, self.cfg)
+        return B.SpreadSim(name, self.legs[name], self.caches[key], self.p[key], self.blackout, rules, self.cfg,
+                           self.rolled[name])
 
 
-def load_base_world(sp, feats, cal, cfg):
+def drop_flagged(src: SourceData) -> SourceData:
+    """The same data without the flagged April 2020 week (robustness.drop_flagged_dates)."""
+    keep = lambda f: f[~f["flag_apr2020"].astype(bool)]
+    return dataclasses.replace(src, frame=keep(src.frame), legs={n: keep(f) for n, f in src.legs.items()})
+
+
+def load_base_world(src: SourceData, cfg):
     d = path("derived_dir")
     fits = pd.read_csv(d / "rolling_fits.csv", index_col=[0, 1], parse_dates=["date"])
     paths = pd.read_csv(d / "model_path.csv", index_col=[0, 1], parse_dates=["date", "fit_date"])
     model = {k: (fits.loc[k], paths.loc[k]) for k in fits.index.get_level_values(0).unique()}
     pr = pd.read_csv(d / "regime_probability.csv", index_col=[0, 1], parse_dates=["date"])
     p_daily = {k: pr.loc[k][["p_hat"]] for k in pr.index.get_level_values(0).unique()}
-    return World(sp, feats, cal, cfg, cfg["model"]["window"], model, p_daily)
+    return World(src, cfg, cfg["model"]["window"], model, p_daily)
 
 
-def main() -> dict:
+def main(source: str | None = None) -> dict:
     use_style()
     cfg = load_config()
-    _, sp = load_clean()
-    feats = load_features()
-    cal = pd.read_csv(path("clean_dir") / "event_features.csv", index_col=0, parse_dates=True)
-    W0 = load_base_world(sp, feats, cal, cfg)
+    source = set_source(source)
+    src = load_source()
+    sp = src.frame
+    TAB_DIR = tab_dir()
+    W0 = load_base_world(src, cfg)
     keys = list(W0.model)
     fixed = [k for k in keys if k.startswith("fixed|")]
     periods = cfg["evaluation"]["sub_periods"]
-    out = {"source": "spot", "binding": False,
-           "note": "Spot proxy. The binding verdict needs the Bloomberg futures run (PREREGISTRATION.md section 5)."}
+    if source == "futures":
+        out = {"source": "futures", "binding": True,
+               "note": "Binding run on Bloomberg futures (PREREGISTRATION.md section 5)."}
+    else:
+        out = {"source": "spot", "binding": False,
+               "note": "Spot proxy. The binding verdict is the Bloomberg futures run (PREREGISTRATION.md section 5)."}
 
     # ---------------------------------------------------------------- ladder (all keys)
     runs, rows = {}, {}
@@ -160,20 +181,19 @@ def main() -> dict:
     for wlen in rb["window"]:
         if wlen == cfg["model"]["window"]:
             continue
-        Ww = World(sp, feats, cal, cfg, wlen)
+        Ww = World(src, cfg, wlen)
         for k in keys:
             d, t = Ww.run(k, B.Rules())
             rob[(f"window {wlen}", k)] = MT.summarize(d, t, COL)
     for h in rb["label_horizon_days"]:
         if h == cfg["regime"]["label_horizon_days"]:
             continue
-        Wh = World(sp, feats, cal, cfg, cfg["model"]["window"], W0.model, None, horizon=h)
+        Wh = World(src, cfg, cfg["model"]["window"], W0.model, None, horizon=h)
         for k in keys:
             d, t = Wh.run(k, B.Rules())
             rob[(f"label {h}d", k)] = MT.summarize(d, t, COL)
     if rb.get("drop_flagged_dates"):
-        spx = sp[~sp["flag_apr2020"].astype(bool)]
-        Wx = World(spx, feats, cal, cfg, cfg["model"]["window"])
+        Wx = World(drop_flagged(src), cfg, cfg["model"]["window"])
         for k in keys:
             for step in ["blackout", "logit_filter"]:
                 d, t = Wx.run(k, B.Rules.ladder(step, cfg))
@@ -213,7 +233,7 @@ def main() -> dict:
             a.axvspan(pd.Timestamp(a0), pd.Timestamp(b0) if b0 else last, color=REF_LINE, alpha=0.10, lw=0)
         v = verdicts.get(k)
         tag = (" — PASS" if v["PASS"] else " — FAIL") if v else " (robustness, not gated)"
-        a.set_title(f"{k}: cumulative net P&L, research stream (\\$k, R = \\$6k/day){tag}")
+        a.set_title(f"{k}: cumulative net P&L, research stream (\\$k, R = \\$6k/day), {SOURCE_TAG[source]}{tag}")
         a.set_ylabel("\\$k")
         a.legend(loc="upper left", ncols=4, fontsize=7.5)
     fig.tight_layout()
@@ -252,4 +272,7 @@ def main() -> dict:
 
 
 if __name__ == "__main__":
-    print(json.dumps(main(), indent=2, default=float))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", choices=["futures", "spot"], default=None,
+                    help="default: futures once the Bloomberg export is in place, else spot")
+    print(json.dumps(main(ap.parse_args().source), indent=2, default=float))

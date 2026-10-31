@@ -35,7 +35,7 @@ import statsmodels.api as sm
 
 from .config import load_config
 from .diagnostics import month_starts
-from .model import spread_from_legs
+from .model import by_spread, spread_from_legs
 
 SPREAD_DUMMIES = {"brent_wti": "d_brent_wti", "ho_rb": "d_ho_rb"}      # crack321 is the base level
 CFTC_LEGS = {"crack321": {"mm_net_rb": 1, "mm_net_ho": 1}, "brent_wti": {"mm_net_cl": -1},
@@ -251,20 +251,22 @@ def calibration_table(episodes: pd.DataFrame, bins=(0, 0.2, 0.4, 0.5, 0.6, 0.7, 
 
 
 # --------------------------------------------------------------------------- one call
-def build_regime(sp: pd.DataFrame, feats: pd.DataFrame, cal: pd.DataFrame,
+def build_regime(sp: pd.DataFrame | dict[str, pd.DataFrame], feats: pd.DataFrame, cal: pd.DataFrame,
                  model: dict[str, tuple[pd.DataFrame, pd.DataFrame]], cfg: dict | None = None,
                  horizon: int | None = None, extra: list[str] | None = None, kind: str = "logit"):
     """Episodes and daily point-in-time P for every model key ('variant|spread' -> (fits, path)).
 
-    Only fixed-variant episodes train the pooled model; every key gets a daily P from it.
+    `sp` is one frame of legs or {spread: frame} (model.by_spread). Only fixed-variant episodes train
+    the pooled model; every key gets a daily P from it.
     Returns (episodes with p_hat, daily features by key, daily P by key, coefficient history).
     """
     cfg = cfg or load_config()
+    data = by_spread(sp, {k.split("|")[1] for k in model})
     daily, eps = {}, []
     for key, (fits, path) in model.items():
         name = key.split("|")[1]
         daily[key] = regime_features(name, path, feats, cal, cfg)
-        e = build_episodes(name, sp, fits, path, horizon, cfg)
+        e = build_episodes(name, data[name], fits, path, horizon, cfg)
         e["key"] = key
         eps.append(e.join(daily[key], how="left"))
     episodes = pd.concat(eps).sort_index()

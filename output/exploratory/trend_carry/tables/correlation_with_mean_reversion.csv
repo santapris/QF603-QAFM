@@ -1,0 +1,5 @@
+,trend,carry,combined,mean_reversion
+trend,1.0,0.424,0.784,-0.218
+carry,0.424,1.0,0.895,0.013
+combined,0.784,0.895,1.0,-0.098
+mean_reversion,-0.218,0.013,-0.098,1.0

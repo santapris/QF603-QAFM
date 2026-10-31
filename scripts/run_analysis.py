@@ -1,10 +1,12 @@
 """Parts 2-3: summary moments, diagnostics and seasonality -> output/tables, output/figures, data/derived.
 
-Usage:  .venv/bin/python scripts/run_analysis.py [--skip-slow]
+Usage:  .venv/bin/python scripts/run_analysis.py [--skip-slow] [--source futures|spot]
 Requires scripts/build_data.py to have run. --skip-slow skips the rolling SARIMA forecasts and the
 rolling Johansen tests.
 
-All results are on spot data (a spot proxy; see PREREGISTRATION.md section 5).
+Futures (binding) by default once the Bloomberg export is in place; --source spot gives the spot proxy
+(PREREGISTRATION.md section 5). On futures the spreads are the additive back-adjusted series, and each
+pair test uses the legs of the spread it belongs to (Brent on WTI: Brent-WTI's legs; Johansen: the crack's).
 """
 from __future__ import annotations
 
@@ -19,9 +21,9 @@ from statsmodels.tsa.vector_ar.vecm import select_order
 
 from oilrv import diagnostics as dg
 from oilrv import explore as ex
-from oilrv.config import load_config, path
-from oilrv.data import load_clean
-from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TAB_DIR, TEXT_2, save, save_table, use_style
+from oilrv.config import load_config, path, set_source
+from oilrv.data import SourceData, load_source
+from oilrv.plotting import CRITICAL, REF_LINE, SERIES, TEXT_2, save, save_table, tab_dir, use_style
 
 LABELS = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
 SEASONAL = ["crack321", "ho_rb"]
@@ -128,7 +130,8 @@ def part2(sp: pd.DataFrame, cfg: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- Part 3
-def part3(sp: pd.DataFrame, cfg: dict, skip_slow: bool) -> dict:
+def part3(src: SourceData, cfg: dict, skip_slow: bool) -> dict:
+    sp = src.frame
     w = cfg["model"]["window"]
     band = (cfg["model"]["half_life_min"], cfg["model"]["half_life_max"])
     periods = cfg["evaluation"]["sub_periods"]
@@ -186,20 +189,21 @@ def part3(sp: pd.DataFrame, cfg: dict, skip_slow: bool) -> dict:
 
     # 5a. Engle-Granger: Brent on WTI, HO on RB ($/bbl)
     keep = ~sp["flag_apr2020"].astype(bool)
-    eg = {"brent_on_wti": dg.eg_pair(sp["brent_bbl"], sp["cl_bbl"]),
-          "brent_on_wti_excl_apr2020": dg.eg_pair(sp.loc[keep, "brent_bbl"], sp.loc[keep, "cl_bbl"]),
-          "ho_on_rb": dg.eg_pair(sp["ho_bbl"], sp["rb_bbl"])}
+    bw, hr, cr = src.legs["brent_wti"], src.legs["ho_rb"], src.legs["crack321"]
+    eg = {"brent_on_wti": dg.eg_pair(bw["brent_bbl"], bw["cl_bbl"]),
+          "brent_on_wti_excl_apr2020": dg.eg_pair(bw.loc[keep, "brent_bbl"], bw.loc[keep, "cl_bbl"]),
+          "ho_on_rb": dg.eg_pair(hr["ho_bbl"], hr["rb_bbl"])}
     eg_tab = pd.DataFrame(eg).T
     save_table(eg_tab, "03_engle_granger.csv")
     out["engle_granger"] = eg_tab.astype(float).round(4).to_dict("index")
-    reg = {"brent_wti": dg.rolling_eg(sp["brent_bbl"], sp["cl_bbl"], w), "ho_rb": dg.rolling_eg(sp["ho_bbl"], sp["rb_bbl"], w)}
+    reg = {"brent_wti": dg.rolling_eg(bw["brent_bbl"], bw["cl_bbl"], w), "ho_rb": dg.rolling_eg(hr["ho_bbl"], hr["rb_bbl"], w)}
     pd.concat(reg, names=["pair", "date"]).to_csv(path("derived_dir") / "rolling_eg.csv")
     out["rolling_eg"] = {k: {"eg_pass_rate": float((r["eg_p"] < 0.05).mean()),
                              "median_beta": float(r["beta"].median()),
                              "beta_range": [float(r["beta"].min()), float(r["beta"].max())]} for k, r in reg.items()}
 
     # 5b. Johansen on (CL, RB, HO) in $/bbl
-    lv = sp[LEGS].rename(columns=lambda s: s.replace("_bbl", ""))
+    lv = cr[LEGS].rename(columns=lambda s: s.replace("_bbl", ""))
     lags = select_order(lv.to_numpy(), maxlags=10, deterministic="ci")
     jo = {"k_ar_diff=1": dg.johansen(lv, 1, targets=TARGETS),
           f"k_ar_diff={lags.aic} (AIC)": dg.johansen(lv, int(lags.aic), targets=TARGETS),
@@ -261,17 +265,21 @@ def part3(sp: pd.DataFrame, cfg: dict, skip_slow: bool) -> dict:
     return out
 
 
-def main(skip_slow: bool = False) -> dict:
+def main(skip_slow: bool = False, source: str | None = None) -> dict:
     use_style()
     cfg = load_config()
-    _, sp = load_clean()
-    res = {"source": "spot", "part2": part2(sp, cfg), "part3": part3(sp, cfg, skip_slow)}
-    TAB_DIR.mkdir(parents=True, exist_ok=True)
-    (TAB_DIR / "analysis_summary.json").write_text(json.dumps(res, indent=2, default=float))
+    source = set_source(source)
+    src = load_source()
+    res = {"source": source, "part2": part2(src.frame, cfg), "part3": part3(src, cfg, skip_slow)}
+    tab_dir().mkdir(parents=True, exist_ok=True)
+    (tab_dir() / "analysis_summary.json").write_text(json.dumps(res, indent=2, default=float))
     return res
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-slow", action="store_true")
-    print(json.dumps(main(ap.parse_args().skip_slow), indent=2, default=float))
+    ap.add_argument("--source", choices=["futures", "spot"], default=None,
+                    help="default: futures once the Bloomberg export is in place, else spot")
+    a = ap.parse_args()
+    print(json.dumps(main(a.skip_slow, a.source), indent=2, default=float))

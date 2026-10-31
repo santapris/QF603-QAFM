@@ -1,0 +1,381 @@
+{
+  "status": "EXPLORATORY (PREREGISTRATION_PAIRS.md); does not change the binding verdict",
+  "source": "futures",
+  "start": "2010-02-01",
+  "end": "2026-10-26",
+  "verdicts": {
+    "book": {
+      "G1_sharpe": false,
+      "G1_value": -0.18964404443657498,
+      "G2_round_trips": true,
+      "G2_value": 80,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.23874125136977573,
+        "entry_z=2.0": -0.18964404443657498,
+        "entry_z=2.5": -0.38164806761896514,
+        "eg_p_max=0.05": -0.18332728264939918,
+        "eg_p_max=0.1": -0.18964404443657498
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": -40281.34703340125,
+        "hormuz": -11962.73554829507
+      },
+      "PASS": false
+    },
+    "brent/cl": {
+      "G1_sharpe": false,
+      "G1_value": -0.1427008070198115,
+      "G2_round_trips": false,
+      "G2_value": 11,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": 0.2593141561333497,
+        "entry_z=2.0": -0.1427008070198115,
+        "entry_z=2.5": -0.17713726580774983,
+        "eg_p_max=0.05": -0.13805574201534376,
+        "eg_p_max=0.1": -0.1427008070198115
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": -31462.442977333492,
+        "hormuz": -41883.90681711776
+      },
+      "PASS": false
+    },
+    "ho/rb": {
+      "G1_sharpe": false,
+      "G1_value": -0.13111161714731157,
+      "G2_round_trips": false,
+      "G2_value": 16,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.24905560046730107,
+        "entry_z=2.0": -0.13111161714731157,
+        "entry_z=2.5": -0.15421009244055112,
+        "eg_p_max=0.05": -0.2721124015434355,
+        "eg_p_max=0.1": -0.13111161714731157
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": -71386.42610280318,
+        "hormuz": 0.0
+      },
+      "PASS": false
+    },
+    "rb/cl": {
+      "G1_sharpe": false,
+      "G1_value": -0.215352491559387,
+      "G2_round_trips": false,
+      "G2_value": 14,
+      "G3_subperiods": false,
+      "G3_value": 0,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.11838290871700531,
+        "entry_z=2.0": -0.215352491559387,
+        "entry_z=2.5": -0.22715701025582455,
+        "eg_p_max=0.05": -0.00018742981635504538,
+        "eg_p_max=0.1": -0.215352491559387
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": -10251.81954703758,
+        "hormuz": -22443.672795250517
+      },
+      "PASS": false
+    },
+    "ho/cl": {
+      "G1_sharpe": false,
+      "G1_value": -0.36943740195716285,
+      "G2_round_trips": false,
+      "G2_value": 7,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.7581769611884644,
+        "entry_z=2.0": -0.36943740195716285,
+        "entry_z=2.5": -0.25051662178528367,
+        "eg_p_max=0.05": -0.14613209005592792,
+        "eg_p_max=0.1": -0.36943740195716285
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": -94841.1982151813,
+        "hormuz": 0.0
+      },
+      "PASS": false
+    },
+    "rb/brent": {
+      "G1_sharpe": false,
+      "G1_value": 0.08636135030772192,
+      "G2_round_trips": false,
+      "G2_value": 19,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.14830524170400203,
+        "entry_z=2.0": 0.08636135030772192,
+        "entry_z=2.5": -0.07743348493100367,
+        "eg_p_max=0.05": 0.014416428296894655,
+        "eg_p_max=0.1": 0.08636135030772192
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": -45752.80649304756,
+        "hormuz": -7448.833677402152
+      },
+      "PASS": false
+    },
+    "ho/brent": {
+      "G1_sharpe": false,
+      "G1_value": 0.07812612886664419,
+      "G2_round_trips": false,
+      "G2_value": 13,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": 0.2556379943710758,
+        "entry_z=2.0": 0.07812612886664419,
+        "entry_z=2.5": -0.3156019538596419,
+        "eg_p_max=0.05": -0.03343687734938948,
+        "eg_p_max=0.1": 0.07812612886664419
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 12006.611134995572,
+        "hormuz": 0.0
+      },
+      "PASS": false
+    }
+  },
+  "book": {
+    "sharpe": -0.18964404443657498,
+    "sharpe_t": -0.7754158390409652,
+    "total": -39331.211055052336,
+    "ann_mean": -2352.5908345295966,
+    "ann_sd": 12405.297733018991,
+    "max_dd": -71933.55173468025,
+    "years": 16.71825396825397
+  },
+  "round_trips": 80,
+  "pairs": {
+    "brent/cl": {
+      "sharpe": -0.1427008070198115,
+      "sharpe_t": -0.583474510553886,
+      "total": -36548.57716097956,
+      "ann_mean": -2186.1479811457034,
+      "max_dd": -87725.3145194599,
+      "n_trades": 11,
+      "open_at_end": 0,
+      "win_rate": 0.45454545454545453,
+      "tp_rate": 0.18181818181818182,
+      "avg_hold": 14.909090909090908,
+      "avg_hold_over_half_life": 0.7419310831039847,
+      "avg_trade": -3322.597923725414,
+      "worst_trade": -32735.79824040221,
+      "time_in_market": 0.038927130310942325,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.306669831474009,
+      "counts_as_evidence": false
+    },
+    "ho/rb": {
+      "sharpe": -0.13111161714731157,
+      "sharpe_t": -0.5360886756045842,
+      "total": -62434.14807054012,
+      "ann_mean": -3734.489749294116,
+      "max_dd": -140384.29937423632,
+      "n_trades": 16,
+      "open_at_end": 0,
+      "win_rate": 0.5,
+      "tp_rate": 0.25,
+      "avg_hold": 22.9375,
+      "avg_hold_over_half_life": 1.360964893965925,
+      "avg_trade": -3902.134254408757,
+      "worst_trade": -68219.57895042362,
+      "time_in_market": 0.08711132209826727,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.17588416805126988,
+      "counts_as_evidence": false
+    },
+    "rb/cl": {
+      "sharpe": -0.215352491559387,
+      "sharpe_t": -0.88053243869692,
+      "total": -74877.50426350094,
+      "ann_mean": -4478.787342606751,
+      "max_dd": -80451.8900810969,
+      "n_trades": 14,
+      "open_at_end": 0,
+      "win_rate": 0.5,
+      "tp_rate": 0.21428571428571427,
+      "avg_hold": 14.571428571428571,
+      "avg_hold_over_half_life": 1.2040972266762895,
+      "avg_trade": -5348.393161678638,
+      "worst_trade": -36433.334904840805,
+      "time_in_market": 0.048421552338001425,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.26204604794683123,
+      "counts_as_evidence": false
+    },
+    "ho/cl": {
+      "sharpe": -0.36943740195716285,
+      "sharpe_t": -1.5105542273305328,
+      "total": -149614.0280435181,
+      "ann_mean": -8949.141957504524,
+      "max_dd": -149614.02804351813,
+      "n_trades": 7,
+      "open_at_end": 0,
+      "win_rate": 0.2857142857142857,
+      "tp_rate": 0.2857142857142857,
+      "avg_hold": 26.714285714285715,
+      "avg_hold_over_half_life": 1.8905808183625157,
+      "avg_trade": -21373.43257764544,
+      "worst_trade": -94841.1982151813,
+      "time_in_market": 0.044386422976501305,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.0951815808212675,
+      "counts_as_evidence": false
+    },
+    "rb/brent": {
+      "sharpe": 0.08636135030772192,
+      "sharpe_t": 0.3531139567737344,
+      "total": 46632.050653533246,
+      "ann_mean": 2789.289524018604,
+      "max_dd": -110775.51694038848,
+      "n_trades": 19,
+      "open_at_end": 0,
+      "win_rate": 0.5263157894736842,
+      "tp_rate": 0.3157894736842105,
+      "avg_hold": 22.0,
+      "avg_hold_over_half_life": 1.7506331718876063,
+      "avg_trade": 2454.3184554491168,
+      "worst_trade": -33084.35568238987,
+      "time_in_market": 0.09921671018276762,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.2516021837170662,
+      "counts_as_evidence": false
+    },
+    "ho/brent": {
+      "sharpe": 0.07812612886664419,
+      "sharpe_t": 0.3194418150389747,
+      "total": 40854.94055469147,
+      "ann_mean": 2443.7324993549137,
+      "max_dd": -103438.18688261551,
+      "n_trades": 13,
+      "open_at_end": 0,
+      "win_rate": 0.6153846153846154,
+      "tp_rate": 0.46153846153846156,
+      "avg_hold": 16.46153846153846,
+      "avg_hold_over_half_life": 1.3342354881397045,
+      "avg_trade": 3142.6877349762685,
+      "worst_trade": -62979.457172389106,
+      "time_in_market": 0.0507951578447662,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.20484215523380014,
+      "counts_as_evidence": false
+    }
+  },
+  "comparisons": {
+    "base": {
+      "sharpe": -0.19,
+      "sharpe_t": -0.775,
+      "total": -39331.211,
+      "max_dd": -71933.552,
+      "round_trips": 80.0,
+      "y2022": -40281.347,
+      "y2026": -11962.736
+    },
+    "adjusted": {
+      "sharpe": -0.014,
+      "sharpe_t": -0.057,
+      "total": -2577.544,
+      "max_dd": -56448.584,
+      "round_trips": 60.0,
+      "y2022": -2317.966,
+      "y2026": -11192.204
+    },
+    "market": {
+      "sharpe": -0.581,
+      "sharpe_t": -2.374,
+      "total": -89157.546,
+      "max_dd": -92379.592,
+      "round_trips": 55.0,
+      "y2022": -28974.988,
+      "y2026": -14495.107
+    },
+    "no_gate": {
+      "sharpe": 0.171,
+      "sharpe_t": 0.701,
+      "total": 79425.208,
+      "max_dd": -85141.831,
+      "round_trips": 233.0,
+      "y2022": -56623.938,
+      "y2026": -27043.331
+    }
+  },
+  "grid": {
+    "entry_z=1.5": -0.23874125136977573,
+    "entry_z=2.0": -0.18964404443657498,
+    "entry_z=2.5": -0.38164806761896514,
+    "eg_p_max=0.05": -0.18332728264939918,
+    "eg_p_max=0.1": -0.18964404443657498
+  },
+  "carry_split": {
+    "brent/cl": {
+      "gross_usd": -22202.0,
+      "carry_usd": 8644.0,
+      "convergence_usd": -30846.0,
+      "net_usd": -36549.0
+    },
+    "ho/rb": {
+      "gross_usd": -51501.0,
+      "carry_usd": 100367.0,
+      "convergence_usd": -151868.0,
+      "net_usd": -62434.0
+    },
+    "rb/cl": {
+      "gross_usd": -66678.0,
+      "carry_usd": -10368.0,
+      "convergence_usd": -56310.0,
+      "net_usd": -74878.0
+    },
+    "ho/cl": {
+      "gross_usd": -141117.0,
+      "carry_usd": 8453.0,
+      "convergence_usd": -149570.0,
+      "net_usd": -149614.0
+    },
+    "rb/brent": {
+      "gross_usd": 61416.0,
+      "carry_usd": 23395.0,
+      "convergence_usd": 38021.0,
+      "net_usd": 46632.0
+    },
+    "ho/brent": {
+      "gross_usd": 55093.0,
+      "carry_usd": -1267.0,
+      "convergence_usd": 56360.0,
+      "net_usd": 40855.0
+    },
+    "all": {
+      "gross_usd": -164989.0,
+      "carry_usd": 129223.0,
+      "convergence_usd": -294212.0,
+      "net_usd": -235987.0
+    }
+  },
+  "corr": {
+    "mean_reversion": 0.017,
+    "trend_carry": -0.127
+  }
+}
