@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from numpy.exceptions import ComplexWarning
+from scipy.stats import chi2
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tools.sm_exceptions import ConvergenceWarning, InterpolationWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -64,6 +65,43 @@ def ar1(x: np.ndarray | pd.Series) -> tuple[float, float]:
     b = float(sm.OLS(v[1:], sm.add_constant(v[:-1])).fit().params[1])
     hl = float(np.log(2) / -np.log(b)) if 0 < b < 1 else np.inf
     return b, hl
+
+
+def ar1_residuals(x: np.ndarray | pd.Series) -> np.ndarray:
+    """Innovations e_t of the AR(1) in `ar1`."""
+    v = np.asarray(x, dtype=float)
+    return sm.OLS(v[1:], sm.add_constant(v[:-1])).fit().resid
+
+
+def ljung_box(x: np.ndarray | pd.Series, lags=(10, 20), model_df: int = 0) -> dict:
+    """Ljung-Box p-values (`lb_p_<m>`, H0: no autocorrelation up to lag m) and a version robust to
+    volatility clustering (`robust_p_<m>`).
+
+    Plain Ljung-Box assumes constant variance and over-rejects under GARCH. The robust statistic scales
+    each squared autocorrelation by its own variance: Q* = n * sum(rho_k^2 / tau_k), with
+    tau_k = mean(e_t^2 * e_{t-k}^2) / var(e)^2. Both use chi2(m - model_df).
+    """
+    v = np.asarray(x, dtype=float)
+    lb = acorr_ljungbox(v, lags=list(lags), model_df=model_df)
+    e = v - v.mean()
+    n, g0 = len(e), float(np.mean(e ** 2))
+    out = {}
+    for i, m in enumerate(lags):
+        k = np.arange(1, m + 1)
+        rho = np.array([np.sum(e[j:] * e[:-j]) / (n * g0) for j in k])
+        tau = np.array([np.sum(e[j:] ** 2 * e[:-j] ** 2) / (n * g0 ** 2) for j in k])
+        out[f"lb_p_{m}"] = float(lb["lb_pvalue"].iloc[i])
+        out[f"robust_p_{m}"] = float(chi2.sf(n * np.sum(rho ** 2 / tau), m - model_df))
+    return out
+
+
+def fitted_residual(legs_win: pd.DataFrame, p: dict, divisor: float = 1.0) -> pd.Series:
+    """The window's residual under a stored fit: the weighted spread minus its month effect and, for
+    pairs, its trend. `p` holds `w_<leg>`, `seas_<month>` and optionally `trend_c`."""
+    legs = [c[2:] for c in p if c.startswith("w_") and np.isfinite(p[c])]
+    s = sum(p[f"w_{k}"] * legs_win[f"{k}_bbl"] for k in legs) / divisor
+    seas = legs_win.index.month.map(lambda m: p[f"seas_{m}"]).to_numpy(dtype=float)
+    return s - p.get("trend_c", 0.0) * np.arange(len(legs_win)) - seas
 
 
 def rolling_stationarity(x: pd.Series, window: int = 756) -> pd.DataFrame:

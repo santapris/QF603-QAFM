@@ -127,3 +127,66 @@ def test_diebold_mariano_sign():
     e_bad = pd.Series(rng.normal(0, 2, 500))
     r = dg.diebold_mariano(e_good, e_bad)
     assert r["mean_d"] < 0 and r["p"] < 0.01
+
+
+# ------------------------------------------------------------------ residual checks
+def _garch_noise(n, seed, a=0.10, b=0.85):
+    rng = np.random.default_rng(seed)
+    e, s2 = np.empty(n), 1.0
+    for t in range(n):
+        e[t] = np.sqrt(s2) * rng.standard_normal()
+        s2 = (1 - a - b) + a * e[t] ** 2 + b * s2
+    return e
+
+
+def test_ar1_residuals_match_the_ar1_fit():
+    x = _ar1(800, 0.9, seed=3)
+    e = dg.ar1_residuals(x)
+    b, _ = dg.ar1(x)
+    assert len(e) == len(x) - 1 and abs(e.mean()) < 1e-9
+    assert np.corrcoef(e, x[:-1])[0, 1] == pytest.approx(0.0, abs=1e-9)   # OLS: orthogonal to the regressor
+    assert np.allclose(np.diff(e) - np.diff(x[1:]) + b * np.diff(x[:-1]), 0.0)
+
+
+def test_ljung_box_passes_true_ar1_and_flags_missed_dynamics():
+    good = dg.ljung_box(dg.ar1_residuals(_ar1(1500, 0.9, seed=4)), model_df=1)
+    assert good["lb_p_10"] > 0.05 and good["robust_p_10"] > 0.05
+    rng = np.random.default_rng(5)
+    x = np.zeros(1500)                                                     # AR(2): an AR(1) leaves dynamics behind
+    for t in range(2, 1500):
+        x[t] = 1.3 * x[t - 1] - 0.4 * x[t - 2] + rng.normal()
+    bad = dg.ljung_box(dg.ar1_residuals(x), model_df=1)
+    assert bad["lb_p_10"] < 0.01 and bad["robust_p_10"] < 0.01
+
+
+def test_ljung_box_model_df_only_changes_degrees_of_freedom():
+    from scipy.stats import chi2
+    e = np.random.default_rng(6).normal(size=500)
+    p0, p1 = dg.ljung_box(e, model_df=0), dg.ljung_box(e, model_df=1)
+    q = chi2.isf(p0["lb_p_10"], 10)
+    assert p1["lb_p_10"] == pytest.approx(chi2.sf(q, 9))
+    assert p1["lb_p_10"] < p0["lb_p_10"]
+
+
+def test_robust_q_agrees_on_iid_and_corrects_garch_over_rejection():
+    e = np.random.default_rng(7).normal(size=5000)
+    p = dg.ljung_box(e)
+    assert p["robust_p_20"] == pytest.approx(p["lb_p_20"], abs=0.05)       # same test when variance is constant
+    tests = [dg.ljung_box(_garch_noise(756, s, a=0.2, b=0.75), lags=(10,)) for s in range(200)]
+    plain = np.mean([t["lb_p_10"] < 0.05 for t in tests])
+    robust = np.mean([t["robust_p_10"] < 0.05 for t in tests])
+    assert plain > 0.10 and robust < plain and robust < 0.10
+
+
+def test_fitted_residual_reproduces_the_stored_fit():
+    from oilrv.model import fit_window
+    rng = np.random.default_rng(8)
+    idx = pd.bdate_range("2015-01-01", periods=400)
+    cl = 60 + np.cumsum(rng.normal(0, 1, 400))
+    legs = pd.DataFrame({"cl_bbl": cl, "rb_bbl": cl + 5 + rng.normal(0, 1, 400), "ho_bbl": cl + 9 + rng.normal(0, 1, 400)}, index=idx)
+    p = fit_window(legs, "crack321")
+    r = dg.fitted_residual(legs, p, 3)
+    assert dg.ar1(r)[0] == pytest.approx(p["ar1_b"], abs=1e-12)
+    assert r.std(ddof=1) == pytest.approx(p["sd"], abs=1e-12)
+    # NaN weights from a shared fits table are ignored
+    assert dg.fitted_residual(legs, {**p, "w_brent": np.nan}, 3).equals(r)

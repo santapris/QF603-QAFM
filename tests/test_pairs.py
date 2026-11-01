@@ -258,3 +258,15 @@ def test_pair_legs_same_delivery_month_and_units():
     assert rolled.sum() >= 5
     ratio = (legs["rb_bbl_unadj"] / 42 - 2.0) * 100
     assert np.allclose(ratio, legs["cl_bbl_unadj"] - 50.0)           # both legs always on the same month
+
+
+def test_fitted_residual_reproduces_the_pair_fit():
+    from oilrv.diagnostics import ar1, fitted_residual
+    legs = pair_frame(trend=0.05, seed=16)
+    pos = 600
+    p = fit(legs, pos)
+    r = fitted_residual(legs.iloc[pos - W:pos], p)
+    assert ar1(r)[1] == pytest.approx(p["half_life_raw"], rel=1e-10)
+    assert r.std(ddof=1) == pytest.approx(p["sd"], rel=1e-10)
+    t = np.arange(W)
+    assert abs(np.polyfit(t, r, 1)[0]) < 0.1 * abs(p["trend_c"])   # the fitted trend is gone

@@ -117,6 +117,31 @@ Dollar figures in this section are at each pair's full R = \$6,000 and are summe
 - **Correlation.** Daily book P&L correlates 0.02 with the registered mean-reversion stream and −0.13 with the trend and carry book. Low correlation does not help a book with a negative return.
 - **Current state, 26 Oct 2026.** All six pairs are flat. Brent/CL has z = 3.31 with its gate open, but it was stopped out on 23 Oct, and z has not come back inside 2, so it is not re-armed. The other five gates are shut.
 
+## 4.1 Residual checks (added after the results; not registered, not a gate)
+
+`scripts/run_residual_checks.py` runs Ljung–Box at lags 10 and 20 on every monthly fit. Each residual is rebuilt from a stored fit and must reproduce that fit's AR(1). Plain Ljung–Box assumes constant variance, which these series do not have, so a version robust to volatility clustering is shown beside it. The table gives the share of windows rejecting at 5%, at lag 10, with lag 20 in brackets.
+
+| AR(1) innovations, futures | Plain | Robust |
+|---|---|---|
+| 3-2-1 crack | 20% (15%) | 2% (0%) |
+| Brent−WTI | 64% (69%) | 6% (6%) |
+| HO−RB | 33% (29%) | 3% (9%) |
+| Brent/CL | 69% (75%) | 7% (7%) |
+| HO/RB | 35% (35%) | 3% (12%) |
+| RB/CL | 37% (41%) | 1% (0%) |
+| HO/CL | 27% (32%) | 1% (2%) |
+| RB/Brent | 23% (21%) | 0% (0%) |
+| HO/Brent | 25% (38%) | 4% (2%) |
+
+**Benchmark** (`output/tables/04_ljung_box_size_power.csv`), simulated with volatility clustering like these fits: a true AR(1) is falsely rejected 32–50% of the time by the plain test and 4–7% by the robust one. For missed dynamics, the robust test catches φ₂ = −0.20 in 54–89% of samples, φ₂ = −0.10 in 15–30% and φ₂ = −0.05 in about 10%.
+
+- **The plain rejections are mostly volatility clustering.** Most are within or below the plain test's false-positive range. Only Brent−WTI and Brent/CL sit above it.
+- **AR(1) looks adequate at short lags.** Robust rates are close to what a correct AR(1) gives, apart from HO/RB at lag 20 (12%). Brent−WTI and Brent/CL stand out in 2007–13 (26–28%), the period of the Cushing break. Windows overlap, so these shares are not independent.
+- **This does not validate mean reversion.** A random walk also has white-noise AR(1) innovations, with b near 1. The check says the AR(1) form is not obviously wrong, not that the series reverts. It leaves the conclusion above unchanged.
+- **The test is weak against small misses,** so modest extra dynamics cannot be ruled out.
+- **The pair residual itself rejects in every window, on both tests.** That is what any persistent series does, whether it reverts or not, so it carries no information about reversion.
+- **Spot differs.** On the spot proxy, Brent−WTI rejects in 91–92% of windows even on the robust test, and the crack in 12–14%. This was not investigated further; spot is not the binding data.
+
 # 5. Limits of this test
 
 - **Not fully independent.** The registered results and a rough check on 1:1 Brent–WTI and HO−RB were known before registration. Brent/CL and HO/RB are not fresh tests.
