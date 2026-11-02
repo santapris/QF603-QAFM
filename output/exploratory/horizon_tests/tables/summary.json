@@ -1,7 +1,7 @@
 {
   "status": "DESCRIPTIVE; changes no registered verdict",
   "source": "futures",
-  "reps": 600,
+  "reps": 400,
   "series": [
     "brent",
     "brent_wti",
@@ -16,6 +16,10 @@
     10,
     21,
     63,
-    126
+    126,
+    189,
+    252,
+    378,
+    504
   ]
 }

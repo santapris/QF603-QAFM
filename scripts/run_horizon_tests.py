@@ -31,8 +31,10 @@ from oilrv.config import ROOT
 
 OUT = ROOT / "output/exploratory/horizon_tests"
 TAB, FIG = OUT / "tables", OUT / "figures"
-HORIZONS = (5, 10, 21, 63, 126)
-NULL_HORIZONS = (21, 63, 126)
+HORIZONS = (5, 10, 21, 63, 126, 189, 252, 378, 504)
+NULL_HORIZONS = (21, 63, 126, 189, 252, 378, 504)
+# second trailing window: is the result an artefact of the 252-day anchor?
+ANCHOR_WINDOWS = (252, 504)
 VR_Q = (21, 63, 126, 252)
 TRADE_START = "2010-02-01"
 SUBPERIODS = [("2007-2013", "2007-01-01", "2013-12-31"),
@@ -95,18 +97,21 @@ def part_power(reps_ar: int) -> None:
 
 def part_reversion(S: dict, reps: int) -> pd.DataFrame:
     print("\n[2] Horizon-matched mean reversion, with a random-walk null")
+    print("    Horizons to 504 days and a 504-day anchor added 2026-11-02:")
+    print("    does reversion appear if the horizon is longer than 126 days?")
     rows = []
     for nm in ("crack321", "brent_wti", "ho_rb"):
         lv = S[nm]["market"]
         sd = S[nm]["badj"].diff().std()
-        for k in HORIZONS:
-            r = H.reversion_regression(lv, k)
-            if k in NULL_HORIZONS:
-                null = H.reversion_rw_null(len(lv), sd, k, reps=reps)
-                r["crit5_sim"] = float(np.percentile(null, 5))
-                r["p_sim"] = float((null <= r["t"]).mean())
-            rows.append({"spread": nm, **r})
-    df = pd.DataFrame(rows).set_index(["spread", "k"])
+        for win in ANCHOR_WINDOWS:
+            for k in HORIZONS:
+                r = H.reversion_regression(lv, k, window=win)
+                if k in NULL_HORIZONS:
+                    null = H.reversion_rw_null(len(lv), sd, k, window=win, reps=reps)
+                    r["crit5_sim"] = float(np.percentile(null, 5))
+                    r["p_sim"] = float((null <= r["t"]).mean())
+                rows.append({"spread": nm, "anchor_window": win, **r})
+    df = pd.DataFrame(rows).set_index(["spread", "anchor_window", "k"])
     print(df.round(4).to_string())
     save(df, "reversion_by_horizon.csv")
     return df
@@ -195,39 +200,43 @@ def figure(rev: pd.DataFrame) -> None:
     import matplotlib.pyplot as plt
 
     FIG.mkdir(parents=True, exist_ok=True)
-    names = {"crack321": "3-2-1 crack", "brent_wti": "Brent − WTI", "ho_rb": "HO − RB"}
+    names = {"crack321": "3-2-1 crack", "brent_wti": "Brent \u2212 WTI", "ho_rb": "HO \u2212 RB"}
     col = {"crack321": "#2563eb", "brent_wti": "#dc2626", "ho_rb": "#059669"}
     ks = list(NULL_HORIZONS)
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 4.9), sharey=True)
+    r = rev.xs(252, level="anchor_window")
+    fig, axes = plt.subplots(1, 3, figsize=(14.5, 5.1), sharey=True)
     for ax, nm in zip(axes, names):
-        vals = [rev.loc[(nm, k), "share_of_1sd"] for k in ks]
-        ps = [rev.loc[(nm, k), "p_sim"] for k in ks]
-        ax.bar(range(len(ks)), vals, color=col[nm], alpha=.9, width=.62)
+        vals = [r.loc[(nm, k), "share_of_1sd"] for k in ks]
+        ps = [r.loc[(nm, k), "p_sim"] for k in ks]
+        ax.bar(range(len(ks)), vals,
+               color=[col[nm] if p < .05 else "#d1d5db" for p in ps], width=.66)
         ax.axhline(0, color="#111", lw=1)
         ax.set_xticks(range(len(ks)))
-        ax.set_xticklabels([f"{k}d" for k in ks], fontsize=11)
+        ax.set_xticklabels([f"{k}d" for k in ks], fontsize=10)
         ax.set_title(names[nm], fontweight="bold", fontsize=13, pad=9)
+        ax.set_xlabel("holding horizon", fontsize=10)
         ax.spines[["top", "right"]].set_visible(False)
         ax.grid(axis="y", alpha=.25, lw=.7)
         ax.set_axisbelow(True)
         for i, (v, p) in enumerate(zip(vals, ps)):
             lab = "p<0.01" if p < .01 else f"p={p:.2f}"
             strong = p < .05
-            ax.text(i, v - .022, lab, ha="center", va="top", fontsize=10,
+            ax.text(i, v - .03, lab, ha="center", va="top", fontsize=9,
                     fontweight="bold" if strong else "normal",
-                    color="#111" if strong else "#777")
-    axes[0].set_ylabel("share of a 1σ deviation given back", fontsize=11)
-    lo = min(rev.loc[(n, k), "share_of_1sd"] for n in names for k in ks)
-    axes[0].set_ylim(min(-0.2, lo * 1.18), 0.05)
-    fig.suptitle("Horizon-matched mean reversion — the bet the strategy actually makes",
-                 fontsize=14, fontweight="bold", y=1.0)
-    fig.text(.5, .865, "Forward change regressed on today's deviation from a trailing 252-day "
-             "mean. More negative = stronger reversion.\np-values from a simulated random-walk "
-             "null, not the normal — this regression is biased negative in finite samples.",
-             ha="center", fontsize=10, color="#444")
-    fig.tight_layout(rect=[0, 0, 1, .80])
+                    color="#111" if strong else "#888")
+    axes[0].set_ylabel("share of a 1\u03c3 deviation given back", fontsize=11)
+    lo = min(r.loc[(n, k), "share_of_1sd"] for n in names for k in ks)
+    axes[0].set_ylim(min(-0.2, lo * 1.22), 0.12)
+    fig.suptitle("Mean reversion appears only at multi-month horizons, and only in HO \u2212 RB",
+                 fontsize=14.5, fontweight="bold", y=1.0)
+    fig.text(.5, .875, "Forward change regressed on today's deviation from a trailing 252-day mean "
+             "of the MARKET level. More negative = stronger reversion; coloured = p < 0.05.\n"
+             "p-values from a simulated random-walk null, not the normal \u2014 this regression is "
+             "biased negative in finite samples. Longer horizons have fewer independent windows.",
+             ha="center", fontsize=9.5, color="#444")
+    fig.tight_layout(rect=[0, 0, 1, .81])
     fig.savefig(FIG / "horizon_reversion.png", dpi=170, facecolor="white")
-    print(f"  wrote figures/horizon_reversion.png")
+    print("  wrote figures/horizon_reversion.png")
 
 
 def main(reps: int = 600, quick: bool = False) -> dict:
