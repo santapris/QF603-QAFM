@@ -81,9 +81,52 @@ And the cross-section agrees with the mechanism. If the premium compensates inve
 | ULSD (distillate) | Tightest. Heating and freight demand, thin stocks, the binding constraint in both 2022 and 2026 | **+0.53 (t = 2.18)** |
 | Brent (crude) | Seaborne, floating storage available | +0.39 |
 | WTI (crude) | Cushing tankage, historically ample | +0.38 |
-| RBOB (gasoline) | Most abundant and most seasonal; blending grades change twice a year | **−0.28** |
+| RBOB (gasoline) | Most abundant and most seasonal; blending grades change twice a year | **−0.28** (but +0.17 when stocks are tight — see §2.1) |
 
 That ordering was not fitted. It falls out of the data and matches what the mechanism predicts, which is the thing worth having before believing a backtest. Note also that ULSD carry is the *only* instrument in the entire project with a t-statistic above 2.
+
+## 2.1 The direct test: is it really inventories?
+
+`scripts/run_inventory_carry.py` tests the mechanism rather than the pattern, in three parts. Inventory features are stamped on the day they became known (weekly EIA, from the Thursday after the week ends), so there is no look-ahead.
+
+**A. Does the slope track inventories?** Regress M1 − M2 on the point-in-time 5-year deviation of the matching stock series. The theory of storage predicts a negative coefficient: scarce stocks, backwardation.
+
+| Instrument | Stock series | β | t (NW) | R² | Mean slope, low stocks | high stocks |
+|---|---|---|---|---|---|---|
+| ULSD | distillate | −0.0006 | **−5.20** | 0.15 | +$0.015 | −$0.005 |
+| Brent | crude ex-SPR | −0.038 | **−7.75** | 0.22 | +$0.80 | −$0.18 |
+| WTI | crude ex-SPR | −0.043 | **−7.99** | 0.24 | +$0.70 | −$0.58 |
+| RBOB | gasoline | −0.0023 | **−3.74** | 0.11 | +$0.023 | −$0.001 |
+
+All four negative, all significant, and the curve flips sign between the tight and ample terciles in every instrument. The mechanism is not in doubt.
+
+**B. Does the return concentrate when stocks are tight?** Daily carry P&L split by inventory tercile.
+
+![Carry Sharpe by inventory tercile.](../output/exploratory/horizon_tests/figures/inventory_carry.png)
+
+| Instrument | Low stocks | Mid | High stocks | Low − high |
+|---|---|---|---|---|
+| ULSD | +0.57 | +0.83 | +0.04 | **+0.54** |
+| Brent | +0.57 | +0.25 | +0.31 | +0.25 |
+| WTI | +0.39 | +0.81 | −0.21 | **+0.60** |
+| RBOB | +0.17 | −0.24 | −0.97 | **+1.14** |
+
+**Every instrument has a positive low-minus-high gap, and the ample-stock tercile is near zero or negative in three of four.** That is the prediction, and it holds across the cross-section.
+
+The RBOB row is the most interesting thing in this note. Gasoline carry looked like a failure at −0.28 full-sample, which is why the registered sleeve excludes it. Conditioned on inventories it is **positive when stocks are tight (+0.17) and sharply negative when they are ample (−0.97)** — the largest conditional spread of the four. Gasoline is not a counter-example to the thesis; it is the strongest case for it. It loses unconditionally because gasoline stocks are usually ample, so the signal is short a market that drifts up.
+
+**C. Is the inventory level a usable forward signal?** Regress the next 21 days of carry P&L on today's deviation, Newey–West.
+
+| Instrument | β | t (NW) | R² |
+|---|---|---|---|
+| ULSD | −0.071 | −1.87 | 0.009 |
+| RBOB | −0.192 | −1.60 | 0.012 |
+| WTI | −0.032 | −1.07 | 0.003 |
+| Brent | −0.023 | −0.79 | 0.002 |
+
+All four have the predicted sign, none is significant, and the R² values are tiny.
+
+**What to conclude.** Parts A and B say carry in this complex **is** a scarcity premium: the curve responds to inventories, and the return is earned in the tight states. Part C says the inventory *level* is nonetheless a weak forward predictor at a one-month horizon. The honest reading is that the tercile gap partly reflects regime persistence — inventory states last for months — rather than a tradable timing signal. So this supports the *thesis* about where the premium comes from, and does not yet support an inventory-conditioned trading rule. Those are different claims and the difference matters.
 
 # 3. The restated thesis
 
@@ -95,9 +138,9 @@ Three falsifiable predictions, with their current status:
 |---|---|---|
 | 1 | Carry outperforms spread reversion out of sample | Consistent so far (0.44 vs negative), but in-sample. **The 12-month paper trade is the real test** |
 | 2 | Carry ranks with storage tightness: distillate > crude > gasoline | **Confirmed** on data not used to form the prediction's ordering: 0.53 / 0.39 / 0.38 / −0.28 |
-| 3 | Carry returns concentrate when inventories are low relative to the 5-year band | **Not yet tested.** `inventory_dev_5y` is already built in `data/clean/`. This is the single most informative next run |
+| 3 | Carry returns concentrate when inventories are low relative to the 5-year band | **Tested and supported** — see §2.1. The mechanism check is emphatic; the forward-predictive version is weak |
 
-Prediction 3 is the one that would turn a statistical regularity into an economic claim. If carry pays when stocks are tight and not otherwise, the premium has a mechanism and a conditioning variable. If it pays uniformly regardless of inventory, it is just a trend signal with a different name, and the thesis is wrong.
+Prediction 3 is the one that turns a statistical regularity into an economic claim. If carry pays when stocks are tight and not otherwise, the premium has a mechanism and a conditioning variable. If it pays uniformly regardless of inventory, it is a trend signal with a different name and the thesis is wrong.
 
 ## 3.1 Should the thesis be broadened? Yes, with one discipline
 
@@ -148,6 +191,8 @@ Two principles worth holding to throughout:
 - ULSD carry's full-sample Sharpe is concentrated in 2020–26 (0.88, against 0.02 in 2014–19). The sub-period chart shows no carry instrument pays in every decade, so the *ranking* is firmer than the *timing*.
 - Nothing here corrects for multiple testing across the seven streams or the four instruments.
 - Adding ULSD to the carry sleeve on the strength of this note would be exactly the overfitting the pre-registration exists to prevent. It needs its own dated registration.
+- The §2.1 tercile split uses contemporaneous (point-in-time, but same-day) inventory states, and those states persist for months. The low-minus-high gap is therefore partly a statement about *which periods paid*, not purely about a conditioning variable. Part C is the version that controls for this, and it is weak. Do not read §2.1B as evidence for an inventory-timed rule.
+- Terciles and the pairing of each root with its own stock series were chosen from the mechanism, not fitted. But they are still choices, and no multiple-testing correction is applied across the four instruments.
 
 # Related
 
