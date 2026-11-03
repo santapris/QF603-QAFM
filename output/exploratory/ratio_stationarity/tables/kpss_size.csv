@@ -1,0 +1,7 @@
+series,form,phi,half_life_days,n,kpss_rejects_if_truly_stationary,adf_misses_if_truly_stationary
+crack321,difference_deseasonalised,0.9948596123448501,134.4964960065651,4987,0.85,0.045
+crack321,log_ratio_deseasonalised,0.9861204604328871,49.59283339687954,4987,0.515,0.0
+brent_wti,difference,0.9951703490123545,143.1722503856363,4987,0.865,0.055
+brent_wti,log_ratio,0.9860590519318896,49.37284808221828,4987,0.515,0.0
+ho_rb,difference_deseasonalised,0.9874184605282322,54.74509310501611,4987,0.56,0.0
+ho_rb,log_ratio_deseasonalised,0.9805771332540774,35.33946517443398,4987,0.425,0.0
