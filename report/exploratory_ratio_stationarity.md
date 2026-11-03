@@ -138,7 +138,7 @@ Full-sample half-life: 134 → 50, 143 → 49, 55 → 35 days. A three-year wind
 
 | Series | 21-day held slope (t) | 63-day held slope (t) | Share of market reversion that is roll, 21 / 63 days |
 |---|---|---|---|
-| 3-2-1 crack | −0.008 (−1.72) | −0.011 (−1.53) | 42% / 54% |
+| 3-2-1 crack | −0.008 (−1.72) | −0.011 (−1.52) | 42% / 54% |
 | Brent / WTI | −0.002 (−1.20) | −0.005 (−0.96) | 43% / 41% |
 | HO / RB | **−0.016 (−2.78)** | **−0.030 (−3.51)** | 28% / 22% |
 
@@ -192,7 +192,7 @@ The registered trend rule takes the sign of the 252-day back-adjusted dollar cha
 - Month-end tests have about 237 points and low power.
 - Zivot–Andrews allows one break only. Brent/WTI has at least two visible shifts.
 
-## Open decisions for Phase 2
+## What followed
 
-1. Whether ratio mean reversion goes forward as a new exploratory pre-registration. The evidence supports HO/RB first, and the crack and Brent/WTI are weaker.
-2. Whether the deck's Test 1 and A3 are rewritten around market-price log-ratios (my recommendation), keeping the back-adjusted result as the "P&L basis" row.
+- Ratio mean reversion was pre-registered for all three spreads on 2026-11-04 (`PREREGISTRATION_RATIO.md`, commit `bd725b7`) and run once: the book fails (net Sharpe 0.055, G1 and G5 fail). HO/RB, the best of the three, has Sharpe 0.38 (t = 1.55). See `report/exploratory_ratio_mr.md`.
+- The deck's Test 1 now has the back-adjusted result as the "P&L basis" row, then the market-price dollar gap and the log-ratio, with new slides on the professor's argument, KPSS, the roll, and the two horizons.

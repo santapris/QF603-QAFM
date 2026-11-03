@@ -1,0 +1,5 @@
+,G1_sharpe,G1_value,G2_round_trips,G2_value,G3_subperiods,G3_value,G4_grid,G4_value,G5_stress,G5_value,PASS
+book,False,0.05535888505331305,True,71,True,2,True,"{""entry_z=1.5"": 0.13186062936890497, ""entry_z=2.0"": 0.05535888505331305, ""entry_z=2.5"": 0.21920602100470718}",False,"{""ukraine"": -3803.259390779169, ""hormuz"": -132946.10799974838}",False
+crack321,False,0.2174388438712327,True,29,True,3,True,"{""entry_z=1.5"": 0.17105916467975496, ""entry_z=2.0"": 0.2174388438712327, ""entry_z=2.5"": 0.2135740003934789}",True,"{""ukraine"": -13296.884141752918, ""hormuz"": -34028.27624066696}",False
+brent_wti,False,-0.48619292698149197,False,15,False,1,False,"{""entry_z=1.5"": -0.2393378491994272, ""entry_z=2.0"": -0.48619292698149197, ""entry_z=2.5"": -0.1445257658510041}",False,"{""ukraine"": 0.0, ""hormuz"": -347858.6419066099}",False
+ho_rb,False,0.38009315925707404,True,27,True,3,True,"{""entry_z=1.5"": 0.3471912411088574, ""entry_z=2.0"": 0.38009315925707404, ""entry_z=2.5"": 0.29059514555841237}",True,"{""ukraine"": 1887.1059694154137, ""hormuz"": -16951.40585196828}",False

@@ -255,7 +255,9 @@ def step5(D: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
                      "corr_rolling_sd_dollar_change_vs_price": float(sd_d.corr(P)),
                      "corr_rolling_sd_log_ratio_return_vs_price": float(sd_r.corr(P)),
                      "corr_difference_level_vs_price": float(d["diff"].corr(P)),
-                     "corr_log_ratio_level_vs_price": float(d["lr"].corr(P))})
+                     "corr_log_ratio_level_vs_price": float(d["lr"].corr(P)),
+                     # the back-adjusted level minus the market level is the sum of all past roll gaps
+                     "adf_p_accumulated_roll_gap": dg.adf_p((d["adj_diff"] - d["diff"]).to_numpy())})
         df = pd.concat([d["diff"], P], axis=1, keys=["diff", "P"]).dropna()
         r = sm.OLS(df["diff"], sm.add_constant(df["P"])).fit(cov_type="HAC", cov_kwds={"maxlags": 20})
         u = df["diff"] - r.params["const"] - r.params["P"] * df["P"]

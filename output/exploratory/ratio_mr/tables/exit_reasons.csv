@@ -1,0 +1,6 @@
+exit_reason,crack321,brent_wti,ho_rb
+model_break,0,1,0
+open_at_end,0,0,1
+stop_loss,4,7,8
+take_profit,14,5,13
+time_stop,11,2,6

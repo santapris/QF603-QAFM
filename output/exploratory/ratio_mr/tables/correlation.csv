@@ -1,0 +1,5 @@
+,ratio_mr,dollar_mean_reversion,pairs,trend_carry
+ratio_mr,1.0,0.208,0.079,-0.179
+dollar_mean_reversion,0.208,1.0,0.017,-0.098
+pairs,0.079,0.017,1.0,-0.127
+trend_carry,-0.179,-0.098,-0.127,1.0

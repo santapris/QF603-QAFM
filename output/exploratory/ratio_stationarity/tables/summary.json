@@ -486,7 +486,8 @@
    "corr_rolling_sd_dollar_change_vs_price": 0.3493,
    "corr_rolling_sd_log_ratio_return_vs_price": -0.3121,
    "corr_difference_level_vs_price": 0.3523,
-   "corr_log_ratio_level_vs_price": -0.2643
+   "corr_log_ratio_level_vs_price": -0.2643,
+   "adf_p_accumulated_roll_gap": 0.966
   },
   {
    "series": "brent_wti",
@@ -494,7 +495,8 @@
    "corr_rolling_sd_dollar_change_vs_price": 0.423,
    "corr_rolling_sd_log_ratio_return_vs_price": -0.2007,
    "corr_difference_level_vs_price": 0.3217,
-   "corr_log_ratio_level_vs_price": 0.0578
+   "corr_log_ratio_level_vs_price": 0.0578,
+   "adf_p_accumulated_roll_gap": 0.7145
   },
   {
    "series": "ho_rb",
@@ -502,7 +504,8 @@
    "corr_rolling_sd_dollar_change_vs_price": 0.458,
    "corr_rolling_sd_log_ratio_return_vs_price": -0.1932,
    "corr_difference_level_vs_price": 0.2207,
-   "corr_log_ratio_level_vs_price": 0.017
+   "corr_log_ratio_level_vs_price": 0.017,
+   "adf_p_accumulated_roll_gap": 0.1419
   }
  ],
  "diff_on_price": [

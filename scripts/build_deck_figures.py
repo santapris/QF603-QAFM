@@ -182,6 +182,85 @@ def fig_annual():
     save(fig, "09_annual_pnl.png")
 
 
+RS = T / "exploratory" / "ratio_stationarity" / "tables"
+ERA_BOUNDS = [("2007-01-01", "2010-12-31"), ("2011-01-01", "2013-12-31"), ("2014-01-01", "2019-12-31"), ("2020-01-01", None)]
+
+
+def fig_diff_vs_logratio():
+    """Market dollar gap against market log-ratio, with era means of the log-ratio (k moves between eras)."""
+    f = fut()
+    cl, rb, ho = f["crack321__cl_bbl_unadj"], f["crack321__rb_bbl_unadj"], f["crack321__ho_bbl_unadj"]
+    s = {"crack321": (f["crack321_unadj"], np.log((2 * rb + ho) / (3 * cl))),
+         "brent_wti": (f["brent_wti_unadj"], np.log(f["brent_wti__brent_bbl_unadj"] / f["brent_wti__cl_bbl_unadj"])),
+         "ho_rb": (f["ho_rb_unadj"], np.log(f["ho_rb__ho_bbl_unadj"] / f["ho_rb__rb_bbl_unadj"]))}
+    fig, ax = plt.subplots(2, 3, figsize=(11, 5), sharex=True)
+    for j, n in enumerate(LAB):
+        diff, lr = s[n]
+        ax[0, j].plot(diff.index, diff, color="#999", lw=.8)
+        ax[0, j].set_title(f"{LAB[n]}: dollar gap")
+        ax[1, j].plot(lr.index, lr, color=COL[n], lw=.8)
+        for a, b in ERA_BOUNDS:
+            x = lr.loc[a:b]
+            ax[1, j].hlines(x.mean(), x.index[0], x.index[-1], color="#000", lw=1.5)
+        ax[1, j].set_title(f"{LAB[n]}: log-ratio, era means")
+    ax[0, 0].set_ylabel("$/bbl")
+    ax[1, 0].set_ylabel("log(A / B)")
+    save(fig, "10_difference_vs_log_ratio.png")
+
+
+def fig_kpss_false_alarms():
+    k = pd.read_csv(RS / "kpss_size.csv")
+    k["lab"] = k.series.map(lambda x: {"crack321": "Crack", "brent_wti": "Brent/WTI", "ho_rb": "HO/RB"}[x]) + chr(10) + np.where(
+        k.form.str.startswith("log"), "log-ratio", "dollar gap")
+    fig, ax = plt.subplots(figsize=(9, 3.6))
+    ax.bar(range(len(k)), k.kpss_rejects_if_truly_stationary * 100,
+           color=np.where(k.form.str.startswith("log"), "#2a78d6", "#b5b5b5"), width=.7)
+    ax.axhline(5, color="#444", ls="--", lw=.8)
+    ax.text(len(k) - .5, 7, "5% (what a good test gives)", fontsize=8, ha="right")
+    ax.set_xticks(range(len(k)))
+    ax.set_xticklabels(k.lab, fontsize=8)
+    ax.set_ylabel("% of stationary series rejected")
+    ax.set_title("KPSS on series we know are stationary, at each spread's own persistence")
+    save(fig, "11_kpss_false_alarms.png")
+
+
+def fig_variance_ratio():
+    v = pd.read_csv(RS / "variance_ratios.csv")
+    v = v[v.freq == "daily"]
+    fig, ax = plt.subplots(1, 2, figsize=(11, 3.8), sharey=True)
+    for a, group, title, col in [(ax[0], {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / RB"},
+                                    "Spreads: held log-ratio return", None),
+                                 (ax[1], {"cl": "WTI", "brent": "Brent", "rb": "RBOB", "ho": "ULSD"},
+                                  "Outrights: held log return", None)]:
+        for i, (k, lab) in enumerate(group.items()):
+            s = v[(v.series == k) & v.basis.isin(["held_log_ratio", "held_log"])].sort_values("q")
+            a.plot(s.q, s.vr, marker="o", ms=3, lw=1.3, color=["#1f5fa8", "#c4531a", "#2a8a6e", "#e38b2c"][i], label=lab)
+        a.axhline(1, color="#444", lw=.8)
+        a.set_xscale("log")
+        a.set_xticks([5, 21, 63, 126, 252])
+        a.set_xticklabels(["5", "21", "63", "126", "252"])
+        a.set_xlabel("horizon (trading days)")
+        a.set_title(title)
+        a.legend(fontsize=8)
+    ax[0].set_ylabel("variance ratio (1 = random walk)")
+    save(fig, "12_variance_ratio_profile.png")
+
+
+def fig_ratio_mr_pnl():
+    """Cumulative net P&L of the pre-registered log-ratio mean reversion: the three spreads and the book."""
+    b = pd.read_csv(T / "exploratory" / "ratio_mr" / "tables" / "daily_books.csv", index_col=0, parse_dates=True)
+    fig, ax = plt.subplots(figsize=(9, 3.8))
+    for n in LAB:
+        ax.plot(b.index, b[n].cumsum() / 1e3, color=COL[n], lw=1.0, label=LAB[n] + " (full risk)")
+    ax.plot(b.index, b["book"].cumsum() / 1e3, color=COL["combined"], lw=1.8, label="Three-spread book")
+    ax.axhline(0, color="#999", lw=.6)
+    shade(ax, legend=True)
+    ax.set_ylabel("cumulative net P&L, $k")
+    ax.set_title("Log-ratio mean reversion, futures (pre-registered 4 Nov 2026)")
+    ax.legend(ncol=4, loc="upper center", bbox_to_anchor=(.5, -.1), fontsize=8)
+    save(fig, "13_ratio_mean_reversion_pnl.png")
+
+
 if __name__ == "__main__":
     fig_adjustment()
     fig_spreads()
@@ -192,3 +271,7 @@ if __name__ == "__main__":
     fig_books()
     fig_annual()
     fig_acf("monthly")
+    fig_diff_vs_logratio()
+    fig_kpss_false_alarms()
+    fig_variance_ratio()
+    fig_ratio_mr_pnl()

@@ -186,6 +186,135 @@ ob = pd.read_csv(HS / "oil_beta.csv").set_index("book")
 for b, lab in [("trend", "Trend"), ("carry", "Carry"), ("combined", "50/50 book")]:
     add(f"beta {b}", f"| {lab} | {ob.loc[b, 'raw_sharpe']:.2f} | {ob.loc[b, 'alpha_t']:.2f} | {ob.loc[b, 'sharpe_from_alpha']:.2f} |")
 
+# =============================================================================== ratio work (added 2026-11-04)
+RS = O / "exploratory" / "ratio_stationarity" / "tables"
+RM = O / "exploratory" / "ratio_mr" / "tables"
+pct = lambda x: f"{int(float(x) * 100 + 0.5 + 1e-9)}%"      # round half up, as the deck writes percentages
+NAMES = {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / RB"}
+
+sd_ = pd.read_csv(RS / "scale_dependence.csv").set_index("series")
+dp_ = pd.read_csv(RS / "diff_on_price.csv").set_index("series")
+dol, lr_ = sd_.corr_rolling_sd_dollar_change_vs_price, sd_.corr_rolling_sd_log_ratio_return_vs_price.abs()
+add("differences: dollar vol corr", f"(correlation +{dol.min():.2f} to +{dol.max():.2f})")
+add("differences: log vol corr", f"(−{lr_.min():.2f} to −{lr_.max():.2f})")
+add("differences: intercepts", f"intercepts −${abs(dp_.loc['brent_wti', 'a_in_diff_eq_a_plus_cP']):.2f} and −${abs(dp_.loc['ho_rb', 'a_in_diff_eq_a_plus_cP']):.2f}")
+assert abs(dp_.loc["brent_wti", "t_a_hac"]) < 2 and abs(dp_.loc["ho_rb", "t_a_hac"]) < 2          # "not different from zero"
+assert 7.5 <= dp_.loc["crack321", "a_in_diff_eq_a_plus_cP"] < 8.5 and round(100 * dp_.loc["crack321", "c_in_diff_eq_a_plus_cP"]) == 18
+add("differences: crack fixed", "about **$8 fixed**")
+add("differences: crack proportional", "about 18% of the crude price")
+add("roll gap ADF", f"p = {sd_.loc['crack321', 'adf_p_accumulated_roll_gap']:.2f} for the crack")
+
+ur_ = pd.read_csv(RS / "unit_roots.csv")
+ur_ = ur_[(ur_.freq == "daily") & (ur_.period == "full") & (ur_.regression == "c") & (ur_.d == 0)].set_index(["series", "form"])
+ks_ = pd.read_csv(RS / "kpss_size.csv").set_index(["series", "form"])
+za_ = pd.read_csv(RS / "zivot_andrews.csv").set_index(["series", "form"])
+back = {s: u[(u.series == s) & (u.d == 0)].iloc[0] for s in NAMES}
+
+
+def pz(x: float) -> str:
+    return f"{x:.4f}" if x < 0.001 else (f"{x:.3f}" if x < 0.01 else f"{x:.2f}")
+
+
+for s, lab in NAMES.items():
+    seas = "_deseasonalised" if s != "brent_wti" else ""
+    hd, hl_ = ks_.loc[(s, "difference" + seas), "half_life_days"], ks_.loc[(s, "log_ratio" + seas), "half_life_days"]
+    d_, l_ = ur_.loc[(s, "difference")], ur_.loc[(s, "log_ratio")]
+    add(f"test 1b row {s}", f"| {lab} | {back[s].adf_p:.3f} | {d_.adf_p:.3f} / {d_.pp_p:.3f} | **{l_.adf_p:.3f} / {l_.pp_p:.3f}** | "
+                           f"{hd:.0f} → {hl_:.0f} | {pz(za_.loc[(s, 'difference'), 'za_p'])} → {pz(za_.loc[(s, 'log_ratio'), 'za_p'])} |")
+    assert l_.kpss_p <= 0.0105 and d_.kpss_p <= 0.016                                         # "KPSS rejects everywhere"
+add("test 1b: strict rule", "KPSS rejects everywhere")
+add("kpss false alarms log", f"KPSS rejects {pct(ks_.loc[('crack321', 'log_ratio_deseasonalised'), 'kpss_rejects_if_truly_stationary'])}, "
+                             f"{pct(ks_.loc[('brent_wti', 'log_ratio'), 'kpss_rejects_if_truly_stationary'])} and "
+                             f"{pct(ks_.loc[('ho_rb', 'log_ratio_deseasonalised'), 'kpss_rejects_if_truly_stationary'])} of the log-ratios")
+add("kpss false alarms dollar", f"and {pct(ks_.loc[('crack321', 'difference_deseasonalised'), 'kpss_rejects_if_truly_stationary'])}, "
+                                f"{pct(ks_.loc[('brent_wti', 'difference'), 'kpss_rejects_if_truly_stationary'])} and "
+                                f"{pct(ks_.loc[('ho_rb', 'difference_deseasonalised'), 'kpss_rejects_if_truly_stationary'])} of the dollar gaps")
+lh = ks_[ks_.index.get_level_values(1).str.startswith("log")].half_life_days
+assert round(lh.min()) == 35 and round(lh.max()) == 50
+add("half-life range", "half-life 35–50 days")
+co_ = pd.read_csv(RS / "cointegration_summary.csv").set_index(["pair", "form"])
+add("log slopes", f"The log slope is {co_.loc[('brent_wti', 'logs'), 'beta_full']:.3f} for Brent on WTI and {co_.loc[('ho_rb', 'logs'), 'beta_full']:.3f} for HO on RB")
+add("dollar slopes", f"(slopes {co_.loc[('brent_wti', 'levels'), 'beta_full']:.2f} and {co_.loc[('ho_rb', 'levels'), 'beta_full']:.2f})")
+add("log EG shares", f"a rope is found in {pct(co_.loc[('brent_wti', 'logs'), 'share_eg_p_lt_05'])} of Brent/WTI windows ({pct(co_.loc[('brent_wti', 'levels'), 'share_eg_p_lt_05'])} in dollars) "
+                     f"and {pct(co_.loc[('ho_rb', 'logs'), 'share_eg_p_lt_05'])} of HO/RB windows ({pct(co_.loc[('ho_rb', 'levels'), 'share_eg_p_lt_05'])} in dollars)")
+ek_ = pd.read_csv(RS / "eras.csv")
+for era in ["2007–10", "2011–13", "2014–19", "2020–26"]:
+    k_ = ek_[ek_.era == era.replace("–", "-")].set_index("series").implied_k
+    add(f"implied k {era}", f"| {era} | {k_['crack321']:.2f} | {k_['brent_wti']:.2f} | {k_['ho_rb']:.2f} |")
+ac_ = pd.read_csv(RS / "acf_log_ratio_changes.csv")
+assert int(ac_[ac_.form == "held_log_ratio_return"].bh_reject.sum()) == 0
+add("log-ratio acf", "no lag survives the correction")
+ch_ = pd.read_csv(RS / "changes_summary.csv")
+ch_ = ch_[ch_.form == "held_log_ratio_return"].set_index("series")
+add("log-ratio BIC", f"BIC picks AR({ch_.loc['crack321', 'bic_order']}), AR({ch_.loc['brent_wti', 'bic_order']}) and AR({ch_.loc['ho_rb', 'bic_order']}) "
+                     f"(R² of the AIC model {100 * ch_.loc['crack321', 'r2_aic']:.1f}%, {100 * ch_.loc['brent_wti', 'r2_aic']:.1f}%, {100 * ch_.loc['ho_rb', 'r2_aic']:.1f}%)")
+
+rj_ = pd.read_csv(RS / "roll_jumps.csv").set_index("series")
+add("roll-day moves", f"(crack {rj_.loc['crack321', 'median_abs_move_roll_day']:.3f} against {rj_.loc['crack321', 'median_abs_move_other_day']:.3f}, "
+                      f"Brent/WTI {rj_.loc['brent_wti', 'median_abs_move_roll_day']:.3f} against {rj_.loc['brent_wti', 'median_abs_move_other_day']:.3f}, "
+                      f"HO/RB {rj_.loc['ho_rb', 'median_abs_move_roll_day']:.3f} against {rj_.loc['ho_rb', 'median_abs_move_other_day']:.3f})")
+add("roll jump sums", f"add up to {m(rj_.loc['crack321', 'sum_roll_jumps'])}, {m(rj_.loc['brent_wti', 'sum_roll_jumps'])} and {sg(rj_.loc['ho_rb', 'sum_roll_jumps'])}, "
+                      f"against ranges of {rj_.loc['crack321', 'range_of_market_log_ratio']:.2f}, {rj_.loc['brent_wti', 'range_of_market_log_ratio']:.2f} and {rj_.loc['ho_rb', 'range_of_market_log_ratio']:.2f}")
+add("held sums", f"({sg(rj_.loc['crack321', 'sum_held_returns'])}, {sg(rj_.loc['brent_wti', 'sum_held_returns'])}, {sg(rj_.loc['ho_rb', 'sum_held_returns'])})")
+tr_ = pd.read_csv(RS / "tradeable_reversion.csv")
+tr_ = tr_[tr_.period == "full"].set_index(["series", "horizon"])
+for s, lab in [("ho_rb", "HO / RB"), ("crack321", "3-2-1 crack"), ("brent_wti", "Brent / WTI")]:
+    a21, a63 = tr_.loc[(s, 21)], tr_.loc[(s, 63)]
+    bold = "**" if s == "ho_rb" else ""
+    add(f"holder row {s}", f"| {lab} | {bold}{m(a21.held_slope, 3)} ({m(a21.held_t)}){bold} | {bold}{m(a63.held_slope, 3)} ({m(a63.held_t)}){bold} | "
+                           f"{pct(a21.roll_share_of_market_reversion)} / {pct(a63.roll_share_of_market_reversion)} |")
+
+vr_ = pd.read_csv(RS / "variance_ratios.csv")
+v252 = vr_[(vr_.basis == "held_log_ratio") & (vr_.freq == "daily") & (vr_.q == 252)].set_index("series").vr
+add("vr one year", f"**{pct(v252['crack321'])}, {pct(v252['brent_wti'])} and {pct(v252['ho_rb'])}**")
+vo = vr_[(vr_.basis == "held_log") & (vr_.freq == "daily") & (vr_.q == 252)].set_index("series").vr
+add("vr outrights", f"Brent {vo['brent']:.2f} and ULSD {vo['ho']:.2f} at one year")
+add("vr outrights A4", f"Brent {vo['brent']:.2f}, ULSD {vo['ho']:.2f}, WTI {vo['cl']:.2f} and RBOB {vo['rb']:.2f}")
+pr_ = vr_[vr_.basis == "held_log_ratio"].p_robust
+add("vr p range", f"(robust p from {pr_.min():.2f} to {pr_.max():.2f})")
+sa_ = pd.read_csv(RS / "trend_sign_agreement.csv")
+add("trend sign", f"on only {100 * sa_.share_disagree.min():.0f}–{100 * sa_.share_disagree.max():.0f}% of days")
+me_ = pd.read_csv(RS / "unit_roots.csv")
+me_ = me_[(me_.freq == "month_end") & (me_.period == "full") & (me_.regression == "c") & (me_.d == 0)].set_index(["series", "form"])
+add("A3 month-end log", f"ADF p is {me_.loc[('crack321', 'log_ratio'), 'adf_p']:.3f} for the crack, {me_.loc[('brent_wti', 'log_ratio'), 'adf_p']:.3f} for Brent/WTI "
+                        f"and {me_.loc[('ho_rb', 'log_ratio'), 'adf_p']:.3f} for HO/RB ({me_.loc[('ho_rb', 'log_ratio_deseasonalised'), 'adf_p']:.3f} once")
+assert me_.loc[("brent_wti", "log_ratio"), "kpss_p"] >= 0.10
+
+# --- ratio mean reversion (pre-registered 2026-11-04)
+rmj = json.loads((RM / "summary.json").read_text())
+V, SP, CO = rmj["verdicts"], rmj["spreads"], rmj["comparisons"]
+ok = lambda b: "✓" if b else "✗"
+
+
+def g5(v: dict, y: str) -> str:
+    return f"✗ ({m(v['G5_value'][y] / 1e3, 0).replace('−', '−$')}k in {'2026' if y == 'hormuz' else '2022'})"
+
+
+for s, lab in NAMES.items():
+    v, sp = V[s], SP[s]
+    g1 = f"{m(v['G1_value'])} {ok(v['G1_sharpe'])}" + (f" (t = {sp['sharpe_t']:.2f})" if s == "ho_rb" else "")
+    g5s = ok(v["G5_stress"]) if v["G5_stress"] else g5(v, "hormuz")
+    add(f"ratio MR row {s}", f"| {lab} | {g1} | {v['G2_value']} {ok(v['G2_round_trips'])} | {v['G3_value']} {ok(v['G3_subperiods'])} | {ok(v['G4_grid'])} | {g5s} |")
+vb = V["book"]
+add("ratio MR book", f"| **Three-spread book** | **{vb['G1_value']:.3f} {ok(vb['G1_sharpe'])}** | {vb['G2_value']} {ok(vb['G2_round_trips'])} | {vb['G3_value']} {ok(vb['G3_subperiods'])} | "
+                     f"{ok(vb['G4_grid'])} | {g5(vb, 'hormuz')} |")
+add("ratio MR vs dollar", f"give a book Sharpe of {m(CO['dollar_market']['sharpe'])}, against {sg(CO['base']['sharpe'])} for the log-ratio")
+cm_ = pd.read_csv(RM / "comparisons.csv", index_col=0)
+add("ratio MR HO/RB dollar", f"({cm_.loc['dollar_market', 'sharpe|ho_rb']:.2f} → {cm_.loc['base', 'sharpe|ho_rb']:.2f})")
+rb_ = pd.read_csv(RM / "robustness.csv").set_index(["setting", "value"])
+add("ratio MR zero cost", f"at zero cost the book Sharpe is {rb_.loc[('cost_usd_per_bbl', 0.0), 'sharpe']:.2f}")
+add("ratio MR windows", f"({m(rb_.loc[('window', 504.0), 'sharpe'])} at 504 days, {rb_.loc[('window', 1008.0), 'sharpe']:.2f} at 1,008)")
+tz_ = pd.read_csv(RM / "trades.csv", parse_dates=["fill_date"])
+t26 = tz_[(tz_.spread == "brent_wti") & (tz_.fill_date >= "2026-01-01")].sort_values("net_usd").iloc[0]
+add("ratio MR 2026 Brent/WTI", f"entered in January with {t26.units:.0f} units was stopped for {m(t26.net_usd / 1e3, 0).replace('−', '−$')}k")
+gs_ = pd.read_csv(RM / "gate_open_by_year.csv").drop(columns="year").mean()
+add("ratio MR gate open", f"open on {100 * gs_.min():.0f}–{100 * gs_.max():.0f}% of days")
+cr_ = pd.read_csv(RM / "correlation.csv", index_col=0)
+add("ratio MR corr trend", f"**{m(cr_.loc['ratio_mr', 'trend_carry'])} correlated with the trend and carry book**")
+add("ratio MR corr dollar", f"{sg(cr_.loc['ratio_mr', 'dollar_mean_reversion'])} with the registered dollar strategy")
+add("recommendation ho_rb sleeve", f"stand-alone Sharpe {SP['ho_rb']['sharpe']:.2f}, t = {SP['ho_rb']['sharpe_t']:.2f}, daily P&L correlation {m(cr_.loc['ratio_mr', 'trend_carry'])} with the book")
+
+
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")
 for lab, s in missing:
