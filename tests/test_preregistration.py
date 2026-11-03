@@ -144,3 +144,25 @@ REGISTERED_PAIRS = {
 def test_exploratory_pairs_unchanged():
     """Exploratory addendum (PREREGISTRATION_PAIRS.md), registered before any pairs signal or P&L."""
     assert load_config()["exploratory_pairs"] == REGISTERED_PAIRS
+
+
+REGISTERED_RATIO = {
+    "registered_on": "2026-11-04",
+    "spreads": {"crack321": {"a": {"rb": 2, "ho": 1}, "b": {"cl": 3}, "seasonal_adjust": True},
+                "brent_wti": {"a": {"brent": 1}, "b": {"cl": 1}, "seasonal_adjust": False},
+                "ho_rb": {"a": {"ho": 1}, "b": {"rb": 1}, "seasonal_adjust": True}},
+    "signal": "log_ratio_market", "weights": "dollar_neutral_at_fit",
+    "gross_contracts_per_unit": 2, "usd_per_1bbl_per_unit": 1000, "risk_per_day_usd": 6000,
+    "entry_gate": ["half_life_in_band"],
+    "grid": {"entry_z": [1.5, 2.0, 2.5]},
+    "comparisons": ["dollar_market", "no_gate"],
+    "robustness": {"window": [504, 1008], "exit_z": [0.25, 0.75], "cost_usd_per_bbl": [0.0, 0.025, 0.10, 0.20]},
+    "gates": {"min_net_sharpe": 0.5, "min_round_trips": 20, "min_positive_subperiods": 2,
+              "grid_min_sharpe": 0.0, "stress_windows": ["ukraine", "hormuz"], "stress_max_loss_usd": 40000},
+    "single_spread_min_t": 2.39,
+}
+
+
+def test_exploratory_ratio_unchanged():
+    """Exploratory addendum (PREREGISTRATION_RATIO.md), registered before any ratio signal or P&L."""
+    assert load_config()["exploratory_ratio"] == REGISTERED_RATIO

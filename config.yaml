@@ -252,3 +252,36 @@ exploratory_pairs:
     stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
     stress_max_loss_usd: 40000
   single_pair_min_t: 2.64         # Bonferroni: two-sided 5% over six tests
+
+# EXPLORATORY strategy, registered 2026-11-04 AFTER the binding mean-reversion verdict, the trend and carry result, the pairs
+# result and the descriptive ratio stationarity study (report/exploratory_ratio_stationarity.md, including its forward-return
+# regressions), and BEFORE any signal or P&L of this strategy was computed. It never changes the binding verdict. Rationale and
+# rules: PREREGISTRATION_RATIO.md. tests/test_preregistration.py guards this block. Entry, exit, stop, time stop, re-arm,
+# blackout, fill lag, costs, roll costs, GARCH sizing and the half-life gate come from `strategy` and `model` unchanged.
+exploratory_ratio:
+  registered_on: "2026-11-04"
+  spreads:                        # log(A / B) of the market prices of the held contracts, same delivery month
+    crack321: {a: {rb: 2, ho: 1}, b: {cl: 3}, seasonal_adjust: true}
+    brent_wti: {a: {brent: 1}, b: {cl: 1}, seasonal_adjust: false}
+    ho_rb: {a: {ho: 1}, b: {rb: 1}, seasonal_adjust: true}
+  signal: log_ratio_market        # z of the market log-ratio against the 756 days before the fit, month effect in-window
+  weights: dollar_neutral_at_fit  # side A and side B hold equal market notional at the last close of the fit window
+  gross_contracts_per_unit: 2     # with M below, $0.05/bbl = $25 per contract, as in the registered spreads
+  usd_per_1bbl_per_unit: 1000
+  risk_per_day_usd: 6000          # R per spread; the book is the equal-risk average of the three
+  entry_gate: [half_life_in_band]
+  grid:                           # G4
+    entry_z: [1.5, 2.0, 2.5]
+  comparisons: [dollar_market, no_gate]     # reported, not gated
+  robustness:                     # reported, not gated
+    window: [504, 1008]
+    exit_z: [0.25, 0.75]
+    cost_usd_per_bbl: [0.0, 0.025, 0.10, 0.20]
+  gates:                          # judged on the book; reported per spread too
+    min_net_sharpe: 0.5           # G1
+    min_round_trips: 20           # G2: summed over spreads
+    min_positive_subperiods: 2    # G3: of evaluation.sub_periods
+    grid_min_sharpe: 0.0          # G4
+    stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
+    stress_max_loss_usd: 40000
+  single_spread_min_t: 2.39       # Bonferroni: two-sided 5% over three tests
