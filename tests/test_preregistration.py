@@ -166,3 +166,23 @@ REGISTERED_RATIO = {
 def test_exploratory_ratio_unchanged():
     """Exploratory addendum (PREREGISTRATION_RATIO.md), registered before any ratio signal or P&L."""
     assert load_config()["exploratory_ratio"] == REGISTERED_RATIO
+
+
+REGISTERED_RATIO_SLOW = {
+    "registered_on": "2026-11-04", "base": "exploratory_ratio", "decision_months": 1, "time_stop": "daily",
+    "reference_decision": "daily",
+    "grid": {"entry_z": [1.5, 2.0, 2.5]},
+    "comparisons": ["dollar_market"],
+    "robustness": {"decision_months": [3], "window": [504, 1008], "exit_z": [0.25, 0.75],
+                   "cost_usd_per_bbl": [0.0, 0.025, 0.10, 0.20]},
+    "gates": {"min_net_sharpe": 0.5, "min_round_trips": 20, "min_positive_subperiods": 2,
+              "grid_min_sharpe": 0.0, "stress_windows": ["ukraine", "hormuz"], "stress_max_loss_usd": 40000},
+    "single_spread_min_t": 2.39, "book_min_t_to_call_evidence": 3.0, "variants_tried_on_sample": 6,
+}
+
+
+def test_exploratory_ratio_slow_unchanged():
+    """Exploratory addendum (PREREGISTRATION_RATIO_SLOW.md), registered before any monthly-decision signal or P&L."""
+    assert load_config()["exploratory_ratio_slow"] == REGISTERED_RATIO_SLOW
+    # the gates are the ones registered for the daily ratio strategy
+    assert load_config()["exploratory_ratio_slow"]["gates"] == load_config()["exploratory_ratio"]["gates"]

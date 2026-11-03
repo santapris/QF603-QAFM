@@ -285,3 +285,33 @@ exploratory_ratio:
     stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
     stress_max_loss_usd: 40000
   single_spread_min_t: 2.39       # Bonferroni: two-sided 5% over three tests
+
+# EXPLORATORY strategy, registered 2026-11-04 AFTER the registered ratio mean reversion (exploratory_ratio) failed its gates, and
+# BEFORE any monthly-decision signal or P&L was computed. It is the same strategy with one change: entries, exits and stops are
+# decided on the first trading day of a month (or quarter), to match the 3 to 12 month horizon where the log-ratio variance
+# ratios fall below 1. It never changes the binding verdict. Rationale and rules: PREREGISTRATION_RATIO_SLOW.md.
+# tests/test_preregistration.py guards this block. Everything not listed here comes from `exploratory_ratio`.
+exploratory_ratio_slow:
+  registered_on: "2026-11-04"
+  base: exploratory_ratio
+  decision_months: 1              # decide on the first trading day of every month; fills one close later, as registered
+  time_stop: daily                # the registered time stop (3 half-lives) is still checked every day
+  reference_decision: daily       # the registered ratio strategy, re-run here as the reference (book Sharpe 0.055, 71 round trips)
+  grid:                           # G4
+    entry_z: [1.5, 2.0, 2.5]
+  comparisons: [dollar_market]    # reported, not gated: z on the market dollar spread, same monthly decisions
+  robustness:                     # reported, not gated
+    decision_months: [3]
+    window: [504, 1008]
+    exit_z: [0.25, 0.75]
+    cost_usd_per_bbl: [0.0, 0.025, 0.10, 0.20]
+  gates:                          # judged on the book; reported per spread too
+    min_net_sharpe: 0.5           # G1
+    min_round_trips: 20           # G2: summed over spreads
+    min_positive_subperiods: 2    # G3: of evaluation.sub_periods
+    grid_min_sharpe: 0.0          # G4
+    stress_windows: [ukraine, hormuz]   # G5: net P&L > -max_loss in each window
+    stress_max_loss_usd: 40000
+  single_spread_min_t: 2.39       # Bonferroni: two-sided 5% over three tests
+  book_min_t_to_call_evidence: 3.0    # a pass is only called evidence above this, after six looks at one sample
+  variants_tried_on_sample: 6     # mean reversion, pairs, trend, carry, ratio mean reversion, this one
