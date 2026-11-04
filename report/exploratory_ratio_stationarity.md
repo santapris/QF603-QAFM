@@ -199,6 +199,26 @@ Orders chosen by BIC over p, q ≤ 3 (AIC is reported in `arima_orders.csv`). A 
 - **Out of sample** (756-day window, refit monthly, 1, 5, 21 and 63 days ahead). No AR(1) or AR(3) forecast of the log-ratio beats a random walk: RMSE ratios 0.94 to 1.14, Diebold–Mariano |t| of at most 1.8. The best is HO/RB at 21 and 63 days (0.94 to 0.96, t up to 0.8). The trailing 756-day mean, the anchor of the registered z, is worse than no-change at every horizon except HO/RB at 63 days (0.986).
 - **Roll-clean index.** It is a random walk with drift (partly cancelling terms for the crack, coefficients under 0.14 for Brent/WTI). The market ratio is stationary because the roll jumps offset that drift.
 
+### 16. The frequency ladder: daily against month-end (step 16)
+
+Why month-end and not monthly means: averaging a random walk over each month gives the changes a spurious lag-1 autocorrelation of about +0.25 (the Working effect), and a monthly mean straddles rolls. A month-end price is a subsample of the same process and is a price one could trade at. Tables: `frequency_ladder.csv`, `frequency_phase.csv`, `kpss_power_month_end.csv`, `arima_month_end.csv`.
+
+| Month-end, 2007–26 (238 points) | ADF / PP p, raw | ADF / PP p, effects removed | AR(1) half-life, days | Zivot–Andrews p (effects removed) |
+|---|---|---|---|---|
+| 3-2-1 crack | 0.000 / 0.000 | 0.378 / 0.001 | 97 | 0.015 |
+| Brent / WTI | 0.001 / 0.001 | 0.001 / 0.001 | 99 | 0.059 |
+| HO / RB | 0.251 / 0.000 | 0.000 / 0.000 | 43 | 0.045 |
+
+- **Same slow process, less noise.** The month-end half-lives (97, 99, 43 days) match the slow roots of the daily ARIMA fits (81, 98, 35), while the daily AR(1) gives 50, 49 and 35: fast noise (the roughly one-day oscillation, roll jumps) drags it down.
+- **Phase robustness** (the last trading day on or before day 5, 10, 15, 20, 25 of each month, and month-end). The half-life is stable (calendar-month effects removed: Brent/WTI 92 to 125 days, HO/RB 39 to 64, crack 97 to 150). The unit-root verdict is **not equally stable**:
+  - Brent/WTI: ADF and PP reject at every day except ADF at day 25 (p = 0.12). The month-end Zivot–Andrews p is 0.059, borderline.
+  - HO/RB: ADF and PP reject at every day once calendar-month effects are removed. The raw ADF fails at every day (0.15 to 0.26), so seasonality matters.
+  - **Crack, the weakest:** PP rejects at every day, but ADF depends on the day sampled (0.000 to 0.607 raw) and mostly fails after seasonal removal (0.04 to 0.52).
+- **The month-end ARIMA** (BIC) is AR(1) for the crack and Brent/WTI and ARMA(1,1) for HO/RB, with slowest-root half-lives of about 97, 101 and 79 days.
+- **Power at 238 points** (simulated truly stationary AR(1) at each month-end persistence, 300 runs): KPSS rejects 22%, 22% and 12%, and ADF fails to reject only 2%, 2% and 0.3%. The sample is short, not blind, so the crack's failed ADF is evidence and not low power.
+- **Correction.** I had said that KPSS "passing" for Brent/WTI at month-end partly reflects low power. The simulation tests the size of KPSS under stationarity (12% to 22% false alarms), not its power against a unit root, so that claim is not supported and has been dropped. The correct reading is that Brent/WTI is the cleanest case at both frequencies.
+- **Reconciling with the dollar appendix (A3).** A3 reports half-lives of 25 months or more for the dollar spreads. Those are the back-adjusted levels, which carry 20 years of accumulated roll gaps (the gap alone fails ADF at p = 0.97 for the crack). The market log-ratio at month-end has half-lives of about 97, 99 and 43 days. Different object, different half-life. Appendix A1 to A4 were not recomputed on the log-ratio.
+
 ## Reading
 
 1. **The professor's claim is supported.** ADF, PP, Zivot–Andrews and log cointegration all point the same way, and the log slope of 1.009 (Brent/WTI) and 0.991 (HO/RB) is his constant-k model. Half-lives fall from 134–143 to about 50 days for crack and Brent/WTI.

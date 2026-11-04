@@ -552,6 +552,53 @@ add("int tail", f"The worst trade falls from $190k to ${abs(ib_d.worst_trade_usd
 add("int dd", f"the maximum drawdown is {100 * ib_d.max_drawdown_pct:.1f}% against {100 * ib_.loc['registered dollar-gap strategy (reference)', 'max_drawdown_pct']:.1f}%")
 add("int slow horb", f"HO/RB's 2026 loss is still ${abs(float(ibs_[(ibs_.run.str.startswith('monthly')) & (ibs_.spread == 'ho_rb')].y2026.iloc[0])) / 1e3:.0f}k")
 
+# =============================================================================== month-end lens: frequency ladder, phase, power (added 2026-11-04)
+lad_ = pd.read_csv(RS / "frequency_ladder.csv")
+phs_ = pd.read_csv(RS / "frequency_phase.csv")
+pwr_ = pd.read_csv(RS / "kpss_power_month_end.csv").set_index("series")
+mma_ = pd.read_csv(RS / "arima_month_end.csv")
+RAW_, DS_ = "raw", "calendar-month effects removed"
+LL = lambda sp, form, fq: lad_[(lad_.series == sp) & (lad_.form == form) & (lad_.freq == fq)].iloc[0]
+PHx = lambda sp, form, col: phs_[(phs_.series == sp) & (phs_.form == form)][col]
+SH_ = {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / RB"}
+
+for sp, lab in SH_.items():
+    r_, d_ = LL(sp, RAW_, "month-end"), LL(sp, DS_, "month-end")
+    add(f"month-end row {sp}", f"| {lab} | {r_.adf_p:.3f} / {r_.pp_p:.3f} | {d_.adf_p:.3f} / {d_.pp_p:.3f} | {d_.half_life_days_approx:.0f} | {d_.za_p:.3f} |")
+arma_ = {sp: float(aob(SH_[sp], "log-ratio, d = 0").slowest_ar_root_half_life_days) for sp in SH_}
+add("month-end vs ARMA", f"The month-end half-lives ({LL('crack321', DS_, 'month-end').half_life_days_approx:.0f}, {LL('brent_wti', DS_, 'month-end').half_life_days_approx:.0f} and {LL('ho_rb', DS_, 'month-end').half_life_days_approx:.0f} days) "
+                         f"match the slow roots of the daily ARIMA fits ({arma_['crack321']:.0f}, {arma_['brent_wti']:.0f} and {arma_['ho_rb']:.0f}). "
+                         f"The daily AR(1) gives {LL('crack321', DS_, 'daily').half_life_days_approx:.0f}, {LL('brent_wti', DS_, 'daily').half_life_days_approx:.0f} and {LL('ho_rb', DS_, 'daily').half_life_days_approx:.0f}")
+bwa = PHx("brent_wti", RAW_, "adf_p")
+phase_of_max = phs_.loc[bwa.idxmax(), "freq"]
+assert phase_of_max == "day 25" and bwa.drop(bwa.idxmax()).max() < 0.05
+add("phase BW", f"except day 25 (ADF p = {bwa.max():.2f})")
+hra = PHx("ho_rb", RAW_, "adf_p")
+add("phase HORB", f"its raw month-end ADF fails ({hra.min():.2f} to {hra.max():.2f})")
+assert PHx("ho_rb", DS_, "adf_p").max() < 0.05
+cka, ckd = PHx("crack321", RAW_, "adf_p"), PHx("crack321", DS_, "adf_p")
+add("phase crack", f"({cka.min():.3f} to {cka.max():.3f} raw) and mostly fails once seasonal effects are removed ({ckd.min():.2f} to {ckd.max():.2f})")
+assert PHx("crack321", RAW_, "pp_p").max() < 0.05 and PHx("crack321", DS_, "pp_p").max() < 0.05 and (ckd > 0.05).sum() >= 4
+
+pct1 = lambda x: f"{int(float(x) * 100 + 0.5 + 1e-9)}%"
+add("power step4", f"is rejected by KPSS {pct1(pwr_.loc['crack321', 'kpss_rejects_if_truly_stationary'])}, {pct1(pwr_.loc['brent_wti', 'kpss_rejects_if_truly_stationary'])} and "
+                   f"{pct1(pwr_.loc['ho_rb', 'kpss_rejects_if_truly_stationary'])} of the time, and ADF fails to reject it only "
+                   f"{100 * pwr_.loc['crack321', 'adf_fails_to_reject_if_truly_stationary']:.0f}%, {100 * pwr_.loc['brent_wti', 'adf_fails_to_reject_if_truly_stationary']:.0f}% and "
+                   f"{100 * pwr_.loc['ho_rb', 'adf_fails_to_reject_if_truly_stationary']:.1f}% of the time")
+mmb = {sp: mma_[(mma_.series == sp) & (mma_.criterion == "BIC")].iloc[0] for sp in SH_}
+assert mmb["crack321"].order == "(1,0,0)" and mmb["brent_wti"].order == "(1,0,0)" and mmb["ho_rb"].order == "(1,0,1)"
+add("month-end arima", f"slowest-root half-lives of about {mmb['crack321'].slowest_ar_root_half_life_days * 21:.0f}, {mmb['brent_wti'].slowest_ar_root_half_life_days * 21:.0f} and {mmb['ho_rb'].slowest_ar_root_half_life_days * 21:.0f} days")
+add("a3 crack", f"the same removal gives ADF p = {LL('crack321', DS_, 'month-end').adf_p:.3f} (PP {LL('crack321', DS_, 'month-end').pp_p:.3f})")
+add("a3 gap", f"fails ADF at p = {sd_.loc['crack321', 'adf_p_accumulated_roll_gap']:.2f} for the crack")
+add("a3 halflives", f"about {LL('crack321', DS_, 'month-end').half_life_days_approx:.0f}, {LL('brent_wti', DS_, 'month-end').half_life_days_approx:.0f} and {LL('ho_rb', DS_, 'month-end').half_life_days_approx:.0f} days. Different object")
+hl_r = lambda sp: (PHx(sp, DS_, "half_life_days_approx").min(), PHx(sp, DS_, "half_life_days_approx").max())
+add("phase half-lives", f"Brent/WTI {hl_r('brent_wti')[0]:.0f} to {hl_r('brent_wti')[1]:.0f} days, HO/RB {hl_r('ho_rb')[0]:.0f} to {hl_r('ho_rb')[1]:.0f}, crack {hl_r('crack321')[0]:.0f} to {hl_r('crack321')[1]:.0f}")
+ksz_ = pd.read_csv(RS / "kpss_size.csv")
+dk_ = ksz_[ksz_.form.str.startswith("log")].kpss_rejects_if_truly_stationary
+add("power ladder", f"only {100 * pwr_.adf_fails_to_reject_if_truly_stationary.min():.1f}% to {100 * pwr_.adf_fails_to_reject_if_truly_stationary.max():.0f}% of the time")
+add("power kpss", f"KPSS rejects a stationary series {pct1(pwr_.kpss_rejects_if_truly_stationary.min())} to {pct1(pwr_.kpss_rejects_if_truly_stationary.max())} of the time at 238 points, against {pct1(dk_.min())} to {pct1(dk_.max())} for the log-ratios at daily frequency")
+assert (pwr_.n == 238).all()
+
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")
 for lab, s in missing:

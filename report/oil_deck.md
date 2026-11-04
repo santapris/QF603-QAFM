@@ -116,6 +116,17 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 - **The log slope is 1.009 for Brent on WTI and 0.991 for HO on RB**, indistinguishable from 1. In dollars the 1:1 link is rejected (slopes 1.08 and 1.10). That is the constant-k model.
 - Half-lives are for the crack and HO/RB with calendar-month effects removed.
 
+**Month-end** (one observation a month, 238 points) shows the same pull without the daily noise:
+
+| Month-end, 2007–26 | ADF / PP p, raw | ADF / PP p, calendar-month effects removed | AR(1) half-life, days | Zivot–Andrews p (effects removed) |
+|---|---|---|---|---|
+| 3-2-1 crack | 0.000 / 0.000 | 0.378 / 0.001 | 97 | 0.015 |
+| Brent / WTI | 0.001 / 0.001 | 0.001 / 0.001 | 99 | 0.059 |
+| HO / RB | 0.251 / 0.000 | 0.000 / 0.000 | 43 | 0.045 |
+
+- The month-end half-lives (97, 99 and 43 days) match the slow roots of the daily ARIMA fits (81, 98 and 35). The daily AR(1) gives 50, 49 and 35: fast noise that predicts nothing drags it down.
+- **The evidence is not equally strong for the three.** Brent/WTI is stationary at every day of the month by PP and by ADF, except day 25 (ADF p = 0.12). HO/RB is stationary at every day once calendar-month effects are removed, but its raw month-end ADF fails (0.07 to 0.26), so seasonality matters. The crack is the weakest: PP rejects at every day, but ADF depends on the day sampled (0.000 to 0.607 raw) and mostly fails once seasonal effects are removed (0.04 to 0.52).
+
 **For a trade:** the dollar gap wanders, the ratio does not. The strict "all three tests agree" rule still fails, because KPSS rejects everywhere (next slide).
 
 ---
@@ -124,6 +135,7 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 
 - KPSS assumes the series is stationary and rejects if not, so a rejection is real evidence against **one fixed mean for 20 years**.
 - But it also **cries wolf on slow series**. On simulated series that are truly stationary at each spread's own persistence, KPSS rejects 52%, 52% and 43% of the log-ratios, and 85%, 87% and 56% of the dollar gaps (should be 5%).
+- At month-end the sample is short but not blind: a truly stationary series is rejected by KPSS 22%, 22% and 12% of the time, and ADF fails to reject it only 2%, 2% and 0.3% of the time. So the crack's failed month-end ADF is real evidence against it, not low power.
 
 ![KPSS false alarms](deck_figures/11_kpss_false_alarms.png)
 
@@ -165,7 +177,7 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 
 ## Step 5: what the daily ARIMA says (almost nothing, and that explains the earlier tests)
 
-| Series | Dollar gap (on back-adjusted changes) | Log-ratio, d = 0 | Slowest root, half-life | Roll-clean held index |
+| Series (BIC orders throughout) | Dollar gap (on back-adjusted changes) | Log-ratio, d = 0 | Slowest root, half-life | Roll-clean held index |
 |---|---|---|---|---|
 | 3-2-1 crack | ARIMA(0,1,0) | ARIMA(1,0,3) | 81 days | ARIMA(2,1,3), partly cancelling terms |
 | Brent / WTI | ARIMA(2,1,0), coefficients 0.06 and −0.04 | ARIMA(3,0,2) | 98 days | ARIMA(3,1,0), coefficients under 0.14 |
@@ -176,6 +188,8 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 - **Brent/WTI ARMA(3,0,2), factored:** AR = (1 − 0.993 L)(1 − 0.447 L + 0.275 L²). One slow root (half-life 98 days: cargo, pipeline and export arbitrage) and a damped oscillation (it decays by 0.52 a day, period about 6 days): short-run noise as one benchmark reacts first. The order counts polynomial terms. It is not five separate economic facts.
 - **Out of sample** (756-day window, refit monthly, 1 to 63 days ahead): no AR forecast of the log-ratio beats a random walk (RMSE ratio 0.94 to 1.14, Diebold–Mariano |t| of at most 1.8). The 756-day mean the strategies use as the anchor is worse than no-change at every horizon except HO/RB at 63 days.
 - **Roll-clean:** the held-contract index is a random walk with drift, a tradeable series with no daily linear predictability.
+- **Why d = 0 and d = 1 both fit.** Δℓ = −(1 − φ)(ℓ<sub>t−1</sub> − μ) + ε, and with φ ≈ 0.99 the pull is about 1% of the gap, invisible next to daily noise. Forcing d = 1 sets φ = 1 and hides the small pull in a moving-average term, which heads to −1 if the series is really stationary (HO/RB: −0.99). BIC cannot compare the two (they are fitted to different series). ADF, PP, Zivot–Andrews and the arbitrage bound favour d = 0. KPSS favours d = 1 but false-alarms about half the time at these half-lives. The held index is a different series and is d = 1.
+- **At month-end** the BIC order is AR(1) for the crack and Brent/WTI and ARMA(1,1) for HO/RB, with slowest-root half-lives of about 97, 101 and 79 days: the slow pull, with the daily noise gone.
 
 **For a trade:** no daily ARIMA edge exists in any form. Whatever pull there is acts over months, which the next slide tests.
 
@@ -187,6 +201,8 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 
 - **Variance ratio at one year:** the ratio's variance is only **50%, 41% and 48%** of the random-walk level (crack, Brent/WTI, HO/RB). Outright prices lean the other way: Brent 1.34 and ULSD 1.46 at one year. None is statistically significant (robust p from 0.15 to 0.98).
 - **The roll:** the market ratio jumps when we roll into the next contract month, and a holder does not earn that jump. After removing it, **HO/RB shows reversion a holder clearly earns** (t = −2.78 at 21 days, −3.51 at 63 days). The crack and Brent/WTI have the right sign but |t| of at most 1.72, and 41% to 54% of their apparent reversion is the roll.
+
+**In one line:** the ratio is stationary in the long run and a random walk day to day.
 
 **For a trade:** reversion in the **ratio over months** (mean reversion), persistence in **outright prices over a year** (trend). The detail is in Appendix B.
 
@@ -337,6 +353,7 @@ The pull sheet, with the fields to download and the tickers still to be verified
 - **Six looks at one sample.** Mean reversion, pairs, trend, carry, ratio mean reversion and its slower version were all tried on the same 16.7 years, the last three after seeing earlier results. Any single pass would have to be discounted for that.
 - **The moving-anchor model.** It is fitted on the full sample and cannot tell a drifting anchor from a slowly reverting series, so its fast half-lives and the known-anchor world are statements about the model.
 - **Sizing.** The gates were judged on the unrounded research stream. On the registered integer book (units capped at 3) the daily ratio strategy has a Sharpe of 0.23 and the 2026 Brent/WTI loss is $44k, so the research-stream tail losses overstate what a capped book sees. The G1 failure does not change.
+- **Monthly appendix on dollars.** Appendix A1 to A4 use back-adjusted dollar spreads and were not recomputed on the log-ratio. The month-end log-ratio results are in the frequency ladder.
 - **KPSS and a moving anchor.** KPSS rejects for every spread, and the era means of the log-ratio shift. We read this as "anchored around a moving k", and the test cannot prove it.
 - **Few, related instruments.** All nine instruments are oil products and move together. Published trend and carry results draw on many unrelated markets.
 - **Simplifications.** Flat $0.05/bbl costs, no market impact, carry measured at the front of the curve only, unrounded contract sizes.
@@ -541,19 +558,19 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 ## ARIMA in full (2 of 3): the three spreads in four forms
 
-| Spread | Form | BIC order | AIC order | Slowest AR root, half-life (BIC) | Robust Ljung–Box p (20) |
+| Spread | Form | BIC order | AIC order | Half-life of the slowest AR root (BIC; shown for d = 0 only: elsewhere that root is short-run noise) | Robust Ljung–Box p (20) |
 |---|---|---|---|---|---|
 | 3-2-1 crack | Dollar gap, d = 1 | ARIMA(0,1,0) | ARIMA(2,1,2) |  | 0.522 |
 |  | Log-ratio, d = 0 (market) | ARIMA(1,0,3) | ARIMA(3,0,3) | 81 days | 0.892 |
 |  | Log-ratio, d = 1 (market) | ARIMA(0,1,3) | ARIMA(0,1,3) |  | 0.885 |
-|  | Held index, d = 1 (roll-clean) | ARIMA(2,1,3) | ARIMA(2,1,3) | 2.5 days | 0.937 |
-| Brent / WTI | Dollar gap, d = 1 | ARIMA(2,1,0) | ARIMA(0,1,3) | 0.4 days | 0.551 |
+|  | Held index, d = 1 (roll-clean) | ARIMA(2,1,3) | ARIMA(2,1,3) |  | 0.937 |
+| Brent / WTI | Dollar gap, d = 1 | ARIMA(2,1,0) | ARIMA(0,1,3) |  | 0.551 |
 |  | Log-ratio, d = 0 (market) | ARIMA(3,0,2) | ARIMA(3,0,2) | 98 days | 0.546 |
-|  | Log-ratio, d = 1 (market) | ARIMA(2,1,1) | ARIMA(2,1,1) | 1.0 days | 0.699 |
-|  | Held index, d = 1 (roll-clean) | ARIMA(3,1,0) | ARIMA(2,1,2) | 1.0 days | 0.502 |
+|  | Log-ratio, d = 1 (market) | ARIMA(2,1,1) | ARIMA(2,1,1) |  | 0.699 |
+|  | Held index, d = 1 (roll-clean) | ARIMA(3,1,0) | ARIMA(2,1,2) |  | 0.502 |
 | HO / RB | Dollar gap, d = 1 | ARIMA(0,1,0) | ARIMA(3,1,3) |  | 0.727 |
 |  | Log-ratio, d = 0 (market) | ARIMA(1,0,0) | ARIMA(2,0,3) | 35 days | 0.001 |
-|  | Log-ratio, d = 1 (market) | ARIMA(1,1,1) | ARIMA(1,1,1) | 19 days | 0.000 |
+|  | Log-ratio, d = 1 (market) | ARIMA(1,1,1) | ARIMA(1,1,1) |  | 0.000 |
 |  | Held index, d = 1 (roll-clean) | ARIMA(0,1,0) | ARIMA(2,1,2) |  | 0.798 |
 
 - **The dollar gap is d = 1 with almost no short-run structure** (BIC: (0,1,0), (2,1,0), (0,1,0)). Its drift is the roll gaps accumulated in the back-adjusted level.
@@ -599,6 +616,49 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 - No AR forecast beats the random walk significantly. HO/RB at 21 and 63 days is the best (0.94 to 0.96), with t of at most 0.8.
 - The 756-day mean, the anchor used in the registered z, is worse than no-change at every horizon except HO/RB at 63 days (0.986): the anchor is a poor forecast.
+
+---
+
+## The frequency ladder in full: daily, month-end and other days of the month
+
+| Spread | Form | Frequency | n | ADF p | PP p | KPSS p | AR(1) φ | Half-life, days | Zivot–Andrews p |
+|---|---|---|---|---|---|---|---|---|---|
+| 3-2-1 crack | raw | daily | 4,987 | 0.014 | 0.000 | 0.010 | 0.988 | 55 | 0.001 |
+|  | raw | month-end | 238 | 0.000 | 0.000 | 0.010 | 0.853 | 91 | 0.001 |
+|  | calendar-month effects removed | daily | 4,987 | 0.044 | 0.000 | 0.010 | 0.986 | 50 |  |
+|  | calendar-month effects removed | month-end | 238 | 0.378 | 0.001 | 0.010 | 0.860 | 97 | 0.015 |
+| Brent / WTI | raw | daily | 4,987 | 0.002 | 0.000 | 0.010 | 0.986 | 49 | 0.001 |
+|  | raw | month-end | 238 | 0.001 | 0.001 | 0.100 | 0.863 | 99 | 0.059 |
+|  | calendar-month effects removed | daily | 4,987 | 0.002 | 0.000 | 0.010 | 0.986 | 49 |  |
+|  | calendar-month effects removed | month-end | 238 | 0.001 | 0.001 | 0.100 | 0.863 | 99 | 0.059 |
+| HO / RB | raw | daily | 4,987 | 0.000 | 0.000 | 0.010 | 0.989 | 61 | 0.000 |
+|  | raw | month-end | 238 | 0.251 | 0.000 | 0.015 | 0.765 | 54 | 0.000 |
+|  | calendar-month effects removed | daily | 4,987 | 0.000 | 0.000 | 0.010 | 0.981 | 35 |  |
+|  | calendar-month effects removed | month-end | 238 | 0.000 | 0.000 | 0.013 | 0.714 | 43 | 0.045 |
+
+**Does it depend on which day of the month is sampled?** Each cell is ADF p / PP p / AR(1) half-life in days, sampling the last trading day on or before the given day of every month (238 points each).
+
+| Spread | Form | Day 5 | Day 10 | Day 15 | Day 20 | Day 25 | Month-end |
+|---|---|---|---|---|---|---|---|
+| 3-2-1 crack | raw | 0.046 / 0.001 / 100 | 0.009 / 0.001 / 99 | 0.607 / 0.008 / 126 | 0.004 / 0.004 / 117 | 0.549 / 0.001 / 99 | 0.000 / 0.000 / 91 |
+|  | calendar-month effects removed | 0.153 / 0.003 / 104 | 0.040 / 0.003 / 106 | 0.197 / 0.033 / 150 | 0.518 / 0.013 / 132 | 0.055 / 0.002 / 108 | 0.378 / 0.001 / 97 |
+| Brent / WTI | raw | 0.001 / 0.001 / 105 | 0.004 / 0.005 / 125 | 0.023 / 0.001 / 104 | 0.000 / 0.000 / 92 | 0.120 / 0.003 / 115 | 0.001 / 0.001 / 99 |
+|  | calendar-month effects removed | 0.001 / 0.001 / 105 | 0.004 / 0.005 / 125 | 0.023 / 0.001 / 104 | 0.000 / 0.000 / 92 | 0.120 / 0.003 / 115 | 0.001 / 0.001 / 99 |
+| HO / RB | raw | 0.261 / 0.000 / 51 | 0.218 / 0.000 / 62 | 0.147 / 0.000 / 72 | 0.072 / 0.000 / 51 | 0.084 / 0.000 / 50 | 0.251 / 0.000 / 54 |
+|  | calendar-month effects removed | 0.000 / 0.000 / 42 | 0.000 / 0.000 / 55 | 0.000 / 0.000 / 64 | 0.000 / 0.000 / 42 | 0.000 / 0.000 / 39 | 0.000 / 0.000 / 43 |
+
+**How much can 238 points detect?** A truly stationary AR(1) at each spread's month-end persistence, simulated 300 times:
+
+| Spread | n | Monthly φ | KPSS rejects it | ADF fails to reject it |
+|---|---|---|---|---|
+| 3-2-1 crack | 238 | 0.860 | 22% | 2.0% |
+| Brent / WTI | 238 | 0.863 | 22% | 2.3% |
+| HO / RB | 238 | 0.714 | 12% | 0.3% |
+
+- **The half-life is stable across days of the month** (calendar-month effects removed: Brent/WTI 92 to 125 days, HO/RB 39 to 64, crack 97 to 150), so the slow pull is not an artefact of one point in the roll cycle.
+- **The unit-root verdict is not.** The crack's ADF flips with the day sampled, Brent/WTI's fails at day 25 only, and HO/RB needs the seasonal removal. PP rejects at every day for all three.
+- **The sample is short, not blind.** ADF would fail to reject a truly stationary series at these persistences only 0.3% to 2% of the time, so the failures above are evidence, not low power. KPSS rejects a stationary series 12% to 22% of the time at 238 points, against 43% to 52% for the log-ratios at daily frequency.
+- Month-end ARIMA (BIC): AR(1) for the crack and Brent/WTI, ARMA(1,1) for HO/RB (the half-lives are in the Step 5 slide).
 
 ---
 
@@ -796,7 +856,8 @@ Two follow-up checks: whether the conclusions change at a monthly horizon, and d
 - **The data say the pull is too slow to trade**: half-lives of 25 months or more, and none for the crack. Over 2007–26 the half-lives are 97 months for Brent − WTI and 34 for HO − RB.
 - Brent − WTI rejects a unit root on ADF but KPSS also rejects stationarity, so the tests disagree.
 - **Reading:** close to a random walk at trading horizons. This supports the failed mean-reversion gates, but does not prove them: about 200 monthly points is low power, and the backtest uses daily data.
-- **Month-end log-ratios of market prices (2007–26):** ADF p is 0.000 for the crack, 0.001 for Brent/WTI and 0.251 for HO/RB (0.000 once calendar-month effects are removed). Brent/WTI passes all three tests (KPSS p ≥ 0.10), the other two fail KPSS.
+- **Month-end log-ratios of market prices (2007–26):** ADF p is 0.000 for the crack, 0.001 for Brent/WTI and 0.251 for HO/RB (0.000 once calendar-month effects are removed). For the crack the same removal gives ADF p = 0.378 (PP 0.001), and its ADF verdict depends on which day of the month is sampled (see the frequency ladder in full). Brent/WTI passes all three tests (KPSS p ≥ 0.10), the other two fail KPSS.
+- **Why this table and the log-ratio disagree on half-lives.** The dollar rows above are the back-adjusted level, which carries 20 years of accumulated roll gaps (the gap alone fails ADF at p = 0.97 for the crack), so half-lives of 25 months or more are partly that drift. The market log-ratio at month-end has half-lives of about 97, 99 and 43 days. Different object, different half-life. Appendix A1 to A4 were run on back-adjusted dollars and were not recomputed on the log-ratio.
 
 ---
 

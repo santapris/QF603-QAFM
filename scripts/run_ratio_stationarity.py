@@ -705,6 +705,52 @@ def step15(D: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFr
     return pd.DataFrame(rows), pd.DataFrame(factors), pd.DataFrame(oos), pd.DataFrame(wc), pd.DataFrame(integ)
 
 
+# --------------------------------------------------------------------------- step 16: the frequency ladder (daily against month-end)
+PHASE_DAYS = [5, 10, 15, 20, 25, None]          # None = the last trading day of the month
+
+
+def monthly_phase(y: pd.Series, day: int | None) -> pd.Series:
+    """One observation a month: the last trading day on or before calendar day `day` (None: the last trading day)."""
+    keep = y if day is None else y[y.index.day <= day]
+    return keep.groupby(keep.index.to_period("M")).tail(1)
+
+
+def ladder_row(name: str, form: str, freq: str, y: pd.Series, za_p: float = np.nan) -> dict:
+    t = AR.unit_root(y, "c")
+    phi, hl = dg.ar1(y.to_numpy())
+    step = 1.0 if freq == "daily" else 21.0                                  # trading days per observation
+    return {"series": name, "form": form, "freq": freq, "n": len(y), "adf_p": t["adf_p"], "pp_p": t["pp_p"], "kpss_p": t["kpss_p"],
+            "ar1_phi": phi, "half_life_obs": hl, "half_life_days_approx": hl * step, "za_p": za_p}
+
+
+def step16(D: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    zad = pd.read_csv(OUT / "tables" / "zivot_andrews.csv") if (OUT / "tables" / "zivot_andrews.csv").exists() else None
+    ladder, phase, power, arm = [], [], [], []
+    for n, d in D.items():
+        for form, y in (("raw", d["lr"].dropna()), ("calendar-month effects removed", d["lr_ds"].dropna())):
+            za_d = np.nan
+            if zad is not None and form == "raw":
+                za_d = float(zad[(zad.series == n) & (zad.form == "log_ratio")].za_p.iloc[0])
+            ladder.append(ladder_row(n, form, "daily", y, za_d))
+            ym = monthly_phase(y, None)
+            zm = ZivotAndrews(ym.to_numpy(), lags=3, trim=0.15, trend="c")
+            ladder.append(ladder_row(n, form, "month-end", ym, float(zm.pvalue)))
+            for day in PHASE_DAYS:
+                ys = monthly_phase(y, day)
+                r = ladder_row(n, form, "month-end" if day is None else f"day {day}", ys)
+                phase.append({k: r[k] for k in ("series", "form", "freq", "n", "adf_p", "pp_p", "kpss_p", "ar1_phi", "half_life_days_approx")})
+        # power at month-end: simulate truly stationary AR(1) at the month-end persistence and the month-end sample size
+        ym = monthly_phase(d["lr_ds"].dropna(), None)
+        phi_m, _ = dg.ar1(ym.to_numpy())
+        kp, adf_miss = kpss_size(phi_m, len(ym), reps=300)
+        power.append({"series": n, "n": len(ym), "monthly_phi": phi_m, "kpss_rejects_if_truly_stationary": kp,
+                      "adf_fails_to_reject_if_truly_stationary": adf_miss})
+        a, _ = arima_row(n, "log-ratio, d = 0 (month-end, calendar-month effects removed)", ym.to_numpy(), 0)
+        arm += a
+        log(f"  step 16 {n} done")
+    return pd.DataFrame(ladder), pd.DataFrame(phase), pd.DataFrame(power), pd.DataFrame(arm)
+
+
 # --------------------------------------------------------------------------- figures
 def figures(D: dict, era: pd.DataFrame, size: pd.DataFrame) -> None:
     (OUT / "figures").mkdir(parents=True, exist_ok=True)
@@ -765,7 +811,7 @@ def fig_vr(vr: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
+ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"]
 
 
 def main() -> None:
@@ -840,6 +886,13 @@ def main() -> None:
     if "13" in steps:
         step13(D, uc_s).to_csv(T / "cushing_k.csv", index=False)
         log("step 13 done")
+    if "16" in steps:
+        l16, p16, w16, m16 = step16(D)
+        l16.to_csv(T / "frequency_ladder.csv", index=False)
+        p16.to_csv(T / "frequency_phase.csv", index=False)
+        w16.to_csv(T / "kpss_power_month_end.csv", index=False)
+        m16.to_csv(T / "arima_month_end.csv", index=False)
+        log("step 16 done")
     if "15" in steps:
         a_o, a_f, a_oos, a_wti, a_int = step15(D)
         a_o.to_csv(T / "arima_orders.csv", index=False)
@@ -874,7 +927,8 @@ def main() -> None:
                       "variance_ratio_check": "variance_ratio_check.csv", "trend_sign_agreement": "trend_sign_agreement.csv",
                       "moving_anchor_model": "moving_anchor_model.csv", "anchor_error": "anchor_error.csv", "k_consistency": "k_consistency.csv",
                       "heating_oil_2013": "heating_oil_2013.csv", "cushing_k": "cushing_k.csv", "vecm_logs_known": "vecm_logs_known.csv",
-                      "arima_orders": "arima_orders.csv", "arima_oos": "arima_oos.csv", "arima_wti_check": "arima_wti_check.csv"}.items():
+                      "arima_orders": "arima_orders.csv", "arima_oos": "arima_oos.csv", "arima_wti_check": "arima_wti_check.csv",
+                      "frequency_ladder": "frequency_ladder.csv", "frequency_phase": "frequency_phase.csv", "kpss_power_month_end": "kpss_power_month_end.csv"}.items():
         t = rd(name)
         if t is not None:
             summary[key] = t.round(4).to_dict("records")
