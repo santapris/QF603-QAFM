@@ -195,4 +195,5 @@ The registered trend rule takes the sign of the 252-day back-adjusted dollar cha
 ## What followed
 
 - Ratio mean reversion was pre-registered for all three spreads on 2026-11-04 (`PREREGISTRATION_RATIO.md`, commit `bd725b7`) and run once: the book fails (net Sharpe 0.055, G1 and G5 fail). HO/RB, the best of the three, has Sharpe 0.38 (t = 1.55). See `report/exploratory_ratio_mr.md`.
+- A slower version (decisions monthly, to match the horizon where the variance ratios fall below 1) was pre-registered next (`PREREGISTRATION_RATIO_SLOW.md`, commit `f49eeb4`) and made things worse: book Sharpe −0.13 on 22 trades. See `report/exploratory_ratio_slow.md`.
 - The deck's Test 1 now has the back-adjusted result as the "P&L basis" row, then the market-price dollar gap and the log-ratio, with new slides on the professor's argument, KPSS, the roll, and the two horizons.

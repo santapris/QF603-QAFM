@@ -135,9 +135,14 @@ class RatioFitCache:
 class RatioSim(SpreadSim):
     """`SpreadSim` with z read from market prices. P&L and the GARCH state still use the back-adjusted legs."""
 
-    def __init__(self, name, legs, spec, cache, p_hat, blackout, rules, cfg, rolled=None):
+    def __init__(self, name, legs, spec, cache, p_hat, blackout, rules, cfg, rolled=None, decision_months=None):
         super().__init__(name, legs, cache, p_hat, blackout, rules, cfg, rolled)
         self.spec = spec
+        # None: decide every day. k: decide only on the first trading day of months 1, 1 + k, 1 + 2k, ... (k = 1 is every
+        # month, k = 3 is January, April, July and October). Elsewhere z is not read, so nothing is entered, exited or
+        # stopped; the time stop and the monthly model-break test are calendar rules and still run as registered.
+        self.decide = (None if decision_months is None else np.array(
+            [(i in self.ms) and ((self.month[i] - 1) % decision_months == 0) for i in range(len(self.idx))]))
         self.mkt = {c[:-len("_bbl_unadj")]: legs[c].to_numpy(dtype=float)
                     for c in legs.columns if c.endswith("_bbl_unadj")}
 
@@ -149,10 +154,17 @@ class RatioSim(SpreadSim):
         b = sum(n * self.mkt[k][i] for k, n in self.spec["b"].items())
         return float(np.log(a / b))
 
-    def z(self, p: dict, i: int) -> float:
+    def z_raw(self, p: dict, i: int) -> float:
+        """z on any day, whether or not it is a decision day (for reporting)."""
         if not _ok(p):
             return np.nan
         return (self.x(p, i) - p[f"seas_{self.month[i]}"] - p["mean"]) / p["sd"]
+
+    def z(self, p: dict, i: int) -> float:
+        """The z the engine decides on: NaN away from decision days when decisions are slowed down."""
+        if self.decide is not None and not self.decide[i]:
+            return np.nan
+        return self.z_raw(p, i)
 
     def _close_trade(self, i, reasons, decided, cost_bbl, cost_usd):
         super()._close_trade(i, reasons, decided, cost_bbl, cost_usd)
@@ -167,8 +179,10 @@ class RatioSim(SpreadSim):
 
 
 def run_spread(name: str, data: dict, cfg: dict | None = None, mode: str = "base", entry_z: float | None = None,
-               exit_z: float | None = None, window: int | None = None, cost_bbl: float | None = None) -> dict:
-    """One spread, one configuration. Returns {'daily', 'trades', 'sim'}."""
+               exit_z: float | None = None, window: int | None = None, cost_bbl: float | None = None,
+               decision_months: int | None = None) -> dict:
+    """One spread, one configuration. Returns {'daily', 'trades', 'sim'}. `decision_months` slows the decisions
+    (None = every day, as in PREREGISTRATION_RATIO.md; 1 = monthly, 3 = quarterly; PREREGISTRATION_RATIO_SLOW.md)."""
     if mode not in MODES:
         raise ValueError(f"unknown mode {mode!r}")
     cfg = cfg or load_config()
@@ -178,7 +192,8 @@ def run_spread(name: str, data: dict, cfg: dict | None = None, mode: str = "base
     cache = RatioFitCache(legs, spec, mode, c, data["stores"][name])
     rules = Rules(variant="fixed", sizing="garch", use_blackout=True, use_logit=False, entry_z=entry_z, exit_z=exit_z,
                   cost_bbl=cost_bbl, window=window, label=mode)
-    sim = RatioSim(name, legs, spec, cache, pd.Series(dtype=float), data["blackout"], rules, c, data["rolled"][name])
+    sim = RatioSim(name, legs, spec, cache, pd.Series(dtype=float), data["blackout"], rules, c, data["rolled"][name],
+                   decision_months)
     for i in range(sim.first, len(legs)):
         sim.step(i)
     daily, trades = sim.results()

@@ -75,6 +75,8 @@ Rules: `PREREGISTRATION_RATIO.md`, registered 2026-11-04 (commit `bd725b7`) befo
 - Hedge ratios are fixed dollar-neutral at each fit and do not drift while a trade is open.
 - Equal-risk averaging of three spreads makes G5 lenient, so each spread is also shown at full R.
 
+**Follow-up.** The slower version (monthly decisions) is in `report/exploratory_ratio_slow.md`: it did worse (book Sharpe −0.13), and HO/RB fell to −0.27.
+
 ## Next experiments (each to be registered before it is run)
 
 1. Whether a small HO/RB ratio sleeve adds to the trend and carry book, given the −0.18 correlation. This is an overlay question, and the stand-alone sleeve does not pass.

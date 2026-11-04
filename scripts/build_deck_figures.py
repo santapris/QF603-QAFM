@@ -261,6 +261,42 @@ def fig_ratio_mr_pnl():
     save(fig, "13_ratio_mean_reversion_pnl.png")
 
 
+def fig_horizon_vs_hold():
+    """Where the log-ratio reverts (variance ratio by horizon) against how long the trades were held, and the book Sharpe by
+    decision interval."""
+    v = pd.read_csv(RS / "variance_ratios.csv")
+    v = v[(v.basis == "held_log_ratio") & (v.freq == "daily")]
+    sl = T / "exploratory" / "ratio_slow" / "tables"
+    prof = pd.read_csv(sl / "decision_interval_profile.csv", index_col=0)
+    fig, ax = plt.subplots(1, 2, figsize=(11, 3.8), gridspec_kw={"width_ratios": [1.5, 1]})
+    for n in LAB:
+        s = v[v.series == n].sort_values("q")
+        ax[0].plot(s.q, s.vr, marker="o", ms=3, lw=1.3, color=COL[n], label=LAB[n])
+    ax[0].axhline(1, color="#444", lw=.8)
+    for col, lab, c in [("daily (reference)", "daily decisions", "#1f5fa8"), ("monthly (base)", "monthly decisions", "#c4531a")]:
+        h = [prof.loc[col, f"avg_hold|{n}"] for n in LAB]
+        ax[0].axvspan(min(h), max(h), color=c, alpha=.15, lw=0, label=f"average hold, {lab}")
+    ax[0].set_xscale("log")
+    ax[0].set_xticks([5, 21, 63, 126, 252])
+    ax[0].set_xticklabels(["5", "21", "63", "126", "252"])
+    ax[0].set_xlabel("horizon (trading days)")
+    ax[0].set_ylabel("variance ratio of log-ratio return")
+    ax[0].set_title("Where the ratio reverts, and how long we held")
+    ax[0].legend(fontsize=7, loc="lower left")
+    names = ["daily (reference)", "monthly (base)", "quarterly"]
+    sharpe_ = [prof.loc[k, "sharpe"] for k in names]
+    ax[1].bar(range(3), sharpe_, color=["#1f5fa8", "#c4531a", "#b5b5b5"], width=.6)
+    for i, k in enumerate(names):
+        ax[1].text(i, max(sharpe_[i], 0) + .008, f"{int(prof.loc[k, 'round_trips'])} trades", ha="center", fontsize=8)
+    ax[1].set_ylim(-.22, .10)
+    ax[1].axhline(0, color="#444", lw=.8)
+    ax[1].set_xticks(range(3))
+    ax[1].set_xticklabels(["daily", "monthly", "quarterly"])
+    ax[1].set_ylabel("book net Sharpe")
+    ax[1].set_title("Slowing the decisions")
+    save(fig, "14_horizon_vs_hold.png")
+
+
 if __name__ == "__main__":
     fig_adjustment()
     fig_spreads()
@@ -275,3 +311,4 @@ if __name__ == "__main__":
     fig_kpss_false_alarms()
     fig_variance_ratio()
     fig_ratio_mr_pnl()
+    fig_horizon_vs_hold()

@@ -196,3 +196,50 @@ def test_log_ratio_matches_clean_futures_file():
     lr = np.log(R.side_value(legs, {"ho": 1}) / R.side_value(legs, {"rb": 1}))
     ref = np.log(f["ho_rb__ho_bbl_unadj"] / f["ho_rb__rb_bbl_unadj"])
     assert np.allclose(lr, ref)
+
+
+# --------------------------------------------------------------------------- slow decisions (PREREGISTRATION_RATIO_SLOW.md)
+def month_starts_of(idx):
+    m = idx.to_period("M")
+    return set(idx[np.flatnonzero(np.r_[True, m[1:] != m[:-1]])])
+
+
+def test_decision_months_none_is_the_daily_strategy():
+    legs = frame(seed=8)
+    a = run(legs)
+    b = run(legs, decision_months=None)
+    assert np.allclose(a["daily"]["pnl_usd"], b["daily"]["pnl_usd"])
+
+
+def test_monthly_decisions_only_on_first_trading_day_of_a_month():
+    legs = frame(seed=8, half_life=15.0)
+    r = run(legs, decision_months=1)
+    t = r["trades"]
+    starts = month_starts_of(legs.index)
+    assert len(t) >= 2
+    assert t["decision_date"].isin(starts).all()                      # every entry is decided on a month start
+    ex = t[t["exit_reason"] != "open_at_end"]
+    by_calendar = ex["exit_reason"].isin(["time_stop", "model_break"])
+    assert ex.loc[~by_calendar, "exit_decision_date"].isin(starts).all()   # take-profit and stop only on month starts
+
+
+def test_quarterly_entries_only_in_jan_apr_jul_oct():
+    legs = frame(seed=9, half_life=15.0, n=2200)
+    t = run(legs, decision_months=3)["trades"]
+    assert len(t) > 1
+    assert set(pd.DatetimeIndex(t["decision_date"]).month) <= {1, 4, 7, 10}
+
+
+def test_slower_decisions_trade_less_on_the_same_data():
+    legs = frame(seed=10, half_life=15.0, n=2200)
+    n_daily = R.round_trips(run(legs)["trades"])
+    n_month = R.round_trips(run(legs, decision_months=1)["trades"])
+    n_quarter = R.round_trips(run(legs, decision_months=3)["trades"])
+    assert n_daily >= n_month >= n_quarter
+
+
+def test_z_raw_is_available_on_non_decision_days():
+    sim = run(frame(seed=11), decision_months=1)["sim"]
+    p = sim.fit
+    non_start = next(i for i in range(sim.first + 5, len(sim.idx)) if not sim.decide[i])
+    assert np.isnan(sim.z(p, non_start)) and np.isfinite(sim.z_raw(p, non_start))

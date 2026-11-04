@@ -1,0 +1,217 @@
+{
+  "status": "EXPLORATORY (PREREGISTRATION_RATIO_SLOW.md); does not change the binding verdict",
+  "source": "futures",
+  "start": "2010-02-01",
+  "end": "2026-10-26",
+  "reference_check_match": true,
+  "verdicts": {
+    "book": {
+      "G1_sharpe": false,
+      "G1_value": -0.13117795535046273,
+      "G2_round_trips": true,
+      "G2_value": 22,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": 0.25457283633853994,
+        "entry_z=2.0": -0.13117795535046273,
+        "entry_z=2.5": 0.048264142894595644
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": 0.0,
+        "hormuz": -60710.06566654002
+      },
+      "PASS": false
+    },
+    "crack321": {
+      "G1_sharpe": false,
+      "G1_value": 0.19408661855261278,
+      "G2_round_trips": false,
+      "G2_value": 11,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": true,
+      "G4_value": {
+        "entry_z=1.5": 0.6688948669670585,
+        "entry_z=2.0": 0.19408661855261278,
+        "entry_z=2.5": 0.16140999119027355
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 0.0,
+        "hormuz": -10731.383920106025
+      },
+      "PASS": false
+    },
+    "brent_wti": {
+      "G1_sharpe": false,
+      "G1_value": -0.12251468549441526,
+      "G2_round_trips": false,
+      "G2_value": 2,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.06795121290752058,
+        "entry_z=2.0": -0.12251468549441526,
+        "entry_z=2.5": -0.1626589167551547
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 0.0,
+        "hormuz": 0.0
+      },
+      "PASS": false
+    },
+    "ho_rb": {
+      "G1_sharpe": false,
+      "G1_value": -0.26543721334081427,
+      "G2_round_trips": false,
+      "G2_value": 9,
+      "G3_subperiods": false,
+      "G3_value": 1,
+      "G4_grid": false,
+      "G4_value": {
+        "entry_z=1.5": -0.07712636757525532,
+        "entry_z=2.0": -0.26543721334081427,
+        "entry_z=2.5": 0.07775991953760905
+      },
+      "G5_stress": false,
+      "G5_value": {
+        "ukraine": 0.0,
+        "hormuz": -171398.81307951405
+      },
+      "PASS": false
+    }
+  },
+  "book": {
+    "sharpe": -0.13117795535046273,
+    "sharpe_t": -0.5363599189943239,
+    "total": -40359.85842446006,
+    "ann_mean": -2414.119231655337,
+    "ann_sd": 18403.391219245903,
+    "max_dd": -73712.84677414769,
+    "years": 16.71825396825397,
+    "years_for_t2": NaN,
+    "years_for_t3": NaN
+  },
+  "round_trips": 22,
+  "book_passes_gates": false,
+  "book_counts_as_evidence": false,
+  "spreads": {
+    "crack321": {
+      "sharpe": 0.19408661855261278,
+      "sharpe_t": 0.7935806189892288,
+      "total": 92332.24262964573,
+      "ann_mean": 5522.840052853246,
+      "max_dd": -108157.92643059908,
+      "n_trades": 11,
+      "open_at_end": 0,
+      "win_rate": 0.5454545454545454,
+      "tp_rate": 0.18181818181818182,
+      "avg_hold": 52.18181818181818,
+      "avg_hold_over_half_life": 2.56047114603776,
+      "avg_trade": 8393.840239058702,
+      "worst_trade": -26024.633104423665,
+      "time_in_market": 0.13624495608829812,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.990030856871588,
+      "counts_as_evidence": false,
+      "years_for_t2": 106.18637718438917,
+      "years_for_t3": 238.91934866487563
+    },
+    "brent_wti": {
+      "sharpe": -0.12251468549441526,
+      "sharpe_t": -0.5009375745477942,
+      "total": -48468.154956559636,
+      "ann_mean": -2899.115843591984,
+      "max_dd": -108366.75566982832,
+      "n_trades": 2,
+      "open_at_end": 0,
+      "win_rate": 0.5,
+      "tp_rate": 0.0,
+      "avg_hold": 105.5,
+      "avg_hold_over_half_life": 2.1216705946497187,
+      "avg_trade": -24234.077478279825,
+      "worst_trade": -74005.11435069362,
+      "time_in_market": 0.05008307619273677,
+      "years": 16.71825396825397,
+      "gate_open_share": 0.9052931402800855,
+      "counts_as_evidence": false,
+      "years_for_t2": NaN,
+      "years_for_t3": NaN
+    },
+    "ho_rb": {
+      "sharpe": -0.26543721334081427,
+      "sharpe_t": -1.0853186563641313,
+      "total": -164943.66294646624,
+      "ann_mean": -9866.08190422727,
+      "max_dd": -257101.02633272696,
+      "n_trades": 9,
+      "open_at_end": 0,
+      "win_rate": 0.3333333333333333,
+      "tp_rate": 0.1111111111111111,
+      "avg_hold": 35.77777777777778,
+      "avg_hold_over_half_life": 2.844510967588862,
+      "avg_trade": -18327.07366071847,
+      "worst_trade": -146555.46968629368,
+      "time_in_market": 0.07643009731782578,
+      "years": 16.71825396825397,
+      "gate_open_share": 1.0,
+      "counts_as_evidence": false,
+      "years_for_t2": NaN,
+      "years_for_t3": NaN
+    }
+  },
+  "profile": {
+    "daily (reference)": {
+      "sharpe": 0.055,
+      "sharpe_t": 0.226,
+      "total": 21453.728,
+      "round_trips": 71.0
+    },
+    "monthly (base)": {
+      "sharpe": -0.131,
+      "sharpe_t": -0.536,
+      "total": -40359.858,
+      "round_trips": 22.0
+    },
+    "quarterly": {
+      "sharpe": -0.192,
+      "sharpe_t": -0.783,
+      "total": -38978.78,
+      "round_trips": 8.0
+    }
+  },
+  "comparisons": {
+    "base": {
+      "sharpe": -0.131,
+      "sharpe_t": -0.536,
+      "total": -40359.858,
+      "round_trips": 22.0,
+      "y2022": 0.0,
+      "y2026": -60710.066
+    },
+    "dollar_market": {
+      "sharpe": -0.054,
+      "sharpe_t": -0.221,
+      "total": -28200.062,
+      "round_trips": 29.0,
+      "y2022": 5918.894,
+      "y2026": -85675.23
+    }
+  },
+  "grid": {
+    "entry_z=1.5": 0.25457283633853994,
+    "entry_z=2.0": -0.13117795535046273,
+    "entry_z=2.5": 0.048264142894595644
+  },
+  "corr": {
+    "ratio_daily": 0.517,
+    "dollar_mean_reversion": 0.209,
+    "pairs": 0.037,
+    "trend_carry": -0.195
+  }
+}

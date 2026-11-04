@@ -282,7 +282,7 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 - Outright prices lean the other way: Brent 1.34 and ULSD 1.46 at one year.
 - **None of the log-ratio variance ratios is statistically significant** (robust p from 0.15 to 0.98), so this supports the picture but cannot confirm it.
 
-**For a trade:** reversion in the **ratio over weeks to months** (mean reversion), persistence in **outright prices over a year** (trend). The trend rule is unchanged: the sign of the 252-day change in the log-ratio differs from the sign of the dollar change on only 6–12% of days.
+**For a trade:** reversion in the **ratio over months** (mean reversion, tested on the next slides: it does not pay), persistence in **outright prices over a year** (trend). The trend rule is unchanged: the sign of the 252-day change in the log-ratio differs from the sign of the dollar change on only 6–12% of days.
 
 ---
 
@@ -360,6 +360,36 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 
 ---
 
+## Does the horizon rescue it? A slower version, registered first
+
+![Variance ratio against holding period, and Sharpe by decision interval](deck_figures/14_horizon_vs_hold.png)
+
+- The ratio reverts at **3 to 12 months** (variance ratio 0.66, 0.63 and 0.77 at 63 days, 0.50, 0.41 and 0.48 at one year). The daily strategy held for only **31, 23 and 26 days** on average, where the ratios are close to random walks (0.84, 0.73 and 1.11 at 21 days).
+- So we registered one change on 4 November, before any result: decide **monthly** instead of daily. Everything else is as registered, and the daily version re-run in the same code reproduces the earlier result.
+- **It made things worse.** Book Sharpe −0.13 against +0.06 daily, on 22 trades instead of 71. It fails G1, G3, G4 and G5. HO/RB, the best spread in the daily version, falls from 0.38 to −0.27.
+- **14 of 22 trades ended on the time stop**, and only 3 reached take-profit. The time stops lost $125k in total.
+- **A limit:** the time stop is 3 times the half-life fitted at entry (13 to 49 days), so average holds were 52, 106 and 36 days. A full 6 to 12 month hold is still untested.
+
+**For a trade:** slowing the decisions does not help here. Waiting for the gap to close mostly ends in a time stop, not a profit.
+
+---
+
+## Should we test a 12-month hold? Why we stop here
+
+**The case for.** The variance ratios fall with the horizon, the 63-day forward slopes are larger than the 21-day ones, and a slower strategy is cheap to build.
+
+**The case against, which we find stronger:**
+
+- **The evidence is a point estimate.** No log-ratio variance ratio is significant, and we saw it before writing the rules.
+- **The sample cannot decide.** There are about 17 non-overlapping years. At the best Sharpe seen anywhere (HO/RB daily, 0.38) it takes about **28 years for t = 2 and 62 years for t = 3**.
+- **Forking paths.** This is the **sixth** strategy variant tried on one sample. A seventh, tuned to a horizon we already saw, could not be told apart from luck, and the bar would have to rise (we set t above 3.0 before a pass is called evidence).
+- **Longer holds meet more regime breaks.** The two largest losses here are HO/RB in 2026 (−$147k on one trade) and Brent/WTI in 2011 (−$74k).
+- **Why we did not do it first.** On back-adjusted dollar changes the variance ratio was about 1 at every horizon, so there was no slow reversion to match. It appeared only in the log-ratio, after the professor's feedback.
+
+**What would change the answer:** more independent bets (more spreads or markets) to raise the power, or tracking the fixed rules forward on new data. More tuning on these three spreads cannot.
+
+---
+
 ## Trend and carry: a near miss
 
 | Net of costs, 2010–26 | G1 Sharpe | G2 changes | G3 eras | G4 settings | G5 crises |
@@ -392,6 +422,7 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 
 - **It stopped us trading a failed idea.** Mean reversion on Brent − WTI would have lost $224k, mostly in 2022 and 2026.
 - **It explains the failure.** Levels drift, links break in crises, and any reversion is slower than the holding period.
+- **It tested the obvious rescue.** Matching the strategy to the horizon where the ratio reverts did not help, and the reasons for not going further are on the record.
 - **It found what survives.** Carry earns most of the Sharpe at a tenth of the cost drag of trend.
 - **It kept us honest.** Trend's 504-day lookback scores 0.52, above the bar. Picking it after seeing the table would be overfitting, so it is not counted.
 - **It is reusable.** The data pipeline, pre-registered gates, seven tests and the reporting checks run on any new data.
@@ -406,7 +437,7 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 - All nine positions are long at the 26 October close, so today the book is effectively one long-oil bet.
 - Next experiments, each registered before it is run:
   1. Trade less (weekly, or only when the signal flips), to cut trend's 39% cost drag.
-  2. Overlay a small HO/RB ratio sleeve (stand-alone Sharpe 0.38, t = 1.55, daily P&L correlation −0.18 with the book), as a registered test of whether it adds to trend and carry.
+  2. Overlay a small HO/RB ratio sleeve (stand-alone Sharpe 0.38, t = 1.55, daily P&L correlation −0.18 with the book), as a registered test of whether it adds to trend and carry. It is fragile: the same spread falls to −0.27 when decisions go monthly.
   3. Track the fixed rules forward on new data, the only test free of hindsight.
 
 ---
@@ -414,6 +445,7 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 ## Caveats
 
 - **Chosen after seeing results.** Trend and carry came from the literature, but were picked after mean reversion failed, so they are labelled exploratory. The ratio strategy followed the professor's feedback, and its rules were registered after we had seen the forward-return regressions on HO/RB, so even a pass would not be independent.
+- **Six looks at one sample.** Mean reversion, pairs, trend, carry, ratio mean reversion and its slower version were all tried on the same 16.7 years, the last three after seeing earlier results. Any single pass would have to be discounted for that.
 - **KPSS and a moving anchor.** KPSS rejects for every spread, and the era means of the log-ratio shift. We read this as "anchored around a moving k", and the test cannot prove it.
 - **Few, related instruments.** All nine instruments are oil products and move together. Published trend and carry results draw on many unrelated markets.
 - **Simplifications.** Flat $0.05/bbl costs, no market impact, carry measured at the front of the curve only, unrounded contract sizes.
@@ -426,7 +458,7 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 | Test | Finding | Economic reading | Consequence |
 |---|---|---|---|
 | ADF, PP, KPSS, Zivot–Andrews | Dollar gaps need one difference, log-ratios are stationary around a moving mean | The anchor is a ratio k, and k shifts between eras | Trade the ratio against a rolling mean, never a fixed one |
-| Variance ratio | Log-ratios 0.4–0.5 at one year, outrights 1.1–1.5 | Two horizons | Mean reversion short, trend long |
+| Variance ratio | Log-ratios 0.4–0.5 at one year, outrights 1.1–1.5 | Two horizons | Mean reversion months, trend a year; but a monthly-decision version fails (−0.13) |
 | Cointegration | Link in 8–11% of windows | Arbitrage works, but regimes shift | Reversion needs a stability check |
 | ACF, PACF | 0 of 280 lags survive | Markets absorb yesterday's news | No daily forecasting |
 | AIC, BIC, Ljung–Box | AR(0) for 6 of 7 | No short-term memory to exploit | Drop AR and SARIMA |

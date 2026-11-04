@@ -315,6 +315,54 @@ add("ratio MR corr dollar", f"{sg(cr_.loc['ratio_mr', 'dollar_mean_reversion'])}
 add("recommendation ho_rb sleeve", f"stand-alone Sharpe {SP['ho_rb']['sharpe']:.2f}, t = {SP['ho_rb']['sharpe_t']:.2f}, daily P&L correlation {m(cr_.loc['ratio_mr', 'trend_carry'])} with the book")
 
 
+from oilrv.config import load_config as _lc
+cfg_slow = _lc()["exploratory_ratio_slow"]
+
+# =============================================================================== slow ratio version (added 2026-11-04)
+SL = O / "exploratory" / "ratio_slow" / "tables"
+slj = json.loads((SL / "summary.json").read_text())
+assert slj["reference_check_match"]                                    # the daily re-run reproduces the registered result
+sV, sSP = slj["verdicts"], slj["spreads"]
+vb_ = sV["book"]
+assert (not vb_["G1_sharpe"]) and vb_["G2_round_trips"] and not vb_["G3_subperiods"] and not vb_["G4_grid"] and not vb_["G5_stress"]
+add("slow: gates failed", "It fails G1, G3, G4 and G5.")
+add("slow: sharpe vs daily", f"Book Sharpe {m(slj['book']['sharpe'])} against {sg(rmj['book']['sharpe'])} daily, on {slj['round_trips']} trades instead of {rmj['round_trips']}")
+add("slow: HO/RB", f"falls from {rmj['spreads']['ho_rb']['sharpe']:.2f} to {m(sSP['ho_rb']['sharpe'])}")
+add("slow: fragile", f"the same spread falls to {m(sSP['ho_rb']['sharpe'])} when decisions go monthly")
+add("slow: summary row", f"a monthly-decision version fails ({m(slj['book']['sharpe'])})")
+
+v63 = vr_[(vr_.basis == "held_log_ratio") & (vr_.freq == "daily") & (vr_.q == 63)].set_index("series").vr
+v21 = vr_[(vr_.basis == "held_log_ratio") & (vr_.freq == "daily") & (vr_.q == 21)].set_index("series").vr
+add("horizon: 63d and 1y", f"(variance ratio {v63['crack321']:.2f}, {v63['brent_wti']:.2f} and {v63['ho_rb']:.2f} at 63 days, "
+                           f"{v252['crack321']:.2f}, {v252['brent_wti']:.2f} and {v252['ho_rb']:.2f} at one year)")
+add("horizon: 21d", f"({v21['crack321']:.2f}, {v21['brent_wti']:.2f} and {v21['ho_rb']:.2f} at 21 days)")
+dh = {s: rmj["spreads"][s]["avg_hold"] for s in NAMES}
+add("horizon: daily holds", f"**{dh['crack321']:.0f}, {dh['brent_wti']:.0f} and {dh['ho_rb']:.0f} days**")
+
+ex_ = pd.read_csv(SL / "exit_reasons.csv").set_index("exit_reason")
+n_tot = int(ex_.to_numpy().sum())
+assert n_tot == slj["round_trips"]
+add("slow: exits", f"**{int(ex_.loc['time_stop'].sum())} of {n_tot} trades ended on the time stop**, and only {int(ex_.loc['take_profit'].sum())} reached take-profit")
+st_ = pd.read_csv(SL / "trades.csv")
+sc_ = st_[st_.exit_reason != "open_at_end"]
+add("slow: time stop loss", f"The time stops lost ${abs(sc_[sc_.exit_reason == 'time_stop'].net_usd.sum()) / 1e3:.0f}k in total")
+hl_ = sc_.groupby("spread").half_life.mean()
+add("slow: fitted half-life", f"({hl_.min():.0f} to {hl_.max():.0f} days)")
+hd_ = sc_.groupby("spread").hold_days.mean()
+add("slow: holds", f"average holds were {hd_['crack321']:.0f}, {hd_['brent_wti']:.0f} and {hd_['ho_rb']:.0f} days")
+
+s_hr = rmj["spreads"]["ho_rb"]["sharpe"]
+add("slow: years for t", f"**{(2 / s_hr) ** 2:.0f} years for t = 2 and {(3 / s_hr) ** 2:.0f} years for t = 3**")
+add("slow: best sharpe", f"(HO/RB daily, {s_hr:.2f})")
+worst = st_.sort_values("net_usd").iloc[:2]
+w_ho = worst[worst.spread == "ho_rb"].iloc[0]
+w_bw = st_[(st_.spread == "brent_wti")].sort_values("net_usd").iloc[0]
+assert str(w_ho.fill_date).startswith("2026") and str(w_bw.fill_date).startswith("2011")
+add("slow: worst trades", f"HO/RB in 2026 (−${abs(w_ho.net_usd) / 1e3:.0f}k on one trade) and Brent/WTI in 2011 (−${abs(w_bw.net_usd) / 1e3:.0f}k)")
+assert cfg_slow["variants_tried_on_sample"] == 6 and cfg_slow["book_min_t_to_call_evidence"] == 3.0
+add("slow: sixth look", "the **sixth** strategy variant tried on one sample")
+add("slow: t above 3", "t above 3.0")
+
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")
 for lab, s in missing:
