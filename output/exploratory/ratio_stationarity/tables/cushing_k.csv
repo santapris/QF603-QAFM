@@ -1,0 +1,4 @@
+regression,slope,t_hac,r2,n_weeks,start
+"log-ratio on Cushing deviation (levels, weekly)",7.791918726918463e-05,0.34732708701749476,0.0034843026603669225,907,2009-06-19
+"smoothed log k on Cushing deviation (levels, weekly)",7.787779935819806e-05,0.34859689956293893,0.0036708802896284753,907,2009-06-19
+weekly change in log-ratio on weekly change in Cushing deviation,0.0003653852091716298,2.3611896984581557,0.008907892601797918,906,2009-06-26

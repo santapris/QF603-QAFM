@@ -297,6 +297,55 @@ def fig_horizon_vs_hold():
     save(fig, "14_horizon_vs_hold.png")
 
 
+def fig_moving_anchor():
+    """The market log-ratio, the filtered anchor (local level + AR(1)) and the trailing 756-day mean the registered z uses."""
+    s = pd.read_csv(RS / "moving_anchor_series.csv", parse_dates=["date"])
+    f = fut()
+    raw = {"brent_wti": np.log(f["brent_wti__brent_bbl_unadj"] / f["brent_wti__cl_bbl_unadj"]),
+           "ho_rb": np.log(f["ho_rb__ho_bbl_unadj"] / f["ho_rb__rb_bbl_unadj"])}
+    raw["ho_rb"] = raw["ho_rb"] - raw["ho_rb"].groupby(raw["ho_rb"].index.month).transform("mean") + raw["ho_rb"].mean()
+    fig, ax = plt.subplots(1, 2, figsize=(11, 3.8))
+    for a, n in zip(ax, ["brent_wti", "ho_rb"]):
+        y = raw[n]
+        k = s[s.series == n].set_index("date")["k_filtered"]
+        a.plot(y.index, y, color="#b5b5b5", lw=.7, label="log-ratio")
+        a.plot(k.index, np.log(k), color=COL[n], lw=1.6, label="filtered anchor, log k")
+        a.plot(y.index, y.shift(1).rolling(756).mean(), color="#000", lw=1.2, ls="--", label="756-day mean (registered signal)")
+        a.set_title(LAB[n].replace(" − ", " / "))
+        a.set_ylim(-.12, .45 if n == "brent_wti" else .6)
+    ax[0].set_ylabel("log(A / B)")
+    ax[0].legend(fontsize=7, loc="upper right")
+    save(fig, "15_moving_anchor.png")
+
+
+def fig_model_worlds():
+    """The registered rule simulated on four model worlds against what it earned, and G1 power."""
+    w = pd.read_csv(T / "exploratory" / "gate_power" / "model_worlds.csv")
+    pw = pd.read_csv(T / "exploratory" / "gate_power" / "g1_power.csv")
+    names = list(LAB)
+    cols = {"A": "#9bb9e0", "B": "#2a78d6", "C": "#eb6834", "D": "#1baf7a"}
+    labs = {"A": "A  fixed k, known", "B": "B  fixed k, estimated", "C": "C  moving k, estimated", "D": "D  moving k, anchor known"}
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4), gridspec_kw={"width_ratios": [1.6, 1]})
+    for j, wd in enumerate("ABCD"):
+        v = w[w.world == wd].set_index("spread").reindex(names)
+        ax[0].bar(np.arange(3) + (j - 1.5) * .2, v.mean_sharpe, .18, color=cols[wd], label=labs[wd])
+    real = w[w.world == "C"].set_index("spread").reindex(names).realised_daily_decisions
+    ax[0].scatter(np.arange(3), real, marker="D", color="#000", zorder=5, label="realised (daily decisions)")
+    ax[0].axhline(.5, color="#444", ls="--", lw=.8)
+    ax[0].axhline(0, color="#999", lw=.6)
+    ax[0].set_xticks(np.arange(3))
+    ax[0].set_xticklabels([LAB[n].replace(" − ", " / ") for n in names])
+    ax[0].set_ylabel("net Sharpe of the registered rule")
+    ax[0].set_title("The rule on four model worlds")
+    ax[0].legend(fontsize=7, loc="upper center", bbox_to_anchor=(.5, -.1), ncol=3)
+    ax[1].plot(pw.true_sharpe, pw.p_pass_G1, marker="o", ms=4, color="#2a78d6")
+    ax[1].axhline(.5, color="#999", lw=.6)
+    ax[1].set_xlabel("true Sharpe")
+    ax[1].set_ylabel("probability of passing G1 (> 0.5)")
+    ax[1].set_title("G1 over 16.7 years")
+    save(fig, "16_model_worlds.png")
+
+
 if __name__ == "__main__":
     fig_adjustment()
     fig_spreads()
@@ -312,3 +361,5 @@ if __name__ == "__main__":
     fig_variance_ratio()
     fig_ratio_mr_pnl()
     fig_horizon_vs_hold()
+    fig_moving_anchor()
+    fig_model_worlds()

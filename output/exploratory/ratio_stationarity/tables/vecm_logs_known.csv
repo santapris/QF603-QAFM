@@ -1,0 +1,11 @@
+spread,equation,alpha,t,implied_half_life_days
+crack321,held log return of RB,0.006622605970836553,1.6195506381285,
+crack321,held log return of HO,0.007344692049108266,1.8109842149725017,
+crack321,held log return of CL,0.016758784440940366,2.6220354533742127,
+crack321,held log-ratio return (speed of the ratio on itself),-0.009793856848271498,-2.2518645779370914,70.42652667675084
+brent_wti,held log return of BRENT,0.0027037132873599097,0.43380165845990104,
+brent_wti,held log return of CL,0.01159835742624761,1.2888636983562214,
+brent_wti,held log-ratio return (speed of the ratio on itself),-0.008909165794821476,-1.8366828115652987,77.45449007897481
+ho_rb,held log return of HO,-0.007336796618675227,-1.5312755120169455,
+ho_rb,held log return of RB,-0.0002654613247528144,-0.03685555039437621,
+ho_rb,held log-ratio return (speed of the ratio on itself),-0.0071602968860169786,-1.2204991366702167,96.45726282605712

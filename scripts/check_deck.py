@@ -195,12 +195,12 @@ NAMES = {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / R
 sd_ = pd.read_csv(RS / "scale_dependence.csv").set_index("series")
 dp_ = pd.read_csv(RS / "diff_on_price.csv").set_index("series")
 dol, lr_ = sd_.corr_rolling_sd_dollar_change_vs_price, sd_.corr_rolling_sd_log_ratio_return_vs_price.abs()
-add("differences: dollar vol corr", f"(correlation +{dol.min():.2f} to +{dol.max():.2f})")
-add("differences: log vol corr", f"(−{lr_.min():.2f} to −{lr_.max():.2f})")
-add("differences: intercepts", f"intercepts −${abs(dp_.loc['brent_wti', 'a_in_diff_eq_a_plus_cP']):.2f} and −${abs(dp_.loc['ho_rb', 'a_in_diff_eq_a_plus_cP']):.2f}")
+add("differences: dollar vol corr", f"S: +{dol.min():.2f} to +{dol.max():.2f}")
+add("differences: log vol corr", f"ℓ: −{lr_.min():.2f} to −{lr_.max():.2f}")
+add("differences: intercepts", f"a = −${abs(dp_.loc['brent_wti', 'a_in_diff_eq_a_plus_cP']):.2f} and −${abs(dp_.loc['ho_rb', 'a_in_diff_eq_a_plus_cP']):.2f}")
 assert abs(dp_.loc["brent_wti", "t_a_hac"]) < 2 and abs(dp_.loc["ho_rb", "t_a_hac"]) < 2          # "not different from zero"
 assert 7.5 <= dp_.loc["crack321", "a_in_diff_eq_a_plus_cP"] < 8.5 and round(100 * dp_.loc["crack321", "c_in_diff_eq_a_plus_cP"]) == 18
-add("differences: crack fixed", "about **$8 fixed**")
+add("differences: crack fixed", "a ≈ $8 fixed refining cost")
 add("differences: crack proportional", "about 18% of the crude price")
 add("roll gap ADF", f"p = {sd_.loc['crack321', 'adf_p_accumulated_roll_gap']:.2f} for the crack")
 
@@ -362,6 +362,75 @@ add("slow: worst trades", f"HO/RB in 2026 (−${abs(w_ho.net_usd) / 1e3:.0f}k on
 assert cfg_slow["variants_tried_on_sample"] == 6 and cfg_slow["book_min_t_to_call_evidence"] == 3.0
 add("slow: sixth look", "the **sixth** strategy variant tried on one sample")
 add("slow: t above 3", "t above 3.0")
+
+# =============================================================================== moving anchor, k tie-out, 2013, Cushing, log VECM, gate power (added 2026-11-04)
+GP = O / "exploratory" / "gate_power" / "tables" if False else O / "exploratory" / "gate_power"
+kc_ = pd.read_csv(RS / "k_consistency.csv").set_index("series")
+p1 = lambda x: f"{100 * x:.1f}%"
+add("k tie-out", f"{p1(kc_.loc['crack321', 'premium_from_dollar_regression'])} against {p1(kc_.loc['crack321', 'premium_from_mean_log_ratio'])}, "
+                 f"{p1(kc_.loc['brent_wti', 'premium_from_dollar_regression'])} against {p1(kc_.loc['brent_wti', 'premium_from_mean_log_ratio'])}, "
+                 f"{p1(kc_.loc['ho_rb', 'premium_from_dollar_regression'])} against {p1(kc_.loc['ho_rb', 'premium_from_mean_log_ratio'])}")
+assert (kc_.gap_dollar_vs_log.abs() < 0.01).all()
+
+ho_ = pd.read_csv(RS / "heating_oil_2013.csv")
+ho_ = ho_[ho_.break_date.str.startswith("2013-05")].set_index("series")
+add("2013 HO/RB", f"(+{100 * ho_.loc['ho_rb', 'jump_log_ratio']:.1f}% in May 2013, {round(100 * ho_.loc['ho_rb', 'percentile_of_abs_jump_among_all_month_starts'])}th percentile")
+add("2013 Brent/WTI", f"The {100 * abs(ho_.loc['brent_wti', 'jump_log_ratio']):.1f}% fall in Brent/WTI in 2013 ({round(100 * ho_.loc['brent_wti', 'percentile_of_abs_jump_among_all_month_starts'])}th percentile)")
+cu_ = pd.read_csv(RS / "cushing_k.csv")
+lv_, wk_ = cu_.iloc[0], cu_.iloc[2]
+add("cushing levels", f"(t = {lv_.t_hac:.1f} in levels, R² {100 * lv_.r2:.1f}%; in weekly changes t = {wk_.t_hac:.1f}, R² {100 * wk_.r2:.1f}%)")
+
+ua_ = pd.read_csv(RS / "moving_anchor_model.csv").set_index("series")
+ae_ = pd.read_csv(RS / "anchor_error.csv").set_index("series")
+for s, lab in [("crack321", "3-2-1 crack"), ("brent_wti", "Brent / WTI"), ("ho_rb", "HO / RB")]:
+    add(f"anchor row {s}", f"| {lab} | {ua_.loc[s, 'half_life_fixed_mean_days']:.0f} days | {ua_.loc[s, 'half_life_moving_anchor_days']:.1f} days | "
+                           f"{p1(ua_.loc[s, 'sigma_k_annual'])} | {p1(ua_.loc[s, 'sd_deviation_u'])} |")
+add("anchor error", f"**{ae_.loc['brent_wti', 'rmse_anchor_error_over_sd_u']:.1f}, {ae_.loc['crack321', 'rmse_anchor_error_over_sd_u']:.1f} and {ae_.loc['ho_rb', 'rmse_anchor_error_over_sd_u']:.1f}**")
+sh_ = ae_.share_of_those_where_filtered_deviation_lt_1sd
+add("false extremes", f"**{pct(sh_['brent_wti'])}, {pct(sh_['crack321'])} and {pct(sh_['ho_rb'])}**")
+hl_u = ua_.half_life_moving_anchor_days
+add("anchor: reverts in", f"fast (2 to 18 days)")
+assert round(hl_u.min()) == 2 and round(hl_u.max()) == 18 and 0.01 <= ua_.sd_deviation_u.min() < 0.0105 and 0.069 <= ua_.sd_deviation_u.max() < 0.07
+add("anchor: summary row", "2 to 18 days")
+add("anchor: drift range", "drifts 8 to 10% a year")
+assert 0.083 <= ua_.sigma_k_annual.min() and ua_.sigma_k_annual.max() < 0.1055
+add("anchor: error range", "0.8 to 5.5 deviation-sd")
+add("anchor: ranking", "(−0.49, 0.22, 0.38)")
+
+vk_ = pd.read_csv(RS / "vecm_logs_known.csv")
+cl_ = vk_[(vk_.spread == "crack321") & (vk_.equation == "held log return of CL")].iloc[0]
+bw_ = vk_[(vk_.spread == "brent_wti") & (vk_.equation == "held log return of CL")].iloc[0]
+add("vecm log WTI", f"(WTI α = +{cl_.alpha:.3f} a day, t = {cl_.t:.1f}, in the crack; t = {bw_.t:.1f} in Brent/WTI)")
+sp_ = vk_[vk_.equation.str.startswith("held log-ratio")].set_index("spread")
+add("vecm log speed", f"−{abs(sp_.loc['crack321', 'alpha']):.3f}, −{abs(sp_.loc['brent_wti', 'alpha']):.3f} and −{abs(sp_.loc['ho_rb', 'alpha']):.3f} a day "
+                      f"(t = {m(sp_.loc['crack321', 't'], 1)}, {m(sp_.loc['brent_wti', 't'], 1)} and {m(sp_.loc['ho_rb', 't'], 1)}), "
+                      f"half-lives of {sp_.loc['crack321', 'implied_half_life_days']:.0f}, {sp_.loc['brent_wti', 'implied_half_life_days']:.0f} and {sp_.loc['ho_rb', 'implied_half_life_days']:.0f} days")
+assert (ch_.arch_lm_p_10 < 0.001).all()
+add("arch log-ratio", "also rejects on daily log-ratio returns (p < 0.001)")
+
+# gate power and the model worlds
+gw_ = pd.read_csv(GP / "model_worlds.csv")
+g1_ = pd.read_csv(GP / "g1_power.csv").set_index("true_sharpe")
+ds_ = pd.read_csv(GP / "deflated_sharpe.csv", index_col=0)
+wA = gw_[gw_.world.isin(["A", "B"])].mean_sharpe
+add("worlds A/B", f"a Sharpe of **{wA.min():.1f} to {wA.max():.1f}**")
+wc = gw_[gw_.world == "C"].set_index("spread").mean_sharpe
+add("worlds C", f"**{wc['crack321']:.2f}, {wc['brent_wti']:.2f} and {wc['ho_rb']:.2f}**")
+rt = gw_[gw_.world == "C"].set_index("spread").mean_round_trips_per_year * 16.718
+add("worlds trade counts", f"(26, 16 and 26 simulated against 29, 15 and 27 realised)")
+assert [round(rt[s]) for s in ("crack321", "brent_wti", "ho_rb")] == [26, 16, 26]
+assert [SP[s]["n_trades"] for s in ("crack321", "brent_wti", "ho_rb")] == [29, 15, 27]
+cc = gw_[gw_.world == "C"].set_index("spread")
+assert cc.loc["brent_wti", "realised_daily_decisions"] < cc.loc["brent_wti", "p05"] and cc.loc["ho_rb", "realised_daily_decisions"] < cc.loc["ho_rb", "p05"]
+assert cc.loc["crack321", "p05"] < cc.loc["crack321", "realised_daily_decisions"] < cc.loc["crack321", "p95"]
+dd = gw_[gw_.world == "D"].mean_sharpe
+add("worlds D", f"earns {dd.min():.2f} to {dd.max():.2f}")
+add("g1 power se", "standard error of about 0.25")
+assert 0.24 <= g1_.loc[0.0, "se"] <= 0.26
+add("g1 power 0.45", f"passes G1 only **{pct(g1_.loc[0.45, 'p_pass_G1'])}** of the time")
+add("g1 power 0", f"passes **{pct(g1_.loc[0.0, 'p_pass_G1'])}** of the time")
+add("g1 six nulls", f"at least one pass {pct(g1_.loc[0.0, 'p_at_least_one_of_six_passes_if_all_true_sharpes_equal_this'])} of the time")
+add("dsr", f"**{ds_.loc[6, 'dsr']:.2f}** with six trials and {ds_.loc[12, 'dsr']:.2f} with twelve")
 
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")

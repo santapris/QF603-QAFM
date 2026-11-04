@@ -39,7 +39,9 @@ from scipy.stats import norm
 from statsmodels.stats.diagnostic import het_arch
 from statsmodels.stats.multitest import multipletests
 from statsmodels.tools.sm_exceptions import InterpolationWarning
+from statsmodels.tsa.statespace.structural import UnobservedComponents
 from statsmodels.tsa.stattools import adfuller, kpss
+from statsmodels.tsa.vector_ar.vecm import VECM
 
 from oilrv import diagnostics as dg
 from oilrv import horizon as H
@@ -422,6 +424,165 @@ def step9(D: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# --------------------------------------------------------------------------- step 10: the moving anchor
+def uc_fit(y: np.ndarray, level: str):
+    mod = UnobservedComponents(y, level=level, autoregressive=1)
+    return mod, mod.fit(disp=False, maxiter=300)
+
+
+def half_life(phi: float) -> float:
+    return float(np.log(2) / -np.log(phi)) if 0 < phi < 1 else np.inf
+
+
+def step10(D: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Local level + AR(1):  l_t = log k_t + u_t,  log k_t = log k_{t-1} + eta_t,  u_t = phi u_{t-1} + eps_t.
+
+    Fitted on the market log-ratio (calendar-month effects removed for the crack and HO/RB). Compared with a fixed mean
+    (sigma_eta = 0). The anchor the strategy uses is the trailing 756-day mean; how far is it from the filtered log k_t?"""
+    rows, series, err = [], [], []
+    for n, d in D.items():
+        y = d["lr_ds"].dropna()
+        mod, res = uc_fit(y.to_numpy(), "llevel")
+        mod0, res0 = uc_fit(y.to_numpy(), "fixed intercept")
+        p, p0 = dict(zip(mod.param_names, res.params)), dict(zip(mod0.param_names, res0.params))
+        phi, phi0 = p["ar.L1"], p0["ar.L1"]
+        s_eta, s_ar = np.sqrt(p["sigma2.level"]), np.sqrt(p["sigma2.ar"])
+        sd_u = s_ar / np.sqrt(1 - phi ** 2)
+        lev_s = pd.Series(res.smoothed_state[0], index=y.index)
+        lev_f = pd.Series(res.filtered_state[0], index=y.index)
+        u_f = y - lev_f
+        rows.append({"series": n, "phi_moving_anchor": phi, "half_life_moving_anchor_days": half_life(phi),
+                     "phi_fixed_mean": phi0, "half_life_fixed_mean_days": half_life(phi0),
+                     "sigma_level_daily": s_eta, "sigma_k_annual": s_eta * np.sqrt(252),
+                     "sd_deviation_u": sd_u, "sd_total": float(y.std()),
+                     "share_of_variance_in_anchor": float(1 - sd_u ** 2 / y.var()),
+                     "llf_moving": float(res.llf), "llf_fixed": float(res0.llf), "lr_stat": float(2 * (res.llf - res0.llf)),
+                     "converged": bool(res.mle_retvals.get("converged", True))})
+        series.append(pd.DataFrame({"series": n, "k_smoothed": np.exp(lev_s), "k_filtered": np.exp(lev_f),
+                                    "u_filtered_over_sd": u_f / sd_u}).rename_axis("date").reset_index())
+        # the strategy's anchor against the filtered one
+        m756 = y.shift(1).rolling(WINDOW).mean()
+        gap = (m756 - lev_f.shift(1)).dropna()
+        z = rolling_z(d["lr"], d["seasonal"]).reindex(y.index)
+        big = z.abs() >= 2
+        uf = (u_f / sd_u).abs()
+        err.append({"series": n, "rmse_anchor_error_over_sd_u": float(np.sqrt((gap ** 2).mean()) / sd_u),
+                    "days_abs_z756_ge_2": int(big.sum()),
+                    "share_of_those_where_filtered_deviation_lt_1sd": float((uf[big] < 1).mean()),
+                    "share_where_filtered_deviation_lt_2sd": float((uf[big] < 2).mean()),
+                    "share_where_filtered_deviation_ge_2sd": float((uf[big] >= 2).mean()),
+                    "days_filtered_dev_ge_2sd": int((uf >= 2).sum()),
+                    "share_of_those_missed_by_z756": float((z[uf >= 2].abs() < 2).mean()),
+                    "corr_z756_vs_filtered_dev": float(z.corr(u_f / sd_u))})
+    return pd.DataFrame(rows), pd.concat(series, ignore_index=True), pd.DataFrame(err)
+
+
+# --------------------------------------------------------------------------- step 11: is k the same number everywhere?
+def step11(D: dict) -> pd.DataFrame:
+    """The dollar regression S = a + c P_B gives a premium of c + a E[1/P_B] over B; the log-ratio gives exp(mean l) - 1.
+    For the crack S is per barrel of crude and P_B is WTI, so S / P_B = A/B - 1 exactly."""
+    rows = []
+    for n, d in D.items():
+        df = pd.concat([d["diff"], d["level"]], axis=1, keys=["S", "P"]).dropna()
+        r = sm.OLS(df["S"], sm.add_constant(df["P"])).fit()
+        a, c = float(r.params["const"]), float(r.params["P"])
+        rows.append({"series": n, "a_fixed_dollar": a, "c_proportional": c, "mean_price_P_B": float(df["P"].mean()),
+                     "premium_from_dollar_regression": c + a * float((1 / df["P"]).mean()),
+                     "premium_from_mean_log_ratio": float(np.exp(d["lr"].mean()) - 1),
+                     "premium_mean_of_ratio_minus_1": float((d["A"] / d["B"] - 1).mean()),
+                     "premium_proportional_part_only": c})
+    t = pd.DataFrame(rows)
+    t["gap_dollar_vs_log"] = t.premium_from_dollar_regression - t.premium_from_mean_log_ratio
+    return t
+
+
+# --------------------------------------------------------------------------- step 12: the 2013 heating oil -> ULSD change
+HO_SWITCH = pd.Timestamp("2013-05-01")        # NYMEX HO became ULSD in 2013 (oil-rv-plan.md); the exact month is an assumption
+
+
+def window_jump(y: pd.Series, at: pd.Timestamp, w: int = 252) -> tuple[float, float]:
+    """Mean of y over the w days from `at` minus the mean over the w days before it, with a Newey-West t."""
+    pos = y.index.searchsorted(at)
+    if pos < w or pos + w > len(y):
+        return np.nan, np.nan
+    seg = y.iloc[pos - w:pos + w]
+    dummy = (np.arange(2 * w) >= w).astype(float)
+    r = sm.OLS(seg.to_numpy(), sm.add_constant(dummy)).fit(cov_type="HAC", cov_kwds={"maxlags": 60})
+    return float(r.params[1]), float(r.tvalues[1])
+
+
+def step12(D: dict) -> pd.DataFrame:
+    rows = []
+    starts = pd.date_range("2008-01-01", "2025-06-01", freq="MS")
+    for n, d in D.items():
+        y = d["lr_ds"].dropna()
+        pl = pd.DataFrame([(s, *window_jump(y, s)) for s in starts], columns=["date", "b", "t"]).dropna()
+        for lab, dt in [("2013-03", "2013-03-01"), ("2013-05 (assumed switch)", "2013-05-01"), ("2013-07", "2013-07-01")]:
+            b, t = window_jump(y, pd.Timestamp(dt))
+            rows.append({"series": n, "break_date": lab, "jump_log_ratio": b, "t_hac": t,
+                         "percentile_of_abs_jump_among_all_month_starts": float((pl.b.abs() < abs(b)).mean()),
+                         "placebo_sd_of_jump": float(pl.b.std()), "n_placebo": len(pl)})
+    return pd.DataFrame(rows)
+
+
+# --------------------------------------------------------------------------- step 13: does k follow Cushing stocks?
+def step13(D: dict, uc_series: pd.DataFrame) -> pd.DataFrame:
+    f = pd.read_csv(ROOT / "data" / "clean" / "features_futures.csv", index_col=0, parse_dates=True)
+    cu = f["cushing_dev_5y"]
+    k = uc_series[uc_series.series == "brent_wti"].set_index("date")["k_smoothed"]
+    wk = pd.DataFrame({"lr": D["brent_wti"]["lr"], "cushing_dev": cu, "log_k": np.log(k)}).dropna(subset=["cushing_dev"]) \
+        .resample("W-FRI").last().dropna()
+    rows = []
+    for lab, y, x, lags in [("log-ratio on Cushing deviation (levels, weekly)", wk["lr"], wk["cushing_dev"], 26),
+                            ("smoothed log k on Cushing deviation (levels, weekly)", wk["log_k"], wk["cushing_dev"], 26),
+                            ("weekly change in log-ratio on weekly change in Cushing deviation", wk["lr"].diff(), wk["cushing_dev"].diff(), 4)]:
+        df = pd.concat([y, x], axis=1, keys=["y", "x"]).dropna()
+        r = sm.OLS(df["y"], sm.add_constant(df["x"])).fit(cov_type="HAC", cov_kwds={"maxlags": lags})
+        rows.append({"regression": lab, "slope": float(r.params["x"]), "t_hac": float(r.tvalues["x"]), "r2": float(r.rsquared),
+                     "n_weeks": len(df), "start": str(df.index[0].date())})
+    return pd.DataFrame(rows)
+
+
+# --------------------------------------------------------------------------- step 14: who moves, in logs
+def step14(D: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(a) free VECM(1), rank 2, on the log market prices of CL, RB, HO (as Test 7 did in dollars).
+    (b) the known log-ratio as the error-correction term, one equation per leg on the leg's held-contract log return."""
+    f = pd.read_csv(ROOT / "data" / "clean" / "futures_spreads.csv", index_col=0, parse_dates=True)
+    lv = pd.DataFrame({"cl": np.log(f["crack321__cl_bbl_unadj"]), "rb": np.log(f["crack321__rb_bbl_unadj"]),
+                       "ho": np.log(f["crack321__ho_bbl_unadj"])})
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = VECM(lv.to_numpy(), k_ar_diff=1, coint_rank=2, deterministic="ci").fit()
+    cols = ["ect1", "ect2"]
+    free = pd.concat({"alpha": pd.DataFrame(res.alpha, index=lv.columns, columns=cols),
+                      "alpha_t": pd.DataFrame(res.alpha / res.stderr_alpha, index=lv.columns, columns=cols),
+                      "beta": pd.DataFrame(res.beta, index=lv.columns, columns=cols)})
+    legs = {"crack321": [("rb", "crack321__rb_bbl"), ("ho", "crack321__ho_bbl"), ("cl", "crack321__cl_bbl")],
+            "brent_wti": [("brent", "brent_wti__brent_bbl"), ("cl", "brent_wti__cl_bbl")],
+            "ho_rb": [("ho", "ho_rb__ho_bbl"), ("rb", "ho_rb__rb_bbl")]}
+    rows = []
+    for n, d in D.items():
+        ect = d["lr_ds"].shift(1).rename("ect")
+        held = {}
+        for k, col in legs[n]:
+            adj, mkt = f[col].astype(float), f[f"{col}_unadj"].astype(float)
+            held[k] = np.log1p(adj.diff() / mkt.shift(1))
+        H = pd.DataFrame(held)
+        for k in H:
+            X = pd.concat([ect, H.shift(1).add_suffix("_lag")], axis=1)
+            df = pd.concat([H[k].rename("y"), X], axis=1).dropna()
+            r = sm.OLS(df["y"], sm.add_constant(df.drop(columns="y"))).fit(cov_type="HC1")
+            rows.append({"spread": n, "equation": f"held log return of {k.upper()}", "alpha": float(r.params["ect"]),
+                         "t": float(r.tvalues["ect"])})
+        X = pd.concat([ect, d["held"].shift(1).rename("held_lag")], axis=1)
+        df = pd.concat([d["held"].rename("y"), X], axis=1).dropna()
+        r = sm.OLS(df["y"], sm.add_constant(df.drop(columns="y"))).fit(cov_type="HC1")
+        sp = float(r.params["ect"])
+        rows.append({"spread": n, "equation": "held log-ratio return (speed of the ratio on itself)", "alpha": sp,
+                     "t": float(r.tvalues["ect"]), "implied_half_life_days": half_life(1 + sp)})
+    return free, pd.DataFrame(rows)
+
+
 # --------------------------------------------------------------------------- figures
 def figures(D: dict, era: pd.DataFrame, size: pd.DataFrame) -> None:
     (OUT / "figures").mkdir(parents=True, exist_ok=True)
@@ -482,7 +643,7 @@ def fig_vr(vr: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9"]
+ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]
 
 
 def main() -> None:
@@ -541,6 +702,27 @@ def main() -> None:
     if "9" in steps:
         step9(D).to_csv(T / "trend_sign_agreement.csv", index=False)
         log("step 9 done")
+    if "10" in steps or "13" in steps:
+        uc_t, uc_s, uc_e = step10(D)
+        if "10" in steps:
+            uc_t.to_csv(T / "moving_anchor_model.csv", index=False)
+            uc_s.to_csv(T / "moving_anchor_series.csv", index=False)
+            uc_e.to_csv(T / "anchor_error.csv", index=False)
+            log("step 10 done")
+    if "11" in steps:
+        step11(D).to_csv(T / "k_consistency.csv", index=False)
+        log("step 11 done")
+    if "12" in steps:
+        step12(D).to_csv(T / "heating_oil_2013.csv", index=False)
+        log("step 12 done")
+    if "13" in steps:
+        step13(D, uc_s).to_csv(T / "cushing_k.csv", index=False)
+        log("step 13 done")
+    if "14" in steps:
+        free14, known14 = step14(D)
+        free14.to_csv(T / "vecm_logs_free.csv")
+        known14.to_csv(T / "vecm_logs_known.csv", index=False)
+        log("step 14 done")
 
     rd = lambda n: pd.read_csv(T / n) if (T / n).exists() else None
     if rd("eras.csv") is not None and rd("kpss_size.csv") is not None:
@@ -559,7 +741,9 @@ def main() -> None:
                       "diff_on_price": "diff_on_price.csv", "roll_jumps": "roll_jumps.csv",
                       "tradeable_reversion": "tradeable_reversion.csv", "fade_after_z2": "fade_after_z2.csv",
                       "changes": "changes_summary.csv", "variance_ratios": "variance_ratios.csv",
-                      "variance_ratio_check": "variance_ratio_check.csv", "trend_sign_agreement": "trend_sign_agreement.csv"}.items():
+                      "variance_ratio_check": "variance_ratio_check.csv", "trend_sign_agreement": "trend_sign_agreement.csv",
+                      "moving_anchor_model": "moving_anchor_model.csv", "anchor_error": "anchor_error.csv", "k_consistency": "k_consistency.csv",
+                      "heating_oil_2013": "heating_oil_2013.csv", "cushing_k": "cushing_k.csv", "vecm_logs_known": "vecm_logs_known.csv"}.items():
         t = rd(name)
         if t is not None:
             summary[key] = t.round(4).to_dict("records")

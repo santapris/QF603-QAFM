@@ -2359,6 +2359,307 @@
    "mean_daily_logratio_trend_pnl_all": -0.0002
   }
  ],
+ "moving_anchor_model": [
+  {
+   "series": "crack321",
+   "phi_moving_anchor": 0.9081,
+   "half_life_moving_anchor_days": 7.1911,
+   "phi_fixed_mean": 0.9866,
+   "half_life_fixed_mean_days": 51.2547,
+   "sigma_level_daily": 0.0065,
+   "sigma_k_annual": 0.1035,
+   "sd_deviation_u": 0.0343,
+   "sd_total": 0.0957,
+   "share_of_variance_in_anchor": 0.8713,
+   "llf_moving": 13552.3873,
+   "llf_fixed": 13525.4873,
+   "lr_stat": 53.8,
+   "converged": true
+  },
+  {
+   "series": "brent_wti",
+   "phi_moving_anchor": 0.7306,
+   "half_life_moving_anchor_days": 2.208,
+   "phi_fixed_mean": 0.9866,
+   "half_life_fixed_mean_days": 51.4717,
+   "sigma_level_daily": 0.0057,
+   "sigma_k_annual": 0.0899,
+   "sd_deviation_u": 0.0101,
+   "sd_total": 0.0561,
+   "share_of_variance_in_anchor": 0.9676,
+   "llf_moving": 16292.1475,
+   "llf_fixed": 16250.0202,
+   "lr_stat": 84.2546,
+   "converged": true
+  },
+  {
+   "series": "ho_rb",
+   "phi_moving_anchor": 0.9631,
+   "half_life_moving_anchor_days": 18.4379,
+   "phi_fixed_mean": 0.9809,
+   "half_life_fixed_mean_days": 35.9993,
+   "sigma_level_daily": 0.0053,
+   "sigma_k_annual": 0.0839,
+   "sd_deviation_u": 0.0694,
+   "sd_total": 0.0978,
+   "share_of_variance_in_anchor": 0.4963,
+   "llf_moving": 12559.4951,
+   "llf_fixed": 12555.9684,
+   "lr_stat": 7.0534,
+   "converged": true
+  }
+ ],
+ "anchor_error": [
+  {
+   "series": "crack321",
+   "rmse_anchor_error_over_sd_u": 1.9535,
+   "days_abs_z756_ge_2": 437,
+   "share_of_those_where_filtered_deviation_lt_1sd": 0.6499,
+   "share_where_filtered_deviation_lt_2sd": 0.9153,
+   "share_where_filtered_deviation_ge_2sd": 0.0847,
+   "days_filtered_dev_ge_2sd": 54,
+   "share_of_those_missed_by_z756": 0.2037,
+   "corr_z756_vs_filtered_dev": 0.572
+  },
+  {
+   "series": "brent_wti",
+   "rmse_anchor_error_over_sd_u": 5.529,
+   "days_abs_z756_ge_2": 407,
+   "share_of_those_where_filtered_deviation_lt_1sd": 0.86,
+   "share_where_filtered_deviation_lt_2sd": 0.9828,
+   "share_where_filtered_deviation_ge_2sd": 0.0172,
+   "days_filtered_dev_ge_2sd": 20,
+   "share_of_those_missed_by_z756": 0.55,
+   "corr_z756_vs_filtered_dev": 0.3291
+  },
+  {
+   "series": "ho_rb",
+   "rmse_anchor_error_over_sd_u": 0.8112,
+   "days_abs_z756_ge_2": 412,
+   "share_of_those_where_filtered_deviation_lt_1sd": 0.3592,
+   "share_where_filtered_deviation_lt_2sd": 0.8762,
+   "share_where_filtered_deviation_ge_2sd": 0.1238,
+   "days_filtered_dev_ge_2sd": 80,
+   "share_of_those_missed_by_z756": 0.1,
+   "corr_z756_vs_filtered_dev": 0.7679
+  }
+ ],
+ "k_consistency": [
+  {
+   "series": "crack321",
+   "a_fixed_dollar": 7.8967,
+   "c_proportional": 0.1761,
+   "mean_price_P_B": 73.1238,
+   "premium_from_dollar_regression": 0.2956,
+   "premium_from_mean_log_ratio": 0.2874,
+   "premium_mean_of_ratio_minus_1": 0.2938,
+   "premium_proportional_part_only": 0.1761,
+   "gap_dollar_vs_log": 0.0082
+  },
+  {
+   "series": "brent_wti",
+   "a_fixed_dollar": -0.7109,
+   "c_proportional": 0.0803,
+   "mean_price_P_B": 73.0567,
+   "premium_from_dollar_regression": 0.0696,
+   "premium_from_mean_log_ratio": 0.0678,
+   "premium_mean_of_ratio_minus_1": 0.0695,
+   "premium_proportional_part_only": 0.0803,
+   "gap_dollar_vs_log": 0.0018
+  },
+  {
+   "series": "ho_rb",
+   "a_fixed_dollar": -2.3526,
+   "c_proportional": 0.1017,
+   "mean_price_P_B": 91.779,
+   "premium_from_dollar_regression": 0.0735,
+   "premium_from_mean_log_ratio": 0.0686,
+   "premium_mean_of_ratio_minus_1": 0.0761,
+   "premium_proportional_part_only": 0.1017,
+   "gap_dollar_vs_log": 0.0049
+  }
+ ],
+ "heating_oil_2013": [
+  {
+   "series": "crack321",
+   "break_date": "2013-03",
+   "jump_log_ratio": -0.0802,
+   "t_hac": -3.7167,
+   "percentile_of_abs_jump_among_all_month_starts": 0.799,
+   "placebo_sd_of_jump": 0.0587,
+   "n_placebo": 209
+  },
+  {
+   "series": "crack321",
+   "break_date": "2013-05 (assumed switch)",
+   "jump_log_ratio": -0.0999,
+   "t_hac": -5.8169,
+   "percentile_of_abs_jump_among_all_month_starts": 0.8947,
+   "placebo_sd_of_jump": 0.0587,
+   "n_placebo": 209
+  },
+  {
+   "series": "crack321",
+   "break_date": "2013-07",
+   "jump_log_ratio": -0.0983,
+   "t_hac": -4.7199,
+   "percentile_of_abs_jump_among_all_month_starts": 0.8852,
+   "placebo_sd_of_jump": 0.0587,
+   "n_placebo": 209
+  },
+  {
+   "series": "brent_wti",
+   "break_date": "2013-03",
+   "jump_log_ratio": -0.0872,
+   "t_hac": -4.6257,
+   "percentile_of_abs_jump_among_all_month_starts": 0.9282,
+   "placebo_sd_of_jump": 0.0441,
+   "n_placebo": 209
+  },
+  {
+   "series": "brent_wti",
+   "break_date": "2013-05 (assumed switch)",
+   "jump_log_ratio": -0.0962,
+   "t_hac": -5.4348,
+   "percentile_of_abs_jump_among_all_month_starts": 0.9426,
+   "placebo_sd_of_jump": 0.0441,
+   "n_placebo": 209
+  },
+  {
+   "series": "brent_wti",
+   "break_date": "2013-07",
+   "jump_log_ratio": -0.0866,
+   "t_hac": -3.9572,
+   "percentile_of_abs_jump_among_all_month_starts": 0.9187,
+   "placebo_sd_of_jump": 0.0441,
+   "n_placebo": 209
+  },
+  {
+   "series": "ho_rb",
+   "break_date": "2013-03",
+   "jump_log_ratio": 0.0203,
+   "t_hac": 2.0303,
+   "percentile_of_abs_jump_among_all_month_starts": 0.2823,
+   "placebo_sd_of_jump": 0.0766,
+   "n_placebo": 209
+  },
+  {
+   "series": "ho_rb",
+   "break_date": "2013-05 (assumed switch)",
+   "jump_log_ratio": 0.0205,
+   "t_hac": 1.9835,
+   "percentile_of_abs_jump_among_all_month_starts": 0.2871,
+   "placebo_sd_of_jump": 0.0766,
+   "n_placebo": 209
+  },
+  {
+   "series": "ho_rb",
+   "break_date": "2013-07",
+   "jump_log_ratio": 0.0097,
+   "t_hac": 0.813,
+   "percentile_of_abs_jump_among_all_month_starts": 0.177,
+   "placebo_sd_of_jump": 0.0766,
+   "n_placebo": 209
+  }
+ ],
+ "cushing_k": [
+  {
+   "regression": "log-ratio on Cushing deviation (levels, weekly)",
+   "slope": 0.0001,
+   "t_hac": 0.3473,
+   "r2": 0.0035,
+   "n_weeks": 907,
+   "start": "2009-06-19"
+  },
+  {
+   "regression": "smoothed log k on Cushing deviation (levels, weekly)",
+   "slope": 0.0001,
+   "t_hac": 0.3486,
+   "r2": 0.0037,
+   "n_weeks": 907,
+   "start": "2009-06-19"
+  },
+  {
+   "regression": "weekly change in log-ratio on weekly change in Cushing deviation",
+   "slope": 0.0004,
+   "t_hac": 2.3612,
+   "r2": 0.0089,
+   "n_weeks": 906,
+   "start": "2009-06-26"
+  }
+ ],
+ "vecm_logs_known": [
+  {
+   "spread": "crack321",
+   "equation": "held log return of RB",
+   "alpha": 0.0066,
+   "t": 1.6196,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "crack321",
+   "equation": "held log return of HO",
+   "alpha": 0.0073,
+   "t": 1.811,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "crack321",
+   "equation": "held log return of CL",
+   "alpha": 0.0168,
+   "t": 2.622,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "crack321",
+   "equation": "held log-ratio return (speed of the ratio on itself)",
+   "alpha": -0.0098,
+   "t": -2.2519,
+   "implied_half_life_days": 70.4265
+  },
+  {
+   "spread": "brent_wti",
+   "equation": "held log return of BRENT",
+   "alpha": 0.0027,
+   "t": 0.4338,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "brent_wti",
+   "equation": "held log return of CL",
+   "alpha": 0.0116,
+   "t": 1.2889,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "brent_wti",
+   "equation": "held log-ratio return (speed of the ratio on itself)",
+   "alpha": -0.0089,
+   "t": -1.8367,
+   "implied_half_life_days": 77.4545
+  },
+  {
+   "spread": "ho_rb",
+   "equation": "held log return of HO",
+   "alpha": -0.0073,
+   "t": -1.5313,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "ho_rb",
+   "equation": "held log return of RB",
+   "alpha": -0.0003,
+   "t": -0.0369,
+   "implied_half_life_days": NaN
+  },
+  {
+   "spread": "ho_rb",
+   "equation": "held log-ratio return (speed of the ratio on itself)",
+   "alpha": -0.0072,
+   "t": -1.2205,
+   "implied_half_life_days": 96.4573
+  }
+ ],
  "acf_bh_rejections": {
   "held_log_ratio_return": 0,
   "market_log_ratio_change_ex_roll": 0
