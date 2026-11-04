@@ -243,3 +243,33 @@ def test_z_raw_is_available_on_non_decision_days():
     p = sim.fit
     non_start = next(i for i in range(sim.first + 5, len(sim.idx)) if not sim.decide[i])
     assert np.isnan(sim.z(p, non_start)) and np.isfinite(sim.z_raw(p, non_start))
+
+
+# --------------------------------------------------------------------------- integer book (registered sizing, reported not gated)
+def test_sd_S_converts_the_log_signal_to_dollars_of_the_spread():
+    legs = frame(seed=12)
+    p = fit(legs)
+    v_a = p["w_ho"] * legs["ho_bbl_unadj"].iloc[600 - 1]
+    assert p["sd_S"] == pytest.approx(p["sd"] * v_a)
+    pd_ = fit(legs, mode="dollar_market")
+    assert pd_["sd_S"] == pytest.approx(pd_["sd"])                      # already in dollars
+
+
+def test_integer_book_units_are_whole_numbers_within_the_cap():
+    cfg = load_config()
+    legs = frame(seed=13, half_life=15.0, n=1800)
+    book = R.run_integer_book(data_for(legs), cfg, window=W)
+    t = book["spreads"][NAME]["trades"]
+    assert len(t) > 0
+    assert (t["units"] == np.floor(t["units"])).all()
+    assert t["units"].between(1, cfg["sizing"]["max_units"]).all()
+    assert {"equity", "drawdown", "size_mult", "halted"} <= set(book["book"].columns)
+    assert book["book"]["equity"].iloc[-1] == pytest.approx(cfg["sizing"]["book_usd"] + book["book"]["pnl_usd"].sum())
+
+
+def test_integer_book_does_not_change_the_research_stream():
+    legs = frame(seed=14, half_life=15.0, n=1500)
+    before = run(legs)["daily"]["pnl_usd"]
+    R.run_integer_book(data_for(legs), load_config(), window=W)
+    after = run(legs)["daily"]["pnl_usd"]
+    assert np.allclose(before, after)

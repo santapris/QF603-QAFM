@@ -1,0 +1,141 @@
+{
+  "status": "DESCRIPTIVE: the ratio strategies on the registered integer book; judges nothing",
+  "integer_book": {
+    "daily decisions (registered ratio rules)": {
+      "final_equity": 2121167.446600217,
+      "total": 121167.44660021907,
+      "sharpe": 0.22939155689282534,
+      "max_dd_usd": -125351.4891087503,
+      "max_drawdown_pct": 0.06047992600724342,
+      "halted": false,
+      "n_round_trips": 71,
+      "blocked_by_size": 0,
+      "days_half_size": 0,
+      "max_units_used": 3.0,
+      "mean_units": 2.76056338028169,
+      "worst_trade_usd": -40692.599444958316,
+      "y2022": -5685.402310770358,
+      "y2026": -82464.4734698564
+    },
+    "monthly decisions (slow version)": {
+      "final_equity": 1937117.2726152162,
+      "total": -62882.72738478099,
+      "sharpe": -0.13262176846210508,
+      "max_dd_usd": -137952.55556876055,
+      "max_drawdown_pct": 0.06696499258453516,
+      "halted": false,
+      "n_round_trips": 22,
+      "blocked_by_size": 0,
+      "days_half_size": 0,
+      "max_units_used": 3.0,
+      "mean_units": 2.8636363636363638,
+      "worst_trade_usd": -83185.96238827302,
+      "y2022": 0.0,
+      "y2026": -111438.91425276244
+    },
+    "registered dollar-gap strategy (reference)": {
+      "final_equity": 2066881.2000000025,
+      "total": 66881.1999999971,
+      "sharpe": 0.1326322660689877,
+      "max_dd_usd": -214752.80000000045,
+      "max_drawdown_pct": 0.0943133419469536,
+      "halted": false,
+      "n_round_trips": 43,
+      "blocked_by_size": 57,
+      "days_half_size": NaN,
+      "max_units_used": NaN,
+      "mean_units": NaN,
+      "worst_trade_usd": NaN,
+      "y2022": NaN,
+      "y2026": NaN
+    }
+  },
+  "research_vs_integer": [
+    {
+      "run": "daily decisions (registered ratio rules)",
+      "research_sharpe": 0.0554,
+      "research_total": 21453.7284,
+      "research_round_trips": 71,
+      "research_worst_trade": -190198.0385,
+      "integer_sharpe": 0.2294,
+      "integer_total": 121167.4466,
+      "integer_round_trips": 71,
+      "integer_worst_trade": -40692.5994,
+      "integer_2026": -82464.4735
+    },
+    {
+      "run": "monthly decisions (slow version)",
+      "research_sharpe": -0.1312,
+      "research_total": -40359.8584,
+      "research_round_trips": 22,
+      "research_worst_trade": -146555.4697,
+      "integer_sharpe": -0.1326,
+      "integer_total": -62882.7274,
+      "integer_round_trips": 22,
+      "integer_worst_trade": -83185.9624,
+      "integer_2026": -111438.9143
+    }
+  ],
+  "by_spread": [
+    {
+      "run": "daily decisions (registered ratio rules)",
+      "spread": "crack321",
+      "sharpe": 0.1409,
+      "total": 49235.7027,
+      "round_trips": 29,
+      "mean_units": 2.7241,
+      "worst_trade_usd": -40692.5994,
+      "y2026": -28884.0194
+    },
+    {
+      "run": "daily decisions (registered ratio rules)",
+      "spread": "brent_wti",
+      "sharpe": -0.3382,
+      "total": -40672.1573,
+      "round_trips": 15,
+      "mean_units": 3.0,
+      "worst_trade_usd": -19879.2461,
+      "y2026": -43883.9031
+    },
+    {
+      "run": "daily decisions (registered ratio rules)",
+      "spread": "ho_rb",
+      "sharpe": 0.2998,
+      "total": 112603.9011,
+      "round_trips": 27,
+      "mean_units": 2.6667,
+      "worst_trade_usd": -25381.9417,
+      "y2026": -9696.551
+    },
+    {
+      "run": "monthly decisions (slow version)",
+      "spread": "crack321",
+      "sharpe": 0.1789,
+      "total": 48534.3351,
+      "round_trips": 11,
+      "mean_units": 2.8182,
+      "worst_trade_usd": -13592.7344,
+      "y2026": -8407.3595
+    },
+    {
+      "run": "monthly decisions (slow version)",
+      "spread": "brent_wti",
+      "sharpe": -0.158,
+      "total": -18671.0471,
+      "round_trips": 2,
+      "mean_units": 3.0,
+      "worst_trade_usd": -25003.5702,
+      "y2026": 0.0
+    },
+    {
+      "run": "monthly decisions (slow version)",
+      "spread": "ho_rb",
+      "sharpe": -0.268,
+      "total": -92746.0154,
+      "round_trips": 9,
+      "mean_units": 2.8889,
+      "worst_trade_usd": -83185.9624,
+      "y2026": -103031.5548
+    }
+  ]
+}

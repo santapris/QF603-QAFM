@@ -75,6 +75,19 @@ Rules: `PREREGISTRATION_RATIO.md`, registered 2026-11-04 (commit `bd725b7`) befo
 - Hedge ratios are fixed dollar-neutral at each fit and do not drift while a trade is open.
 - Equal-risk averaging of three spreads makes G5 lenient, so each spread is also shown at full R.
 
+## On the registered integer book (descriptive, not gated)
+
+The gates above were judged on the research stream, whose units (R / (σ · M)) are unrounded and uncapped, so a calm volatility forecast can mean 65 units. The registered sizing also defines an integer book ($2m, units = the smaller of the volatility limit and a $40k stop limit, floored and capped at 3, size halved after a 10% drawdown, stopped at 20%). It had been run only for the registered dollar strategy. `scripts/run_ratio_integer.py` runs the same ratio rules through it (`output/exploratory/ratio_integer/`).
+
+| Integer book, 2010–26 | Sharpe | Total P&L | Max drawdown | Round trips | Worst trade | 2026 P&L |
+|---|---|---|---|---|---|---|
+| Ratio rules, daily decisions | **0.23** | +$121k | 6.0% | 71 | −$41k | −$82k |
+| Registered dollar-gap strategy (reference) | 0.13 | +$67k | 9.4% | 43 | n/a | n/a |
+
+- **Same 71 trades, smaller size.** Units average 2.8 (cap 3). The worst trade falls from $190k to $41k, and Brent/WTI's 2026 loss from $348k to $44k (crack −$29k, HO/RB −$10k).
+- **The Sharpe rises** from 0.055 to 0.23, above the dollar strategy's 0.13, with a smaller drawdown. It is **still below the 0.5 bar**, so the G1 verdict does not change. What changes is how much of the tail was sizing rather than signal.
+- The integer book adds the three spreads at up to 3 units each. The research book averages three spreads at full risk, so dollar totals are not comparable.
+
 **Follow-up.** The slower version (monthly decisions) is in `report/exploratory_ratio_slow.md`: it did worse (book Sharpe −0.13), and HO/RB fell to −0.27.
 
 ## Next experiments (each to be registered before it is run)

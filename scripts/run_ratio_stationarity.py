@@ -39,6 +39,7 @@ from scipy.stats import norm
 from statsmodels.stats.diagnostic import het_arch
 from statsmodels.stats.multitest import multipletests
 from statsmodels.tools.sm_exceptions import InterpolationWarning
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.structural import UnobservedComponents
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.tsa.vector_ar.vecm import VECM
@@ -583,6 +584,127 @@ def step14(D: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     return free, pd.DataFrame(rows)
 
 
+# --------------------------------------------------------------------------- step 15: ARIMA identification
+ARIMA_LAB = {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / RB", "cl": "WTI", "brent": "Brent", "rb": "RBOB",
+             "ho": "ULSD"}
+FORM_PRODUCT = "log price, d = 1 (ARMA on held log returns)"
+FORM_DOLLAR = "dollar gap, d = 1 (ARMA on back-adjusted daily change)"
+FORM_LOG0 = "log-ratio, d = 0 (market)"
+FORM_LOG1 = "log-ratio, d = 1 (market, roll jumps included)"
+FORM_HELD = "held log-ratio index, d = 1 (ARMA on held return)"
+
+
+def arima_grid(y: np.ndarray, d: int, pmax: int = 3, qmax: int = 3) -> pd.DataFrame:
+    rows = []
+    for p in range(pmax + 1):
+        for q in range(qmax + 1):
+            try:
+                r = ARIMA(y, order=(p, d, q), trend="c" if d == 0 else "t" if d == 1 else "n").fit()
+                rows.append({"p": p, "q": q, "aic": float(r.aic), "bic": float(r.bic), "res": r})
+            except Exception:
+                rows.append({"p": p, "q": q, "aic": np.inf, "bic": np.inf, "res": None})
+    return pd.DataFrame(rows)
+
+
+def arima_row(series: str, form: str, y: np.ndarray, d: int, d_label: int | None = None) -> tuple[list, list]:
+    """Best AIC and BIC models for `y` fitted as ARIMA(p, d, q); `d_label` is the order to print when `y` is already differenced."""
+    g = arima_grid(y, d)
+    rows, factors = [], []
+    for crit in ("bic", "aic"):
+        b = g.loc[g[crit].idxmin()]
+        r = b["res"]
+        p, q = int(b.p), int(b.q)
+        resid = np.asarray(r.resid)[max(p, q, 1) + 5:]
+        lb = dg.ljung_box(resid, lags=(20,), model_df=p + q)
+        ar_r, ma_r = (np.asarray(r.arroots) if p else np.array([])), (np.asarray(r.maroots) if q else np.array([]))
+        slow = float(np.log(2) / np.log(np.abs(ar_r).min())) if p and np.abs(ar_r).min() > 1 else np.nan
+        dd = d if d_label is None else d_label
+        rows.append({"series": series, "form": form, "criterion": crit.upper(), "order": f"({p},{dd},{q})",
+                     "aic": float(b.aic), "bic": float(b.bic), "slowest_ar_root_half_life_days": slow,
+                     "lb_plain_p20": lb["lb_p_20"], "lb_robust_p20": lb["robust_p_20"],
+                     "arch_lm_p10": float(het_arch(resid - resid.mean(), nlags=10)[1]), "n": len(y),
+                     "params": json.dumps({k: round(float(v), 4) for k, v in zip(r.param_names, r.params) if not k.startswith("sigma")})})
+        if crit == "bic":
+            for kind, roots in (("AR", ar_r), ("MA", ma_r)):
+                for z in roots:
+                    factors.append({"series": series, "form": form, "polynomial": kind, "root_in_L": complex(z).__repr__(),
+                                    "modulus": float(abs(z)), "real": float(np.real(z)), "imag": float(np.imag(z)),
+                                    "half_life_days": float(np.log(2) / np.log(abs(z))) if kind == "AR" and abs(z) > 1 else np.nan})
+            if p and q:                                                        # AR and MA roots that sit on top of each other cancel
+                dist = np.abs(ar_r[:, None] - ma_r[None, :])
+                for f in factors[-(p + q):]:
+                    f["has_cancelling_partner_within_0.15"] = bool((dist < 0.15).any())
+    return rows, factors
+
+
+def ar_forecast_h(y: np.ndarray, beta: np.ndarray, p: int, h: int) -> float:
+    hist = list(y[-p:][::-1])
+    for _ in range(h):
+        nxt = beta[0] + sum(beta[1 + j] * hist[j] for j in range(p))
+        hist = ([nxt] + hist[:p - 1]) if p > 1 else [nxt]
+    return hist[0]
+
+
+def ar_ols(w: np.ndarray, p: int) -> np.ndarray:
+    X = np.column_stack([np.ones(len(w) - p)] + [w[p - j:len(w) - j] for j in range(1, p + 1)])
+    return np.linalg.lstsq(X, w[p:], rcond=None)[0]
+
+
+def step15(D: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    rows, factors, integ = [], [], []
+    held = outright_held()
+    for k, o in held.items():
+        r_ = o["log_held"].dropna()
+        idx = r_.cumsum()
+        integ.append({"series": ARIMA_LAB[k], "adf_p_log_index": adfuller(idx, autolag="AIC")[1], "kpss_p_log_index": AR.unit_root(idx, "c")["kpss_p"],
+                      "adf_p_returns": adfuller(r_, autolag="AIC")[1], "kpss_p_returns": AR.unit_root(r_, "c")["kpss_p"]})
+        a, b = arima_row(ARIMA_LAB[k], FORM_PRODUCT, r_.to_numpy(), 0, d_label=1)
+        rows, factors = rows + a, factors + b
+    # WTI: the cancelling ARMA(2,2) comes from the March to May 2020 episode
+    w = held["cl"]["log_held"].dropna()
+    wc = []
+    for lab, x in [("full sample", w), ("excluding 2020-03-09 to 2020-05-29", w[(w.index < "2020-03-09") | (w.index > "2020-05-29")])]:
+        g = arima_grid(x.to_numpy(), 0)
+        bb = g.loc[g.bic.idxmin()]
+        wc.append({"sample": lab, "n": len(x), "bic_order": f"({int(bb.p)},1,{int(bb.q)})", "bic_best": float(bb.bic),
+                   "bic_random_walk": float(g[(g.p == 0) & (g.q == 0)].bic.iloc[0])})
+    for n, d in D.items():
+        a, b = arima_row(ARIMA_LAB[n], FORM_DOLLAR, d["adj_diff"].diff().dropna().to_numpy(), 0, d_label=1)
+        rows, factors = rows + a, factors + b
+        y = d["lr_ds"].dropna().to_numpy()
+        a, b = arima_row(ARIMA_LAB[n], FORM_LOG0, y, 0)
+        rows, factors = rows + a, factors + b
+        a, b = arima_row(ARIMA_LAB[n], FORM_LOG1, y, 1)
+        rows, factors = rows + a, factors + b
+        a, b = arima_row(ARIMA_LAB[n], FORM_HELD, d["held"].dropna().to_numpy(), 0, d_label=1)
+        rows, factors = rows + a, factors + b
+        log(f"  step 15 {n} fitted")
+    # out of sample: does an AR model of the log-ratio beat a random walk? Parameters refit monthly on the trailing 756 days.
+    hs, oos = (1, 5, 21, 63), []
+    for n, d in D.items():
+        y = d["lr_ds"].dropna().to_numpy()
+        errs = {(m, h): [] for m in ("mean", "ar1", "ar3", "rw") for h in hs}
+        for m0 in range(WINDOW, len(y) - max(hs), 21):
+            w_ = y[m0 - WINDOW:m0]
+            b1, b3, mu = ar_ols(w_, 1), ar_ols(w_, 3), w_.mean()
+            for t in range(m0, min(m0 + 21, len(y) - max(hs))):
+                for h in hs:
+                    tgt = y[t + h]
+                    errs[("rw", h)].append(tgt - y[t])
+                    errs[("mean", h)].append(tgt - mu)
+                    errs[("ar1", h)].append(tgt - ar_forecast_h(y[:t + 1], b1, 1, h))
+                    errs[("ar3", h)].append(tgt - ar_forecast_h(y[:t + 1], b3, 3, h))
+        for h in hs:
+            rw = np.array(errs[("rw", h)])
+            for m in ("mean", "ar1", "ar3"):
+                e = np.array(errs[(m, h)])
+                dl = rw ** 2 - e ** 2                                          # positive: the model beats the random walk
+                rr = sm.OLS(dl, np.ones(len(dl))).fit(cov_type="HAC", cov_kwds={"maxlags": h + 5})
+                oos.append({"series": ARIMA_LAB[n], "horizon_days": h, "model": m,
+                            "rmse_ratio_vs_random_walk": float(np.sqrt((e ** 2).mean() / (rw ** 2).mean())), "dm_t": float(rr.tvalues[0]), "n": len(dl)})
+    return pd.DataFrame(rows), pd.DataFrame(factors), pd.DataFrame(oos), pd.DataFrame(wc), pd.DataFrame(integ)
+
+
 # --------------------------------------------------------------------------- figures
 def figures(D: dict, era: pd.DataFrame, size: pd.DataFrame) -> None:
     (OUT / "figures").mkdir(parents=True, exist_ok=True)
@@ -643,7 +765,7 @@ def fig_vr(vr: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]
+ALL_STEPS = ["1", "2", "2e", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]
 
 
 def main() -> None:
@@ -718,6 +840,14 @@ def main() -> None:
     if "13" in steps:
         step13(D, uc_s).to_csv(T / "cushing_k.csv", index=False)
         log("step 13 done")
+    if "15" in steps:
+        a_o, a_f, a_oos, a_wti, a_int = step15(D)
+        a_o.to_csv(T / "arima_orders.csv", index=False)
+        a_f.to_csv(T / "arima_factors.csv", index=False)
+        a_oos.to_csv(T / "arima_oos.csv", index=False)
+        a_wti.to_csv(T / "arima_wti_check.csv", index=False)
+        a_int.to_csv(T / "arima_integration.csv", index=False)
+        log("step 15 done")
     if "14" in steps:
         free14, known14 = step14(D)
         free14.to_csv(T / "vecm_logs_free.csv")
@@ -743,7 +873,8 @@ def main() -> None:
                       "changes": "changes_summary.csv", "variance_ratios": "variance_ratios.csv",
                       "variance_ratio_check": "variance_ratio_check.csv", "trend_sign_agreement": "trend_sign_agreement.csv",
                       "moving_anchor_model": "moving_anchor_model.csv", "anchor_error": "anchor_error.csv", "k_consistency": "k_consistency.csv",
-                      "heating_oil_2013": "heating_oil_2013.csv", "cushing_k": "cushing_k.csv", "vecm_logs_known": "vecm_logs_known.csv"}.items():
+                      "heating_oil_2013": "heating_oil_2013.csv", "cushing_k": "cushing_k.csv", "vecm_logs_known": "vecm_logs_known.csv",
+                      "arima_orders": "arima_orders.csv", "arima_oos": "arima_oos.csv", "arima_wti_check": "arima_wti_check.csv"}.items():
         t = rd(name)
         if t is not None:
             summary[key] = t.round(4).to_dict("records")

@@ -34,6 +34,8 @@ import pandas as pd
 
 from . import futures
 from .backtest import Rules, SpreadSim, _ok
+from .backtest import run_book as _integer_run_book
+from .sizing import integer_units
 from .config import load_config
 from .diagnostics import ar1, window_before
 from .metrics import sharpe, subperiods, window_pnl
@@ -112,6 +114,10 @@ def fit_ratio(win: pd.DataFrame, spec: dict, pos: int, mode: str = "base", cfg: 
          "mean": float(r.mean()), "sd": float(r.std(ddof=1)), "dS_sd": float(ds.std(ddof=1)),
          "k_hat": float(np.exp(deseasonalise(log_ratio, seas).mean())),
          **{f"w_{k}": v for k, v in w.items()}}
+    # The engine's stop-loss size limit needs the window sd of the signal in $/bbl of S. For the log-ratio, a move of d in the
+    # log-ratio is a move of about d * V_A in S, V_A the market value of side A of one unit ($/bbl, last close of the window).
+    v_a = float(sum(w[k] * win[f"{k}_bbl_unadj"].iloc[-1] for k in a))
+    p["sd_S"] = p["sd"] if mode == "dollar_market" else p["sd"] * v_a
     p.update({f"seas_{k}": v for k, v in seas.items()})
     p.update({f"garch_{k}": v for k, v in fit_garch(ds).items()})
     return p
@@ -154,6 +160,12 @@ class RatioSim(SpreadSim):
         b = sum(n * self.mkt[k][i] for k, n in self.spec["b"].items())
         return float(np.log(a / b))
 
+    def _units(self, sigma: float, az: float, mode: str, mult: float) -> float:
+        """Research stream as registered; the integer book (PREREGISTRATION sizing: $40k stop limit, 3-unit cap) uses sd_S."""
+        if mode == "integer":
+            return float(integer_units(sigma, az, self.fit["sd_S"], self.M, mult, self.cfg)["units"])
+        return super()._units(sigma, az, mode, mult)
+
     def z_raw(self, p: dict, i: int) -> float:
         """z on any day, whether or not it is a decision day (for reporting)."""
         if not _ok(p):
@@ -178,11 +190,11 @@ class RatioSim(SpreadSim):
         return daily, tr
 
 
-def run_spread(name: str, data: dict, cfg: dict | None = None, mode: str = "base", entry_z: float | None = None,
-               exit_z: float | None = None, window: int | None = None, cost_bbl: float | None = None,
-               decision_months: int | None = None) -> dict:
-    """One spread, one configuration. Returns {'daily', 'trades', 'sim'}. `decision_months` slows the decisions
-    (None = every day, as in PREREGISTRATION_RATIO.md; 1 = monthly, 3 = quarterly; PREREGISTRATION_RATIO_SLOW.md)."""
+def make_sim(name: str, data: dict, cfg: dict | None = None, mode: str = "base", entry_z: float | None = None,
+             exit_z: float | None = None, window: int | None = None, cost_bbl: float | None = None,
+             decision_months: int | None = None) -> "RatioSim":
+    """One spread's simulator, not yet stepped. `decision_months` slows the decisions (None = every day, as in
+    PREREGISTRATION_RATIO.md; 1 = monthly, 3 = quarterly; PREREGISTRATION_RATIO_SLOW.md)."""
     if mode not in MODES:
         raise ValueError(f"unknown mode {mode!r}")
     cfg = cfg or load_config()
@@ -192,12 +204,26 @@ def run_spread(name: str, data: dict, cfg: dict | None = None, mode: str = "base
     cache = RatioFitCache(legs, spec, mode, c, data["stores"][name])
     rules = Rules(variant="fixed", sizing="garch", use_blackout=True, use_logit=False, entry_z=entry_z, exit_z=exit_z,
                   cost_bbl=cost_bbl, window=window, label=mode)
-    sim = RatioSim(name, legs, spec, cache, pd.Series(dtype=float), data["blackout"], rules, c, data["rolled"][name],
-                   decision_months)
-    for i in range(sim.first, len(legs)):
+    return RatioSim(name, legs, spec, cache, pd.Series(dtype=float), data["blackout"], rules, c, data["rolled"][name],
+                    decision_months)
+
+
+def run_spread(name: str, data: dict, cfg: dict | None = None, **kw) -> dict:
+    """One spread, one configuration (research stream). Returns {'daily', 'trades', 'sim'}."""
+    sim = make_sim(name, data, cfg, **kw)
+    for i in range(sim.first, len(sim.idx)):
         sim.step(i)
     daily, trades = sim.results()
     return {"daily": daily, "trades": trades, "sim": sim}
+
+
+def run_integer_book(data: dict, cfg: dict | None = None, **kw) -> dict:
+    """The registered integer book ($2m, units floored and capped at 3, $40k stop limit, halve size after a 10% drawdown, stop at
+    20%) across the three spreads, with the same rules as the research stream. Reported next to it, never gated."""
+    cfg = cfg or load_config()
+    sims = {n: make_sim(n, data, cfg, **kw) for n in data["specs"]}
+    book, res = _integer_run_book(sims, cfg)
+    return {"book": book, "spreads": {n: {"daily": r[0], "trades": r[1], "sim": sims[n]} for n, r in res.items()}}
 
 
 def round_trips(trades: pd.DataFrame) -> int:

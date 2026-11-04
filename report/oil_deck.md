@@ -9,29 +9,20 @@ Crude, gasoline and diesel prices are tied together by refining. We tested wheth
 - Bloomberg futures, January 2007 to October 2026
 - QF603 project, 3 November 2026
 
+**The answer in one line.** The spreads are anchored (the log-ratio is stationary) but the anchor moves, and no mean-reversion rule passes the five gates. Trend and carry comes closest, with a net Sharpe of 0.45.
+
 <!-- Speaker: the result is a near miss, not a winner. The value is in what the tests rule out and why. -->
 
 ---
 
-## One barrel of crude becomes several products
+## Crude, gasoline and diesel: one barrel, three spreads, three links
 
-- A refinery splits crude into gasoline, diesel and other fuels. A rule of thumb is **3 barrels of crude give 2 of gasoline and 1 of diesel**.
-- The **3-2-1 crack** is what the refiner earns on that split: 2 gasoline + 1 diesel − 3 crude, per barrel of crude.
-- Product prices and crude prices must stay linked. If gasoline sells for far more than the crude that makes it, refiners buy more crude and make more gasoline, until the gap narrows.
+- A refinery splits **3 barrels of crude into 2 of gasoline and 1 of diesel**. The **3-2-1 crack** is what it earns: 2 gasoline + 1 diesel − 3 crude, per barrel of crude.
+- **Brent − WTI:** cargoes move between the Atlantic and the US Gulf, so the gap should not exceed shipping cost and quality difference.
+- **HO − RB (diesel − gasoline):** refineries can shift yield between the two.
+- Each link is a reason a gap should revert. Each can break: outages and hurricanes, pipeline and export limits (the Cushing glut of 2011–13), diesel shortages (2022), a Hormuz closure (2026).
 
-**Why this matters for trading:** a link that pulls prices back together is the whole reason to expect a spread to snap back.
-
----
-
-## Three spreads, three economic links
-
-| Spread | What ties it together | What can break the tie |
-|---|---|---|
-| **3-2-1 crack** (products − crude) | Refiners switch to the more profitable product and add or cut crude runs | Refinery outages, hurricanes, product shortages, a Hormuz closure |
-| **Brent − WTI** (two crudes) | Cargoes move between the Atlantic and the US Gulf, so the gap should not exceed shipping cost and quality difference | Pipeline and export limits (Cushing glut 2011–13), export rules, regional supply shocks |
-| **HO − RB** (diesel − gasoline) | Refineries can shift yield between diesel and gasoline | Season (summer driving, winter heating), grade changes, diesel shortages as in 2022 |
-
-**For a trade:** each link is a reason the gap should revert. Each break is a reason it might not.
+The full economics of each link is in Appendix A.
 
 ---
 
@@ -55,17 +46,6 @@ Crude, gasoline and diesel prices are tied together by refining. We tested wheth
 
 ---
 
-## How we got there: tests first, then strategies
-
-1. **Tests** tell us what the prices do: do they wander, do they come back, can yesterday predict today, does risk cluster. Steps 1 to 5 follow one argument from equations to evidence: the dollar spread seems to have no home, a model says the ratio should, the ratio does, its home moves, and what that means for a trade.
-2. Each test ends with **"For a trade"**: what it allows or rules out.
-3. A **bridge slide** turns the findings into a shortlist of strategies.
-4. Each strategy is judged on the **same five gates**.
-
-**Why this order:** testing first stops us from backtesting ideas the data already contradicts.
-
----
-
 ## The data: futures expire, so the series are stitched
 
 - A futures contract ends. To follow "the price of oil" for 20 years we hold one contract, then **roll** into the next about 5 business days before expiry.
@@ -75,15 +55,6 @@ Crude, gasoline and diesel prices are tied together by refining. We tested wheth
 ![3-2-1 crack, back-adjusted against market level](deck_figures/01_backadjusted_vs_market.png)
 
 **For a trade:** the registered signal used the adjusted level, so a "wide" spread can partly be accumulated roll gaps, not an economic extreme. This matters in the results. Anything that needs a real price (a ratio, a log, a stationarity test) uses the market level, and P&L always uses the adjusted changes.
-
----
-
-## What the three spreads look like
-
-![Three spreads at market level, with stress windows shaded](deck_figures/02_spreads_market_level.png)
-
-- Levels sit in ranges for years, then move to a new range: Brent − WTI in 2011–13, the crack and HO − RB in 2022 and 2026.
-- The shaded windows are the periods gates G3 and G5 look at.
 
 ---
 
@@ -192,7 +163,268 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 
 ---
 
-## Step 5a: can a holder earn the reversion? (the roll)
+## Step 5: what the daily ARIMA says (almost nothing, and that explains the earlier tests)
+
+| Series | Dollar gap (on back-adjusted changes) | Log-ratio, d = 0 | Slowest root, half-life | Roll-clean held index |
+|---|---|---|---|---|
+| 3-2-1 crack | ARIMA(0,1,0) | ARIMA(1,0,3) | 81 days | ARIMA(2,1,3), partly cancelling terms |
+| Brent / WTI | ARIMA(2,1,0), coefficients 0.06 and −0.04 | ARIMA(3,0,2) | 98 days | ARIMA(3,1,0), coefficients under 0.14 |
+| HO / RB | ARIMA(0,1,0) | ARIMA(1,0,0) | 35 days | ARIMA(0,1,0) |
+
+- **Products:** Brent, RBOB and ULSD are ARIMA(0,1,0) with drift (BIC), and so is WTI once 9 March to 29 May 2020 is excluded (otherwise a cancelling (2,1,2)). ARCH is present in every series (p < 0.001): a random walk with GARCH.
+- **Same process, two lenses.** The log-ratio is d = 0 with one root of 1.007 to 1.02 (half-life 35 to 98 days). It closes only 0.7% to 2% of the gap a day, far below the daily noise, so the ARIMA on the dollar gap sees a random walk. Both are true. HO/RB's d = 1 fit has a moving-average term of −0.99, the signature of over-differencing.
+- **Brent/WTI ARMA(3,0,2), factored:** AR = (1 − 0.993 L)(1 − 0.447 L + 0.275 L²). One slow root (half-life 98 days: cargo, pipeline and export arbitrage) and a damped oscillation (it decays by 0.52 a day, period about 6 days): short-run noise as one benchmark reacts first. The order counts polynomial terms. It is not five separate economic facts.
+- **Out of sample** (756-day window, refit monthly, 1 to 63 days ahead): no AR forecast of the log-ratio beats a random walk (RMSE ratio 0.94 to 1.14, Diebold–Mariano |t| of at most 1.8). The 756-day mean the strategies use as the anchor is worse than no-change at every horizon except HO/RB at 63 days.
+- **Roll-clean:** the held-contract index is a random walk with drift, a tradeable series with no daily linear predictability.
+
+**For a trade:** no daily ARIMA edge exists in any form. Whatever pull there is acts over months, which the next slide tests.
+
+---
+
+## Step 6: over months the ratio reverts, and a holder earns part of it
+
+![Variance ratio by horizon](deck_figures/12_variance_ratio_profile.png)
+
+- **Variance ratio at one year:** the ratio's variance is only **50%, 41% and 48%** of the random-walk level (crack, Brent/WTI, HO/RB). Outright prices lean the other way: Brent 1.34 and ULSD 1.46 at one year. None is statistically significant (robust p from 0.15 to 0.98).
+- **The roll:** the market ratio jumps when we roll into the next contract month, and a holder does not earn that jump. After removing it, **HO/RB shows reversion a holder clearly earns** (t = −2.78 at 21 days, −3.51 at 63 days). The crack and Brent/WTI have the right sign but |t| of at most 1.72, and 41% to 54% of their apparent reversion is the roll.
+
+**For a trade:** reversion in the **ratio over months** (mean reversion), persistence in **outright prices over a year** (trend). The detail is in Appendix B.
+
+---
+
+## What the tests allow
+
+| Finding | What it means | Strategy it motivates | Judged on |
+|---|---|---|---|
+| Changes are close to white noise (BIC: AR(0) for 6 of 7) | No daily forecasting edge | Drop daily AR and SARIMA trades | not carried forward |
+| Dollar levels wander, link unstable (rope in 8–11% of windows) | Reversion is possible but only sometimes | Mean reversion and cointegration pairs, with a stability check | G3, G4, G5 |
+| **Ratios are stationary** (ADF, PP, Zivot–Andrews), half-life 35–50 days, but k moves between eras | The anchor is proportional, and it drifts | **Mean reversion on the log-ratio**, against a rolling mean | G1 to G5 |
+| A moving-anchor model: deviations revert in 2 to 18 days around a drifting k | The slow half-life is mostly the anchor moving | A better anchor than a 3-year mean (not tested, see Appendix D) | not carried forward |
+| Variance ratios: log-ratios below 1, outright prices above 1 | Two horizons: reversion in months, persistence over a year | Mean reversion (short horizon) and trend (long horizon) | G1 to G5 |
+| Volatility clusters (ARCH p < 0.001) | Risk is forecastable | Volatility-based sizing in every strategy | G5 |
+| Daily tests cannot see 12-month moves or the futures curve | A gap in the evidence | Trend and carry, tested directly (appendix) | G1 to G5 |
+
+**The tests rule things out. They cannot pick a winner, so the shortlist goes to the backtest.**
+
+---
+
+## Five candidates, each with an economic reason
+
+| Strategy | Idea | Economic reason | Motivated by |
+|---|---|---|---|
+| **Mean reversion** (registered, dollar gap) | Fade spreads that are 2 standard deviations from the 3-year average | Arbitrage and substitution pull gaps back | Persistent but possibly anchored levels |
+| **Ratio mean reversion** (registered 4 Nov) | The same rules on the log-ratio of market prices | Substitution works in percent, so k is the anchor | Ratios are stationary, half-life 35–50 days |
+| **Pairs** | Trade legs tied by a rope (cointegration) | A long-run link between two prices | The rope test, when it passes |
+| **Trend** | Follow the sign of the past 12 months | Supply and demand adjust slowly, so big shocks keep going | Levels that wander in one direction |
+| **Carry** | Long if the curve is backwardated, short if in contango | Paid for insuring hedgers; scarce prompt barrels sell at a premium | The curve, which no daily test looks at |
+
+---
+
+## Every strategy against the five gates
+
+| Futures, 2010–26, net of costs | G1 net Sharpe > 0.5 | G2 trades ≥ 20 | G3 positive eras (of 3) | G4 every setting > 0 | G5 worst crisis year > −$40k | Integer-book Sharpe |
+|---|---|---|---|---|---|---|
+| Mean reversion, dollar gap (crack / Brent − WTI / HO − RB) | 0.32 / −0.42 / 0.06 ✗ | 18 / 9 / 18 ✗ | 2 / 0 / 2 | ✓ / ✗ / ✗ | −$73k / −$151k / −$84k ✗ | 0.13 |
+| Ratio mean reversion, daily decisions (book of 3) | 0.055 ✗ | 71 ✓ | 2 ✓ | ✓ | −$133k ✗ | 0.23 |
+| Ratio mean reversion, monthly decisions | −0.13 ✗ | 22 ✓ | 1 ✗ | ✗ | −$61k ✗ | −0.13 |
+| Pairs (book of 6) | −0.19 ✗ | 80 ✓ | 1 ✗ | ✗ | −$40k ✗ | not run |
+| **Trend and carry (50/50 book)** | **0.45 ✗** | 1,150 ✓ | 3 ✓ | ✓ | profit in 2022 and 2026 ✓ | not run |
+
+- **No strategy passes all five gates.** Trend and carry passes four and misses G1 by 0.05. Every mean-reversion and pairs variant fails G1 and G5.
+- The registered integer book (units capped at 3, $2m, drawdown rules) lifts the daily ratio strategy from 0.055 to 0.23 and cuts the 2026 Brent/WTI loss from $348k to $44k, but does not reach 0.5.
+- The bar itself is noisy: a measured Sharpe over 16.7 years has a standard error of about 0.25 (see "Could we have known?").
+
+**For a trade:** the gates separate carry and trend from everything else, and no mean-reversion variant gets close.
+
+---
+
+## Why mean reversion fails: the wrong anchor, the wrong horizon, and crisis breaks
+
+![Variance ratio against holding period, and Sharpe by decision interval](deck_figures/14_horizon_vs_hold.png)
+
+- **The wrong anchor.** The registered z measures against a 756-day mean. It misses the filtered anchor by **5.5, 2.0 and 0.8** standard deviations of the deviation (Brent/WTI, crack, HO/RB), and on days with |z| ≥ 2 the filtered deviation is under 1 standard deviation on **86%, 65% and 36%** of days: most "extremes" are the anchor moving.
+- **The wrong horizon.** The ratio reverts over 3 to 12 months, but the daily strategy held for only **31, 23 and 26 days**. Deciding monthly made it worse (Sharpe −0.13), and 14 of 22 trades ended on the time stop.
+- **Crisis breaks.** Brent/WTI broke in the 2026 supply shock. Capping size at 3 units cuts that loss from $348k to $44k, which shows how much of the tail was sizing, not signal. The Sharpe is still only 0.23.
+
+**For a trade:** a stationary ratio is not a tradeable one. A size cap helps the tail but not the Sharpe. A better anchor and a longer hold cannot be tested on this sample without a seventh look.
+
+---
+
+## Trend and carry: a near miss
+
+| Net of costs, 2010–26 | G1 Sharpe | G2 changes | G3 eras | G4 settings | G5 crises |
+|---|---|---|---|---|---|
+| Trend | 0.29 ✗ | 971 ✓ | 3 ✓ | ✓ | ✓ |
+| Carry | 0.44 ✗ | 179 ✓ | 2 ✓ | ✓ | ✓ |
+| **50/50 book** | **0.45 ✗** | 1,150 ✓ | 3 ✓ | ✓ | ✓ |
+
+![Cumulative net P&L of trend, carry and the 50/50 book](deck_figures/08_trend_carry_pnl.png)
+
+- Passes four of five gates, and made money in 2022 and 2026, the years mean reversion lost most (Brent − WTI −$151k in 2022; all three spreads lost in 2026).
+- Daily P&L is slightly negatively correlated with mean reversion (−0.10), so it is a natural partner.
+- t-statistic 1.83 over 16.7 years: short of the 2 normally wanted.
+
+---
+
+## Where the money came from
+
+![Net P&L of the 50/50 book by calendar year](deck_figures/09_annual_pnl.png)
+
+- Gains arrive in bursts: the 2014–15 price collapse, 2021–22 and 2026.
+- 2023, 2024 and 2025 all lost money (−$145k in total), and the book spent 1,089 trading days below its June 2022 peak.
+- **Costs** take 39% of trend's gross profit and 10% of carry's. Carry is cheaper to hold, because it changes sign rarely.
+
+**For a trade:** this is a strategy that needs patience through multi-year dry spells, and the evidence for it is a few large episodes.
+
+---
+
+## Could we have known? What the statistics predict for the gates
+
+![The registered rule on four model worlds, and the power of G1](deck_figures/16_model_worlds.png)
+
+- We simulated the registered rule on four worlds fitted to each spread. **A:** k fixed and known. **B:** k fixed, estimated on 756 days. **C:** k moves (the model of step 4b) and the rule estimates it as registered. **D:** k moves and the rule knows the anchor.
+- If k never moved (A, B), the rule earns a Sharpe of **0.8 to 1.0**, well above the 0.5 bar. With a moving k that has to be estimated (C) it earns **0.47, 0.07 and 0.83**. So the failure was predictable from the stationarity results.
+- World C reproduces the **number of trades** (26, 16 and 26 simulated against 29, 15 and 27 realised) and the **order of the spreads** (HO/RB, then crack, then Brent/WTI). It does not reproduce the **level**: the realised Sharpes (0.22, −0.49, 0.38) are lower, and below the middle 90% of simulated paths for Brent/WTI and HO/RB. Rolls, fat tails, volatility clustering and crises are outside the model.
+- World D, with the anchor known, earns 1.25 to 1.64. That is an upper bound on what better anchor tracking could be worth, not an estimate, because the model cannot tell a drifting anchor from a slowly reverting series.
+- **The gate itself is noisy.** Over 16.7 years the measured Sharpe has a standard error of about 0.25. A strategy with a true Sharpe of 0.45 (our trend and carry estimate) passes G1 only **42%** of the time, and one with no skill passes **2%** of the time. Six skill-less variants would produce at least one pass 12% of the time.
+- **Deflated Sharpe** of the trend and carry book: **0.70** with six trials and 0.57 with twelve (the probability that its true Sharpe beats what the best of that many skill-less trials would show).
+
+**For a trade:** judge a near miss by its power, not by the bar alone. Trend and carry at 0.45 is as likely a 0.5 strategy that was unlucky as a 0.4 strategy that was lucky.
+
+---
+
+## What would change the answer: more years, more independent bets
+
+- **Out-of-sample years.** Pulling 1990 to 2006 (WTI, Brent, heating oil, unleaded gasoline) takes Brent/WTI from 16.7 to about 37 years. The registered rules, fixed now, would then be run on years they have never seen.
+- **Independent spreads.** Gasoil against heating oil and Brent, Dubai or Oman against Brent, Eurobob against RBOB: five or six bets instead of three related ones. This is the real fix for power (about 28 years for t = 2 at the best Sharpe we saw).
+- **Drivers of k.** Freight indices and US crude exports test whether the anchor moves with the arbitrage band.
+- **Measured costs.** Bid, ask and volume replace the flat $0.05 a barrel.
+- **The rules stay fixed.** No parameter is tuned on the new years first, and an anchor-tracking rule would be registered before it is run.
+
+The pull sheet, with the fields to download and the tickers still to be verified, is in `data/raw/bloomberg/README.md`.
+
+---
+
+## Why the work is worth having, even without a passing Sharpe
+
+- **It stopped us trading a failed idea.** Mean reversion on Brent − WTI would have lost $224k, mostly in 2022 and 2026.
+- **It explains the failure.** Levels drift, links break in crises, and any reversion is slower than the holding period.
+- **It tested the obvious rescue.** Matching the strategy to the horizon where the ratio reverts did not help, and the reasons for not going further are on the record.
+- **It found where the failure comes from.** A moving-anchor model reproduces the trade counts and the order of the spreads, and shows that a 3-year mean mistakes anchor drift for dislocation. It does not reproduce the size of the losses.
+- **It found what survives.** Carry earns most of the Sharpe at a tenth of the cost drag of trend.
+- **It kept us honest.** Trend's 504-day lookback scores 0.52, above the bar. Picking it after seeing the table would be overfitting, so it is not counted.
+- **It is reusable.** The data pipeline, pre-registered gates, seven tests and the reporting checks run on any new data.
+
+---
+
+## Recommendation
+
+**Paper trade the 50/50 trend and carry book on fixed rules. Do not commit real capital yet.**
+
+- Net Sharpe 0.45 misses the 0.5 bar, t-statistic 1.83, and 48% of the profit came in 2026.
+- All nine positions are long at the 26 October close, so today the book is effectively one long-oil bet.
+- Next experiments, each registered before it is run:
+  1. Trade less (weekly, or only when the signal flips), to cut trend's 39% cost drag.
+  2. Overlay a small HO/RB ratio sleeve (stand-alone Sharpe 0.38, t = 1.55, daily P&L correlation −0.18 with the book), as a registered test of whether it adds to trend and carry. It is fragile: the same spread falls to −0.27 when decisions go monthly.
+  3. Track the fixed rules forward on new data, the only test free of hindsight.
+  4. Pull 1990 to 2006 and more independent spreads (the Bloomberg sheet is written in `data/raw/bloomberg/README.md`), and treat those years as out-of-sample for any rule fixed beforehand.
+
+---
+
+## Caveats
+
+- **Chosen after seeing results.** Trend and carry came from the literature, but were picked after mean reversion failed, so they are labelled exploratory. The ratio strategy followed the professor's feedback, and its rules were registered after we had seen the forward-return regressions on HO/RB, so even a pass would not be independent.
+- **Six looks at one sample.** Mean reversion, pairs, trend, carry, ratio mean reversion and its slower version were all tried on the same 16.7 years, the last three after seeing earlier results. Any single pass would have to be discounted for that.
+- **The moving-anchor model.** It is fitted on the full sample and cannot tell a drifting anchor from a slowly reverting series, so its fast half-lives and the known-anchor world are statements about the model.
+- **Sizing.** The gates were judged on the unrounded research stream. On the registered integer book (units capped at 3) the daily ratio strategy has a Sharpe of 0.23 and the 2026 Brent/WTI loss is $44k, so the research-stream tail losses overstate what a capped book sees. The G1 failure does not change.
+- **KPSS and a moving anchor.** KPSS rejects for every spread, and the era means of the log-ratio shift. We read this as "anchored around a moving k", and the test cannot prove it.
+- **Few, related instruments.** All nine instruments are oil products and move together. Published trend and carry results draw on many unrelated markets.
+- **Simplifications.** Flat $0.05/bbl costs, no market impact, carry measured at the front of the curve only, unrounded contract sizes.
+- **Test power.** About 200 monthly points cannot reliably separate a slow reversion from none.
+
+---
+
+## Summary: test, finding, economics, consequence
+
+| Test | Finding | Economic reading | Consequence |
+|---|---|---|---|
+| ADF, PP, KPSS, Zivot–Andrews | Dollar gaps need one difference, log-ratios are stationary around a moving mean | The anchor is a ratio k, and k shifts between eras | Trade the ratio against a rolling mean, never a fixed one |
+| Local level + AR(1) | Deviations revert in 2 to 18 days around an anchor that drifts 8 to 10% a year. The 756-day mean misses the anchor by 0.8 to 5.5 deviation-sd | The slow half-life is anchor drift | The open question is how to track the anchor (untested) |
+| Model worlds, power of G1 | Fixed k would earn 0.8 to 1.0, moving k 0.07 to 0.83. The measured Sharpe has a standard error of 0.25 | The failure was predictable and the gate is noisy | Judge near misses by their power |
+| ARIMA on the products and the log-ratios | Products are random walks with drift, the dollar gaps are ARIMA(0,1,0) or (2,1,0), and the log-ratios are d = 0 with a slow root (half-life 35 to 98 days) | The pull is real but too slow to show in daily changes | No daily ARIMA edge; the pull acts over months |
+| Integer book | The daily ratio strategy has a Sharpe of 0.23 on capped sizing (0.055 on the research stream) | Sizing discipline changes the tail more than the signal | G1 still fails |
+| Variance ratio | Log-ratios 0.4–0.5 at one year, outrights 1.1–1.5 | Two horizons | Mean reversion months, trend a year; but a monthly-decision version fails (−0.13) |
+| Cointegration | Link in 8–11% of windows | Arbitrage works, but regimes shift | Reversion needs a stability check |
+| ACF, PACF | 0 of 280 lags survive | Markets absorb yesterday's news | No daily forecasting |
+| AIC, BIC, Ljung–Box | AR(0) for 6 of 7 | No short-term memory to exploit | Drop AR and SARIMA |
+| ARCH, GARCH | Volatility clusters | Shocks arrive in bursts | Size by forecast volatility |
+| Gates on strategies | Mean reversion fails (dollar gap and ratio), trend and carry near-miss | Reversion exists but is too slow and breaks in crises; curve and shock persistence pay | Paper trade trend and carry |
+
+---
+
+# Appendix
+
+Everything the main deck summarises is here in full, in five sections.
+
+- **A. Economics and data detail:** the refining link in full, the three spreads, how the deck is organised, what the spreads look like.
+- **B. The stationarity argument in detail:** the roll decomposition, the two horizons, the equations in one place.
+- **C. The full test battery:** cointegration, ACF and PACF, AIC and BIC, ARIMA in full, Ljung–Box, GARCH, VECM.
+- **D. Strategy detail:** the registered mean reversion, pairs, ratio mean reversion, the slower version, the twelve-month question, the integer book.
+- **E. Follow-up checks:** monthly horizon, trend and carry tests, alpha against oil beta.
+
+---
+
+# Appendix A. Economics and data detail
+
+---
+
+## One barrel of crude becomes several products
+
+- A refinery splits crude into gasoline, diesel and other fuels. A rule of thumb is **3 barrels of crude give 2 of gasoline and 1 of diesel**.
+- The **3-2-1 crack** is what the refiner earns on that split: 2 gasoline + 1 diesel − 3 crude, per barrel of crude.
+- Product prices and crude prices must stay linked. If gasoline sells for far more than the crude that makes it, refiners buy more crude and make more gasoline, until the gap narrows.
+
+**Why this matters for trading:** a link that pulls prices back together is the whole reason to expect a spread to snap back.
+
+---
+
+## Three spreads, three economic links
+
+| Spread | What ties it together | What can break the tie |
+|---|---|---|
+| **3-2-1 crack** (products − crude) | Refiners switch to the more profitable product and add or cut crude runs | Refinery outages, hurricanes, product shortages, a Hormuz closure |
+| **Brent − WTI** (two crudes) | Cargoes move between the Atlantic and the US Gulf, so the gap should not exceed shipping cost and quality difference | Pipeline and export limits (Cushing glut 2011–13), export rules, regional supply shocks |
+| **HO − RB** (diesel − gasoline) | Refineries can shift yield between diesel and gasoline | Season (summer driving, winter heating), grade changes, diesel shortages as in 2022 |
+
+**For a trade:** each link is a reason the gap should revert. Each break is a reason it might not.
+
+---
+
+## How we got there: tests first, then strategies
+
+1. **Tests** tell us what the prices do: do they wander, do they come back, can yesterday predict today, does risk cluster. Steps 1 to 5 follow one argument from equations to evidence: the dollar spread seems to have no home, a model says the ratio should, the ratio does, its home moves, and what that means for a trade.
+2. Each test ends with **"For a trade"**: what it allows or rules out.
+3. A **bridge slide** turns the findings into a shortlist of strategies.
+4. Each strategy is judged on the **same five gates**.
+
+**Why this order:** testing first stops us from backtesting ideas the data already contradicts.
+
+---
+
+## What the three spreads look like
+
+![Three spreads at market level, with stress windows shaded](deck_figures/02_spreads_market_level.png)
+
+- Levels sit in ranges for years, then move to a new range: Brent − WTI in 2011–13, the crack and HO − RB in 2022 and 2026.
+- The shaded windows are the periods gates G3 and G5 look at.
+
+---
+
+# Appendix B. The stationarity argument in detail
+
+---
+
+## Step 6a: can a holder earn the reversion? (the roll)
 
 A market ratio **jumps when we roll** into the next contract month, and a holder does not earn that jump. So we split every change in the market log-ratio into the **held-contract return** (what a position earns) and the **roll jump**.
 
@@ -211,7 +443,7 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 ---
 
-## Step 5b: two horizons, ratios revert and outright prices persist
+## Step 6b: two horizons, ratios revert and outright prices persist
 
 ![Variance ratio by horizon](deck_figures/12_variance_ratio_profile.png)
 
@@ -220,7 +452,28 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 - Outright prices lean the other way: Brent 1.34 and ULSD 1.46 at one year.
 - **None of the log-ratio variance ratios is statistically significant** (robust p from 0.15 to 0.98), so this supports the picture but cannot confirm it.
 
-**For a trade:** reversion in the **ratio over months** (mean reversion, tested on the next slides: it does not pay), persistence in **outright prices over a year** (trend). The trend rule is unchanged: the sign of the 252-day change in the log-ratio differs from the sign of the dollar change on only 6–12% of days.
+**For a trade:** reversion in the **ratio over months** (mean reversion, tested in the strategy slides: it does not pay), persistence in **outright prices over a year** (trend). The trend rule is unchanged: the sign of the 252-day change in the log-ratio differs from the sign of the dollar change on only 6–12% of days.
+
+---
+
+## A0. The equations in one place
+
+| Object | Definition |
+|---|---|
+| Log-ratio | ℓ<sub>t</sub> = ln P<sub>A,t</sub> − ln P<sub>B,t</sub>. The crack uses A = 2 · RB + HO and B = 3 · CL, in $/bbl |
+| Constant-k model | P<sub>A,t</sub> = k · P<sub>B,t</sub> · e<sup>u<sub>t</sub></sup>, u<sub>t</sub> = φ u<sub>t−1</sub> + ε<sub>t</sub>, so ℓ<sub>t</sub> = ln k + u<sub>t</sub> |
+| Dollar gap | S<sub>t</sub> = P<sub>A,t</sub> − P<sub>B,t</sub> = a + c · P<sub>B,t</sub> + noise, with c ≈ k − 1 and a the fixed dollar part |
+| Moving anchor | ℓ<sub>t</sub> = ln k<sub>t</sub> + u<sub>t</sub>, ln k<sub>t</sub> = ln k<sub>t−1</sub> + η<sub>t</sub> |
+| Half-life | h = ln 2 / (−ln φ) |
+| z-score used by the strategies | z<sub>t</sub> = (ℓ<sub>t</sub> − mean<sub>756</sub>) / sd<sub>756</sub>, month effect removed in the window for the crack and HO/RB |
+| Roll decomposition | Δℓ<sub>t</sub> = r<sup>held</sup><sub>t</sub> + J<sub>t</sub>, with r<sup>held</sup> = ln(1 + r<sub>A</sub>) − ln(1 + r<sub>B</sub>) the held-contract return and J the roll jump |
+| Variance ratio | VR(q) = Var(ℓ<sub>t+q</sub> − ℓ<sub>t</sub>) / (q · Var(Δℓ<sub>t</sub>)) |
+| Standard error of a Sharpe ratio | SE ≈ √((1 + SR² / 2) / years) |
+| Deflated Sharpe ratio | DSR = Φ((SR − SR<sub>0</sub>) √(T − 1) / √(1 − γ<sub>3</sub> SR + (γ<sub>4</sub> − 1) SR² / 4)), SR<sub>0</sub> the expected best Sharpe of N skill-less trials |
+
+---
+
+# Appendix C. The full test battery
 
 ---
 
@@ -270,6 +523,85 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 ---
 
+## ARIMA in full (1 of 3): the products and the order of integration
+
+| Series | ADF p, log price | KPSS p, log price | ADF p, returns | KPSS p, returns | BIC order | AIC order | Robust Ljung–Box p (20) | ARCH p |
+|---|---|---|---|---|---|---|---|---|
+| WTI | 0.31 | 0.01 | 0.000 | 0.10 | ARIMA(2,1,2) | ARIMA(3,1,3) | 0.53 | < 0.001 |
+| Brent | 0.25 | 0.01 | 0.000 | 0.10 | ARIMA(0,1,0) | ARIMA(0,1,1) | 0.31 | < 0.001 |
+| RBOB | 0.40 | 0.01 | 0.000 | 0.10 | ARIMA(0,1,0) | ARIMA(3,1,3) | 0.60 | < 0.001 |
+| ULSD | 0.93 | 0.01 | 0.000 | 0.09 | ARIMA(0,1,0) | ARIMA(0,1,0) | 0.71 | < 0.001 |
+
+- All four log prices fail ADF (p 0.25 to 0.93) and KPSS rejects, while the returns pass both: **d = 1**.
+- BIC picks ARIMA(0,1,0) for Brent, RBOB and ULSD: a random walk with a drift of 0.02% to 0.03% a day. AIC picks larger orders (up to (3,1,3)) that explain almost nothing.
+- **WTI's (2,1,2) is an artefact of March to May 2020.** Its AR roots (0.24 ± 1.16i) sit on top of its MA roots (0.28 ± 1.20i): they cancel. Excluding 9 March to 29 May 2020, BIC picks (0,1,0). On the full sample the (2,1,2) beats the random walk by only 13 BIC points.
+- The robust Ljung–Box test finds no serial correlation left (p of at least 0.31). The plain test rejects because of volatility clustering, and ARCH is present in every series: **ARIMA(0,1,0) plus GARCH**.
+
+---
+
+## ARIMA in full (2 of 3): the three spreads in four forms
+
+| Spread | Form | BIC order | AIC order | Slowest AR root, half-life (BIC) | Robust Ljung–Box p (20) |
+|---|---|---|---|---|---|
+| 3-2-1 crack | Dollar gap, d = 1 | ARIMA(0,1,0) | ARIMA(2,1,2) |  | 0.522 |
+|  | Log-ratio, d = 0 (market) | ARIMA(1,0,3) | ARIMA(3,0,3) | 81 days | 0.892 |
+|  | Log-ratio, d = 1 (market) | ARIMA(0,1,3) | ARIMA(0,1,3) |  | 0.885 |
+|  | Held index, d = 1 (roll-clean) | ARIMA(2,1,3) | ARIMA(2,1,3) | 2.5 days | 0.937 |
+| Brent / WTI | Dollar gap, d = 1 | ARIMA(2,1,0) | ARIMA(0,1,3) | 0.4 days | 0.551 |
+|  | Log-ratio, d = 0 (market) | ARIMA(3,0,2) | ARIMA(3,0,2) | 98 days | 0.546 |
+|  | Log-ratio, d = 1 (market) | ARIMA(2,1,1) | ARIMA(2,1,1) | 1.0 days | 0.699 |
+|  | Held index, d = 1 (roll-clean) | ARIMA(3,1,0) | ARIMA(2,1,2) | 1.0 days | 0.502 |
+| HO / RB | Dollar gap, d = 1 | ARIMA(0,1,0) | ARIMA(3,1,3) |  | 0.727 |
+|  | Log-ratio, d = 0 (market) | ARIMA(1,0,0) | ARIMA(2,0,3) | 35 days | 0.001 |
+|  | Log-ratio, d = 1 (market) | ARIMA(1,1,1) | ARIMA(1,1,1) | 19 days | 0.000 |
+|  | Held index, d = 1 (roll-clean) | ARIMA(0,1,0) | ARIMA(2,1,2) |  | 0.798 |
+
+- **The dollar gap is d = 1 with almost no short-run structure** (BIC: (0,1,0), (2,1,0), (0,1,0)). Its drift is the roll gaps accumulated in the back-adjusted level.
+- **The log-ratio is d = 0** (market): the slowest root is 1.007 to 1.02, a half-life of 35 to 98 days. On Brent/WTI and the crack, the d = 1 fits add moving-average terms; on **HO/RB the d = 1 fit has θ = −0.99**, which means the series was over-differenced.
+- **HO/RB's market log-ratio fails the residual test** (robust Ljung–Box p = 0.001 for d = 0). The roll-clean held index passes (p = 0.80): the leftover structure is the roll jumps.
+- **The roll-clean held index is close to a random walk with drift** for all three. The market ratio is stationary because the roll jumps offset the drift of the held index: the pull a holder cannot earn.
+
+---
+
+## ARIMA in full (3 of 3): the roots, and whether any forecast beats a random walk
+
+| Spread | Polynomial | Root in L | Modulus | Half-life |
+|---|---|---|---|---|
+| 3-2-1 crack | AR | 1.009 | 1.009 | 81.2 days |
+| 3-2-1 crack | MA | 1.770 | 1.770 |  |
+| 3-2-1 crack | MA | -1.393 − 1.610i | 2.129 |  |
+| 3-2-1 crack | MA | -1.393 + 1.610i | 2.129 |  |
+| Brent / WTI | AR | 1.007 | 1.007 | 98.3 days |
+| Brent / WTI | AR | 0.814 − 1.726i | 1.909 | 1.1 days |
+| Brent / WTI | AR | 0.814 + 1.726i | 1.909 | 1.1 days |
+| Brent / WTI | MA | 2.791 | 2.791 |  |
+| Brent / WTI | MA | 16.543 | 16.543 |  |
+| HO / RB | AR | 1.020 | 1.020 | 35.3 days |
+
+- Brent/WTI: the real root 1.007 is the slow pull (half-life 98 days). The complex pair 0.814 ± 1.726i has modulus 1.909: a damped oscillation that decays by 0.52 a day with a period of about 5.6 days. The MA roots (2.79 and 16.5) are far from it, so nothing cancels.
+
+**Out of sample.** Monthly refit on the trailing 756 days. Each cell is the RMSE relative to a random walk (below 1 is better), with the Diebold–Mariano t-statistic (HAC) in brackets; a positive t means the model beats the random walk.
+
+| Spread | Horizon (days) | AR(1) | AR(3) | 756-day mean |
+|---|---|---|---|---|
+| 3-2-1 crack | 1 | 0.995 (0.5) | 1.016 (−1.2) | 4.531 (−12.6) |
+|  | 5 | 0.989 (0.3) | 0.984 (0.5) | 2.273 (−10.3) |
+|  | 21 | 0.986 (0.2) | 0.970 (0.3) | 1.443 (−3.9) |
+|  | 63 | 1.009 (−0.1) | 1.001 (−0.0) | 1.140 (−1.5) |
+| Brent / WTI | 1 | 1.005 (−0.6) | 1.055 (−1.5) | 6.082 (−12.5) |
+|  | 5 | 1.043 (−1.8) | 1.011 (−0.5) | 3.328 (−9.5) |
+|  | 21 | 1.104 (−1.7) | 1.068 (−1.4) | 1.999 (−5.1) |
+|  | 63 | 1.137 (−1.6) | 1.136 (−1.8) | 1.416 (−2.6) |
+| HO / RB | 1 | 0.997 (0.9) | 0.999 (0.3) | 4.560 (−9.7) |
+|  | 5 | 0.982 (1.3) | 0.985 (1.1) | 2.092 (−7.6) |
+|  | 21 | 0.952 (0.8) | 0.961 (0.7) | 1.218 (−2.3) |
+|  | 63 | 0.935 (0.8) | 0.938 (0.7) | 0.986 (0.1) |
+
+- No AR forecast beats the random walk significantly. HO/RB at 21 and 63 days is the best (0.94 to 0.96), with t of at most 0.8.
+- The 756-day mean, the anchor used in the registered z, is worse than no-change at every horizon except HO/RB at 63 days (0.986): the anchor is a poor forecast.
+
+---
+
 ## Test 5: is anything left in the leftovers? (Ljung–Box)
 
 **In plain English.** After the model is fitted, the leftover errors should look like pure noise. Ljung–Box tests whether any pattern remains.
@@ -311,31 +643,7 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 ---
 
-## What the tests allow
-
-| Finding | What it means | Strategy it motivates | Judged on |
-|---|---|---|---|
-| Changes are close to white noise (BIC: AR(0) for 6 of 7) | No daily forecasting edge | Drop daily AR and SARIMA trades | not carried forward |
-| Dollar levels wander, link unstable (rope in 8–11% of windows) | Reversion is possible but only sometimes | Mean reversion and cointegration pairs, with a stability check | G3, G4, G5 |
-| **Ratios are stationary** (ADF, PP, Zivot–Andrews), half-life 35–50 days, but k moves between eras | The anchor is proportional, and it drifts | **Mean reversion on the log-ratio**, against a rolling mean | G1 to G5 |
-| A moving-anchor model: deviations revert in 2 to 18 days around a drifting k | The slow half-life is mostly the anchor moving | A better anchor than a 3-year mean (not tested, see the twelve-month slide) | not carried forward |
-| Variance ratios: log-ratios below 1, outright prices above 1 | Two horizons: reversion in months, persistence over a year | Mean reversion (short horizon) and trend (long horizon) | G1 to G5 |
-| Volatility clusters (ARCH p < 0.001) | Risk is forecastable | Volatility-based sizing in every strategy | G5 |
-| Daily tests cannot see 12-month moves or the futures curve | A gap in the evidence | Trend and carry, tested directly (appendix) | G1 to G5 |
-
-**The tests rule things out. They cannot pick a winner, so the shortlist goes to the backtest.**
-
----
-
-## Five candidates, each with an economic reason
-
-| Strategy | Idea | Economic reason | Motivated by |
-|---|---|---|---|
-| **Mean reversion** (registered, dollar gap) | Fade spreads that are 2 standard deviations from the 3-year average | Arbitrage and substitution pull gaps back | Persistent but possibly anchored levels |
-| **Ratio mean reversion** (registered 4 Nov) | The same rules on the log-ratio of market prices | Substitution works in percent, so k is the anchor | Ratios are stationary, half-life 35–50 days |
-| **Pairs** | Trade legs tied by a rope (cointegration) | A long-run link between two prices | The rope test, when it passes |
-| **Trend** | Follow the sign of the past 12 months | Supply and demand adjust slowly, so big shocks keep going | Levels that wander in one direction |
-| **Carry** | Long if the curve is backwardated, short if in contango | Paid for insuring hedgers; scarce prompt barrels sell at a premium | The curve, which no daily test looks at |
+# Appendix D. Strategy detail
 
 ---
 
@@ -379,7 +687,7 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 
 - **Changing the object did not rescue mean reversion.** The same weights with z on the market *dollar* gap give a book Sharpe of −0.05, against +0.06 for the log-ratio. HO/RB is the one spread that improves (0.20 → 0.38).
 - Costs are not the cause: at zero cost the book Sharpe is 0.10. It flips sign with the estimation window (−0.06 at 504 days, 0.24 at 1,008).
-- Brent/WTI loses in the 2026 supply shock: a short entered in January with 65 units was stopped for −$190k. The half-life gate is open on 90–100% of days, so it does not screen anything out.
+- Brent/WTI loses in the 2026 supply shock: in the research stream (unrounded size), a short entered in January with 65 units was stopped for −$190k. On the integer book (units capped at 3) Brent/WTI lost $44k in 2026. The half-life gate is open on 90–100% of days, so it does not screen anything out.
 - Daily P&L is **−0.18 correlated with the trend and carry book**, and +0.21 with the registered dollar strategy.
 
 **For a trade:** a series can be stationary and still not pay. A 35–50 day half-life, a moving anchor and a few crisis stop-outs leave a Sharpe indistinguishable from zero. HO/RB is the one to watch.
@@ -416,123 +724,36 @@ Pre-registered on 4 November, before any signal or P&L. Same rules and gates as 
 
 ---
 
-## Could we have known? What the statistics predict for the gates
+## The integer book: the ratio strategies with the registered sizing
 
-![The registered rule on four model worlds, and the power of G1](deck_figures/16_model_worlds.png)
+The gates for the ratio strategies were judged on the **research stream**: units = R / (σ · M), unrounded, so a calm forecast can mean 65 units. The registered sizing also defines an **integer book**: $2m, units = the smaller of the volatility limit and a $40k stop limit, floored and capped at 3, halved after a 10% drawdown, stopped at 20%. It was run for the registered dollar strategy and never for the ratio strategies. Reported here, not gated.
 
-- We simulated the registered rule on four worlds fitted to each spread. **A:** k fixed and known. **B:** k fixed, estimated on 756 days. **C:** k moves (the model of step 4b) and the rule estimates it as registered. **D:** k moves and the rule knows the anchor.
-- If k never moved (A, B), the rule earns a Sharpe of **0.8 to 1.0**, well above the 0.5 bar. With a moving k that has to be estimated (C) it earns **0.47, 0.07 and 0.83**. So the failure was predictable from the stationarity results.
-- World C reproduces the **number of trades** (26, 16 and 26 simulated against 29, 15 and 27 realised) and the **order of the spreads** (HO/RB, then crack, then Brent/WTI). It does not reproduce the **level**: the realised Sharpes (0.22, −0.49, 0.38) are lower, and below the middle 90% of simulated paths for Brent/WTI and HO/RB. Rolls, fat tails, volatility clustering and crises are outside the model.
-- World D, with the anchor known, earns 1.25 to 1.64. That is an upper bound on what better anchor tracking could be worth, not an estimate, because the model cannot tell a drifting anchor from a slowly reverting series.
-- **The gate itself is noisy.** Over 16.7 years the measured Sharpe has a standard error of about 0.25. A strategy with a true Sharpe of 0.45 (our trend and carry estimate) passes G1 only **42%** of the time, and one with no skill passes **2%** of the time. Six skill-less variants would produce at least one pass 12% of the time.
-- **Deflated Sharpe** of the trend and carry book: **0.70** with six trials and 0.57 with twelve (the probability that its true Sharpe beats what the best of that many skill-less trials would show).
+| Integer book, 2010–26 | Sharpe | Total P&L | Max drawdown | Round trips | Mean units | Worst trade | 2026 P&L |
+|---|---|---|---|---|---|---|---|
+| daily decisions (registered ratio rules) | 0.23 | $121k | 6.0% | 71 | 2.8 | −$41k | −$82k |
+| monthly decisions (slow version) | -0.13 | −$63k | 6.7% | 22 | 2.9 | −$83k | −$111k |
+| registered dollar-gap strategy (reference) | 0.13 | $67k | 9.4% | 43 |  |  |  |
 
-**For a trade:** judge a near miss by its power, not by the bar alone. Trend and carry at 0.45 is as likely a 0.5 strategy that was unlucky as a 0.4 strategy that was lucky.
+| Run | Spread | Sharpe | 2026 P&L | Worst trade |
+|---|---|---|---|---|
+| daily decisions | 3-2-1 crack | 0.14 | −$29k | −$41k |
+| daily decisions | Brent / WTI | -0.34 | −$44k | −$20k |
+| daily decisions | HO / RB | 0.30 | −$10k | −$25k |
+| monthly decisions | 3-2-1 crack | 0.18 | −$8k | −$14k |
+| monthly decisions | Brent / WTI | -0.16 | $0 | −$25k |
+| monthly decisions | HO / RB | -0.27 | −$103k | −$83k |
 
----
-
-## Trend and carry: a near miss
-
-| Net of costs, 2010–26 | G1 Sharpe | G2 changes | G3 eras | G4 settings | G5 crises |
-|---|---|---|---|---|---|
-| Trend | 0.29 ✗ | 971 ✓ | 3 ✓ | ✓ | ✓ |
-| Carry | 0.44 ✗ | 179 ✓ | 2 ✓ | ✓ | ✓ |
-| **50/50 book** | **0.45 ✗** | 1,150 ✓ | 3 ✓ | ✓ | ✓ |
-
-![Cumulative net P&L of trend, carry and the 50/50 book](deck_figures/08_trend_carry_pnl.png)
-
-- Passes four of five gates, and made money in 2022 and 2026, the years mean reversion lost most (Brent − WTI −$151k in 2022; all three spreads lost in 2026).
-- Daily P&L is slightly negatively correlated with mean reversion (−0.10), so it is a natural partner.
-- t-statistic 1.83 over 16.7 years: short of the 2 normally wanted.
+- **Same trades, smaller size.** The daily ratio rules take the same 71 round trips, with units of 2.8 on average (cap 3), against up to 65 in the research stream.
+- **The tail shrinks.** The worst trade falls from $190k to $41k, and Brent/WTI's 2026 loss from $348k to $44k.
+- **The Sharpe rises** from 0.055 to 0.23, above the registered dollar strategy's 0.13, and the maximum drawdown is 6.0% against 9.4%. It is still below the 0.5 bar.
+- The slow (monthly) version stays negative (−0.13), and HO/RB's 2026 loss is still $103k.
+- Scale differs: the integer book adds the three spreads at up to 3 units each, while the research book averages three spreads at full risk.
 
 ---
 
-## Where the money came from
-
-![Net P&L of the 50/50 book by calendar year](deck_figures/09_annual_pnl.png)
-
-- Gains arrive in bursts: the 2014–15 price collapse, 2021–22 and 2026.
-- 2023, 2024 and 2025 all lost money (−$145k in total), and the book spent 1,089 trading days below its June 2022 peak.
-- **Costs** take 39% of trend's gross profit and 10% of carry's. Carry is cheaper to hold, because it changes sign rarely.
-
-**For a trade:** this is a strategy that needs patience through multi-year dry spells, and the evidence for it is a few large episodes.
-
----
-
-## Why the work is worth having, even without a passing Sharpe
-
-- **It stopped us trading a failed idea.** Mean reversion on Brent − WTI would have lost $224k, mostly in 2022 and 2026.
-- **It explains the failure.** Levels drift, links break in crises, and any reversion is slower than the holding period.
-- **It tested the obvious rescue.** Matching the strategy to the horizon where the ratio reverts did not help, and the reasons for not going further are on the record.
-- **It found where the failure comes from.** A moving-anchor model reproduces the trade counts and the order of the spreads, and shows that a 3-year mean mistakes anchor drift for dislocation. It does not reproduce the size of the losses.
-- **It found what survives.** Carry earns most of the Sharpe at a tenth of the cost drag of trend.
-- **It kept us honest.** Trend's 504-day lookback scores 0.52, above the bar. Picking it after seeing the table would be overfitting, so it is not counted.
-- **It is reusable.** The data pipeline, pre-registered gates, seven tests and the reporting checks run on any new data.
-
----
-
-## Recommendation
-
-**Paper trade the 50/50 trend and carry book on fixed rules. Do not commit real capital yet.**
-
-- Net Sharpe 0.45 misses the 0.5 bar, t-statistic 1.83, and 48% of the profit came in 2026.
-- All nine positions are long at the 26 October close, so today the book is effectively one long-oil bet.
-- Next experiments, each registered before it is run:
-  1. Trade less (weekly, or only when the signal flips), to cut trend's 39% cost drag.
-  2. Overlay a small HO/RB ratio sleeve (stand-alone Sharpe 0.38, t = 1.55, daily P&L correlation −0.18 with the book), as a registered test of whether it adds to trend and carry. It is fragile: the same spread falls to −0.27 when decisions go monthly.
-  3. Track the fixed rules forward on new data, the only test free of hindsight.
-  4. Pull 1990 to 2006 and more independent spreads (the Bloomberg sheet is written in `data/raw/bloomberg/README.md`), and treat those years as out-of-sample for any rule fixed beforehand.
-
----
-
-## Caveats
-
-- **Chosen after seeing results.** Trend and carry came from the literature, but were picked after mean reversion failed, so they are labelled exploratory. The ratio strategy followed the professor's feedback, and its rules were registered after we had seen the forward-return regressions on HO/RB, so even a pass would not be independent.
-- **Six looks at one sample.** Mean reversion, pairs, trend, carry, ratio mean reversion and its slower version were all tried on the same 16.7 years, the last three after seeing earlier results. Any single pass would have to be discounted for that.
-- **The moving-anchor model.** It is fitted on the full sample and cannot tell a drifting anchor from a slowly reverting series, so its fast half-lives and the known-anchor world are statements about the model.
-- **KPSS and a moving anchor.** KPSS rejects for every spread, and the era means of the log-ratio shift. We read this as "anchored around a moving k", and the test cannot prove it.
-- **Few, related instruments.** All nine instruments are oil products and move together. Published trend and carry results draw on many unrelated markets.
-- **Simplifications.** Flat $0.05/bbl costs, no market impact, carry measured at the front of the curve only, unrounded contract sizes.
-- **Test power.** About 200 monthly points cannot reliably separate a slow reversion from none.
-
----
-
-## Summary: test, finding, economics, consequence
-
-| Test | Finding | Economic reading | Consequence |
-|---|---|---|---|
-| ADF, PP, KPSS, Zivot–Andrews | Dollar gaps need one difference, log-ratios are stationary around a moving mean | The anchor is a ratio k, and k shifts between eras | Trade the ratio against a rolling mean, never a fixed one |
-| Local level + AR(1) | Deviations revert in 2 to 18 days around an anchor that drifts 8 to 10% a year. The 756-day mean misses the anchor by 0.8 to 5.5 deviation-sd | The slow half-life is anchor drift | The open question is how to track the anchor (untested) |
-| Model worlds, power of G1 | Fixed k would earn 0.8 to 1.0, moving k 0.07 to 0.83. The measured Sharpe has a standard error of 0.25 | The failure was predictable and the gate is noisy | Judge near misses by their power |
-| Variance ratio | Log-ratios 0.4–0.5 at one year, outrights 1.1–1.5 | Two horizons | Mean reversion months, trend a year; but a monthly-decision version fails (−0.13) |
-| Cointegration | Link in 8–11% of windows | Arbitrage works, but regimes shift | Reversion needs a stability check |
-| ACF, PACF | 0 of 280 lags survive | Markets absorb yesterday's news | No daily forecasting |
-| AIC, BIC, Ljung–Box | AR(0) for 6 of 7 | No short-term memory to exploit | Drop AR and SARIMA |
-| ARCH, GARCH | Volatility clusters | Shocks arrive in bursts | Size by forecast volatility |
-| Gates on strategies | Mean reversion fails (dollar gap and ratio), trend and carry near-miss | Reversion exists but is too slow and breaks in crises; curve and shock persistence pay | Paper trade trend and carry |
-
----
-
-# Appendix
+# Appendix E. Follow-up checks
 
 Two follow-up checks: whether the conclusions change at a monthly horizon, and direct tests of the trend and carry signals.
-
----
-
-## A0. The equations in one place
-
-| Object | Definition |
-|---|---|
-| Log-ratio | ℓ<sub>t</sub> = ln P<sub>A,t</sub> − ln P<sub>B,t</sub>. The crack uses A = 2 · RB + HO and B = 3 · CL, in $/bbl |
-| Constant-k model | P<sub>A,t</sub> = k · P<sub>B,t</sub> · e<sup>u<sub>t</sub></sup>, u<sub>t</sub> = φ u<sub>t−1</sub> + ε<sub>t</sub>, so ℓ<sub>t</sub> = ln k + u<sub>t</sub> |
-| Dollar gap | S<sub>t</sub> = P<sub>A,t</sub> − P<sub>B,t</sub> = a + c · P<sub>B,t</sub> + noise, with c ≈ k − 1 and a the fixed dollar part |
-| Moving anchor | ℓ<sub>t</sub> = ln k<sub>t</sub> + u<sub>t</sub>, ln k<sub>t</sub> = ln k<sub>t−1</sub> + η<sub>t</sub> |
-| Half-life | h = ln 2 / (−ln φ) |
-| z-score used by the strategies | z<sub>t</sub> = (ℓ<sub>t</sub> − mean<sub>756</sub>) / sd<sub>756</sub>, month effect removed in the window for the crack and HO/RB |
-| Roll decomposition | Δℓ<sub>t</sub> = r<sup>held</sup><sub>t</sub> + J<sub>t</sub>, with r<sup>held</sup> = ln(1 + r<sub>A</sub>) − ln(1 + r<sub>B</sub>) the held-contract return and J the roll jump |
-| Variance ratio | VR(q) = Var(ℓ<sub>t+q</sub> − ℓ<sub>t</sub>) / (q · Var(Δℓ<sub>t</sub>)) |
-| Standard error of a Sharpe ratio | SE ≈ √((1 + SR² / 2) / years) |
-| Deflated Sharpe ratio | DSR = Φ((SR − SR<sub>0</sub>) √(T − 1) / √(1 − γ<sub>3</sub> SR + (γ<sub>4</sub> − 1) SR² / 4)), SR<sub>0</sub> the expected best Sharpe of N skill-less trials |
 
 ---
 

@@ -176,6 +176,29 @@ Variance ratio by horizon in trading days, on held log returns (outrights) and h
 
 The registered trend rule takes the sign of the 252-day back-adjusted dollar change. The sign of the 252-day held log-ratio return **differs on only 6–12% of days** (crack 11.8%, Brent/WTI 11.3%, HO/RB 6.4%), so trading the sign of the log-ratio would be almost the same rule. Trend is left as registered.
 
+### 15. ARIMA identification (step 15)
+
+Orders chosen by BIC over p, q ≤ 3 (AIC is reported in `arima_orders.csv`). A series modelled as ARIMA(p,1,q) is fitted as ARMA(p,q) on its first difference. Roots are of the AR and MA polynomials in the lag operator L (a root of modulus above 1 is stable).
+
+| Series | Form | BIC order | Slowest AR root, half-life |
+|---|---|---|---|
+| Brent, RBOB, ULSD | log price, d = 1 (held-contract log return) | ARIMA(0,1,0) | none |
+| WTI | log price, d = 1 | ARIMA(2,1,2), but (0,1,0) once 9 March to 29 May 2020 is excluded | none |
+| Crack, HO/RB | dollar gap, d = 1 (back-adjusted daily change) | ARIMA(0,1,0) | none |
+| Brent − WTI | dollar gap, d = 1 | ARIMA(2,1,0), coefficients 0.06 and −0.04 | none |
+| Crack | log-ratio, d = 0 (market) | ARIMA(1,0,3) | 81 days |
+| Brent / WTI | log-ratio, d = 0 | ARIMA(3,0,2) | 98 days |
+| HO / RB | log-ratio, d = 0 | ARIMA(1,0,0) | 35 days |
+| Crack, Brent / WTI, HO / RB | roll-clean held index, d = 1 | (2,1,3), (3,1,0), (0,1,0) | none |
+
+- **Integration order.** All four log prices fail ADF (p 0.25 to 0.93) and KPSS rejects, while the returns pass both: d = 1.
+- **WTI's ARMA(2,2) is an artefact.** Its AR roots (0.24 ± 1.16i) and MA roots (0.28 ± 1.20i) cancel, and it beats the random walk by only 13 BIC points. Excluding 9 March to 29 May 2020, BIC picks the random walk.
+- **Residuals.** The robust Ljung–Box test finds nothing left in any fit except HO/RB's market log-ratio (p = 0.001 for d = 0, 0.000 for d = 1). The roll-clean index passes (p = 0.80): the leftover structure is the roll jumps. ARCH is present in every series (p < 0.001).
+- **Dollar gap against log-ratio.** The dollar gap has d = 1 with almost no short-run structure. The log-ratio is d = 0 with one root of modulus 1.007 to 1.02, which closes 0.7% to 2% of the gap a day. Next to the daily noise that is invisible, so the ARIMA on the dollar change sees a random walk. It is one process seen through two lenses. HO/RB's d = 1 fit has θ = −0.99, the signature of over-differencing, which supports d = 0.
+- **Brent/WTI ARMA(3,0,2), factored.** AR = (1 − 0.993 L)(1 − 0.447 L + 0.275 L²): a slow root (half-life 98 days) and a pair of complex roots (0.814 ± 1.726i, modulus 1.909) that decay by 0.52 a day with a period of about 5.6 days. The MA roots (2.79 and 16.5) are far from the complex pair, so nothing cancels. Reading: months for cargo, pipeline and export arbitrage to move the ratio, and a short-run oscillation as one benchmark reacts first. The order counts polynomial terms. It is not five separate economic facts. (An earlier version of this note said the lag-1 terms nearly cancel. That was a coincidence of coefficient sizes, 0.447 against 0.419, not a root cancellation.)
+- **Out of sample** (756-day window, refit monthly, 1, 5, 21 and 63 days ahead). No AR(1) or AR(3) forecast of the log-ratio beats a random walk: RMSE ratios 0.94 to 1.14, Diebold–Mariano |t| of at most 1.8. The best is HO/RB at 21 and 63 days (0.94 to 0.96, t up to 0.8). The trailing 756-day mean, the anchor of the registered z, is worse than no-change at every horizon except HO/RB at 63 days (0.986).
+- **Roll-clean index.** It is a random walk with drift (partly cancelling terms for the crack, coefficients under 0.14 for Brent/WTI). The market ratio is stationary because the roll jumps offset that drift.
+
 ## Reading
 
 1. **The professor's claim is supported.** ADF, PP, Zivot–Andrews and log cointegration all point the same way, and the log slope of 1.009 (Brent/WTI) and 0.991 (HO/RB) is his constant-k model. Half-lives fall from 134–143 to about 50 days for crack and Brent/WTI.

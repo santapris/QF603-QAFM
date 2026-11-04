@@ -59,6 +59,10 @@ By spread (each at full R):
 - The log-ratio is no better than the dollar gap here either.
 - Daily P&L correlation: +0.52 with the daily ratio strategy, +0.21 with the registered mean reversion, +0.04 with pairs, **−0.20** with the trend and carry book.
 
+## On the registered integer book (descriptive, not gated)
+
+With units capped at 3 (`scripts/run_ratio_integer.py`) the monthly-decision version has a Sharpe of **−0.13** (research stream −0.13), total −$63k, 22 round trips and a maximum drawdown of 6.7%. HO/RB is still the worst spread (Sharpe −0.27, −$93k) and its 2026 loss is still $103k, with a worst trade of $83k. Capping size does not rescue the slow version.
+
 ## Should we take this step further? Why not
 
 The question is whether to go on from here (for example to register a version that holds up to a year). My assessment is no, for these reasons.

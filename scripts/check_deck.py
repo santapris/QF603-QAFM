@@ -432,6 +432,126 @@ add("g1 power 0", f"passes **{pct(g1_.loc[0.0, 'p_pass_G1'])}** of the time")
 add("g1 six nulls", f"at least one pass {pct(g1_.loc[0.0, 'p_at_least_one_of_six_passes_if_all_true_sharpes_equal_this'])} of the time")
 add("dsr", f"**{ds_.loc[6, 'dsr']:.2f}** with six trials and {ds_.loc[12, 'dsr']:.2f} with twelve")
 
+# =============================================================================== restructured deck: ARIMA, results matrix, integer book (added 2026-11-04)
+RINT = O / "exploratory" / "ratio_integer" / "tables"
+ar_ = pd.read_csv(RS / "arima_orders.csv")
+fa_ = pd.read_csv(RS / "arima_factors.csv")
+oo_ = pd.read_csv(RS / "arima_oos.csv")
+wc_ = pd.read_csv(RS / "arima_wti_check.csv")
+ib_ = pd.read_csv(RINT / "integer_book.csv", index_col=0)
+ibs_ = pd.read_csv(RINT / "by_spread.csv")
+
+
+def aob(s, f, c="BIC"):
+    return ar_[(ar_.series == s) & ar_.form.str.startswith(f) & (ar_.criterion == c)].iloc[0]
+
+
+def slow_hl(s):
+    return aob(s, "log-ratio, d = 0").slowest_ar_root_half_life_days
+
+
+# title
+add("title answer", f"with a net Sharpe of {sb.loc['combined', 'sharpe']:.2f}.")
+
+# step 5: the ARIMA slide
+c0, b0, h0 = "3-2-1 crack", "Brent / WTI", "HO / RB"
+add("arima row crack", f"| 3-2-1 crack | ARIMA{aob(c0, 'dollar').order} | ARIMA{aob(c0, 'log-ratio, d = 0').order} | {slow_hl(c0):.0f} days | ARIMA{aob(c0, 'held').order}, partly cancelling terms |")
+add("arima row bw", f"| Brent / WTI | ARIMA{aob(b0, 'dollar').order}, coefficients 0.06 and −0.04 | ARIMA{aob(b0, 'log-ratio, d = 0').order} | {slow_hl(b0):.0f} days | ARIMA{aob(b0, 'held').order}, coefficients under 0.14 |")
+add("arima row horb", f"| HO / RB | ARIMA{aob(h0, 'dollar').order} | ARIMA{aob(h0, 'log-ratio, d = 0').order} | {slow_hl(h0):.0f} days | ARIMA{aob(h0, 'held').order} |")
+bw_d = json.loads(aob(b0, "dollar").params)
+assert round(bw_d["ar.L1"], 2) == 0.06 and round(bw_d["ar.L2"], 2) == -0.04
+assert max(abs(v) for k_, v in json.loads(aob(b0, "held").params).items() if k_.startswith("ar")) < 0.14
+assert (ar_[ar_.form.str.startswith("log price")].arch_lm_p10 < 0.001).all() and (ar_.arch_lm_p10 < 0.001).all()
+assert wc_.iloc[1].bic_order == "(0,1,0)"
+for s in ("Brent", "RBOB", "ULSD"):
+    assert aob(s, "log price").order == "(0,1,0)"
+add("arima products", "ARIMA(0,1,0) with drift (BIC), and so is WTI once 9 March to 29 May 2020 is excluded")
+slow = fa_[fa_.form.str.startswith("log-ratio, d = 0") & (fa_.polynomial == "AR") & (fa_.imag.abs() < 1e-6)]
+mods = slow.groupby("series").modulus.min()
+assert f"{mods.min():.3f}" == "1.007" and f"{mods.max():.2f}" == "1.02"
+pull = 100 * (1 - 1 / mods)
+assert 0.65 <= pull.min() < 0.75 and round(pull.max()) == 2
+add("arima roots", "one root of 1.007 to 1.02 (half-life 35 to 98 days)")
+add("arima pull", "closes only 0.7% to 2% of the gap a day")
+assert round(slow_hl(h0)) == 35 and round(slow_hl(b0)) == 98
+assert json.loads(aob(h0, "log-ratio, d = 1").params)["ma.L1"] < -0.99 + 1e-3 and f"{json.loads(aob(h0, 'log-ratio, d = 1').params)['ma.L1']:.2f}" == "-0.99"
+add("arima theta", "moving-average term of −0.99")
+fb = fa_[(fa_.series == b0) & fa_.form.str.startswith("log-ratio, d = 0") & (fa_.polynomial == "AR") & (fa_.imag > 1e-6)].iloc[0]
+rho, ang = 1 / fb.modulus, abs(np.angle(1 / complex(fb.real, fb.imag)))
+phi_s = 1 / mods[b0]
+quad_a, quad_b = 2 * np.real(1 / complex(fb.real, fb.imag)), rho ** 2
+add("arima factored", f"AR = (1 − {phi_s:.3f} L)(1 − {quad_a:.3f} L + {quad_b:.3f} L²)")
+add("arima oscillation", f"it decays by {rho:.2f} a day, period about {round(2 * np.pi / ang):.0f} days")
+r13 = oo_[oo_.model.isin(["ar1", "ar3"])]
+add("arima oos", f"(RMSE ratio {r13.rmse_ratio_vs_random_walk.min():.2f} to {r13.rmse_ratio_vs_random_walk.max():.2f}, Diebold–Mariano |t| of at most {r13.dm_t.abs().max():.1f})")
+mn = oo_[oo_.model == "mean"].pivot_table(index="series", columns="horizon_days", values="rmse_ratio_vs_random_walk")
+assert (mn.drop(index="HO / RB") > 1).all().all() and (mn.loc["HO / RB", [1, 5, 21]] > 1).all() and mn.loc["HO / RB", 63] < 1
+
+# step 6
+add("step6 ho_rb t", f"(t = {m(tr_.loc[('ho_rb', 21)].held_t)} at 21 days, {m(tr_.loc[('ho_rb', 63)].held_t)} at 63 days)")
+weak = pd.concat([tr_.loc[(s, h)] for s in ("crack321", "brent_wti") for h in (21, 63)], axis=1).T
+add("step6 weak t", f"|t| of at most {weak.held_t.abs().max():.2f}")
+rs_ = weak.roll_share_of_market_reversion
+add("step6 roll share", f"{pct(rs_.min())} to {pct(rs_.max())} of their apparent reversion is the roll")
+
+# results matrix
+ib_d, ib_m = ib_.loc["daily decisions (registered ratio rules)"], ib_.loc["monthly decisions (slow version)"]
+reg_int = float(pd.read_csv(O / "tables" / "06_integer_book.csv", index_col=0).loc["gated", "sharpe"])
+gk = ["fixed|crack321", "fixed|brent_wti", "fixed|ho_rb"]
+g5w = [min(json.loads(gv.loc[k_, "G5_value"])[w]["unfiltered"] for w in ("ukraine", "hormuz")) for k_ in gk]
+add("matrix MR", f"| Mean reversion, dollar gap (crack / Brent − WTI / HO − RB) | {' / '.join(m(gv.loc[k_, 'G1_value']) for k_ in gk)} ✗ | "
+                 f"{' / '.join(str(int(gv.loc[k_, 'G2_value'])) for k_ in gk)} ✗ | {' / '.join(str(int(gv.loc[k_, 'G3_value'])) for k_ in gk)} | "
+                 f"{' / '.join('✓' if gv.loc[k_, 'G4_grid'] else '✗' for k_ in gk)} | {' / '.join('−$' + k(x) for x in g5w)} ✗ | {reg_int:.2f} |")
+add("matrix ratio daily", f"| Ratio mean reversion, daily decisions (book of 3) | {V['book']['G1_value']:.3f} ✗ | {V['book']['G2_value']} ✓ | {V['book']['G3_value']} ✓ | ✓ | "
+                          f"−${k(V['book']['G5_value']['hormuz'])} ✗ | {ib_d.sharpe:.2f} |")
+add("matrix ratio monthly", f"| Ratio mean reversion, monthly decisions | {m(sV['book']['G1_value'])} ✗ | {sV['book']['G2_value']} ✓ | {sV['book']['G3_value']} ✗ | ✗ | "
+                            f"−${k(sV['book']['G5_value']['hormuz'])} ✗ | {m(ib_m.sharpe)} |")
+pj = json.loads((O / "exploratory" / "pairs" / "tables" / "summary.json").read_text())["verdicts"]["book"]
+assert pj["G3_value"] == 1 and not pj["G4_grid"] and not pj["G5_stress"]
+add("matrix pairs", f"| Pairs (book of 6) | {m(pg.loc['book', 'G1_value'])} ✗ | {int(pg.loc['book', 'G2_value'])} ✓ | {pj['G3_value']} ✗ | ✗ | −${k(min(pj['G5_value'].values()))} ✗ | not run |")
+tcb = tg.loc["combined"]
+assert tcb.G4_grid and tcb.G5_stress and min(json.loads(tcb.G5_value).values()) > 0
+add("matrix trend carry", f"| **Trend and carry (50/50 book)** | **{tcb.G1_value:.2f} ✗** | {int(tcb.G2_value):,} ✓ | {int(tcb.G3_value)} ✓ | ✓ | profit in 2022 and 2026 ✓ | not run |")
+add("matrix G1 miss", f"misses G1 by {0.5 - tcb.G1_value:.2f}")
+bwr = float(pd.read_csv(RM / "daily_books.csv", index_col=0, parse_dates=True).loc["2026-01-01":, "brent_wti"].sum())
+bwi = float(ibs_[(ibs_.run.str.startswith("daily")) & (ibs_.spread == "brent_wti")].y2026.iloc[0])
+add("matrix integer effect", f"from {V['book']['G1_value']:.3f} to {ib_d.sharpe:.2f} and cuts the 2026 Brent/WTI loss from ${abs(bwr) / 1e3:.0f}k to ${abs(bwi) / 1e3:.0f}k")
+add("matrix noise", "a standard error of about 0.25")
+
+# why mean reversion fails
+add("why exits", f"{int(ex_.loc['time_stop'].sum())} of {n_tot} trades ended on the time stop")
+add("why sizing", f"cuts that loss from ${abs(bwr) / 1e3:.0f}k to ${abs(bwi) / 1e3:.0f}k")
+add("why sharpe", f"The Sharpe is still only {ib_d.sharpe:.2f}")
+add("why ratio sharpe", f"(Sharpe {m(slj['book']['sharpe'])})")
+
+# what would change the answer
+yrs = (pd.Timestamp("2026-10-26") - pd.Timestamp("1990-01-02")).days / 365.25
+assert round(yrs) == 37
+add("change years", "takes Brent/WTI from 16.7 to about 37 years")
+add("change power", f"(about {(2 / s_hr) ** 2:.0f} years for t = 2 at the best Sharpe we saw)")
+
+# caveats and summary
+add("caveat sizing", f"has a Sharpe of {ib_d.sharpe:.2f} and the 2026 Brent/WTI loss is ${abs(bwi) / 1e3:.0f}k")
+add("summary integer", f"The daily ratio strategy has a Sharpe of {ib_d.sharpe:.2f} on capped sizing ({V['book']['G1_value']:.3f} on the research stream)")
+add("summary arima", f"log-ratios are d = 0 with a slow root (half-life {min(slow_hl(s) for s in (c0, b0, h0)):.0f} to {max(slow_hl(s) for s in (c0, b0, h0)):.0f} days)")
+
+# appendix: ARIMA in full and the integer book
+add("af1 wti", f"On the full sample the (2,1,2) beats the random walk by only {wc_.iloc[0].bic_random_walk - wc_.iloc[0].bic_best:.0f} BIC points")
+add("af1 wti excl", f"Excluding 9 March to 29 May 2020, BIC picks {wc_.iloc[1].bic_order}")
+add("af2 horb lb", f"(robust Ljung–Box p = {aob(h0, 'log-ratio, d = 0').lb_robust_p20:.3f} for d = 0)")
+add("af2 held lb", f"passes (p = {aob(h0, 'held').lb_robust_p20:.2f})")
+add("af3 complex", f"The complex pair {fb.real:.3f} ± {abs(fb.imag):.3f}i has modulus {fb.modulus:.3f}")
+add("af3 ma", "The MA roots (2.79 and 16.5)")
+ma_b = fa_[(fa_.series == b0) & fa_.form.str.startswith("log-ratio, d = 0") & (fa_.polynomial == "MA")].modulus.sort_values()
+assert f"{ma_b.iloc[0]:.2f}" == "2.79" and f"{ma_b.iloc[1]:.1f}" == "16.5"
+hb = oo_[(oo_.series == h0) & (oo_.horizon_days.isin([21, 63])) & oo_.model.isin(["ar1", "ar3"])]
+add("af3 horb best", f"({hb.rmse_ratio_vs_random_walk.min():.2f} to {hb.rmse_ratio_vs_random_walk.max():.2f}), with t of at most {hb.dm_t.max():.1f}")
+add("int trips", f"take the same {ib_d.n_round_trips:.0f} round trips")
+add("int units", f"with units of {ib_d.mean_units:.1f} on average (cap 3)")
+add("int tail", f"The worst trade falls from $190k to ${abs(ib_d.worst_trade_usd) / 1e3:.0f}k")
+add("int dd", f"the maximum drawdown is {100 * ib_d.max_drawdown_pct:.1f}% against {100 * ib_.loc['registered dollar-gap strategy (reference)', 'max_drawdown_pct']:.1f}%")
+add("int slow horb", f"HO/RB's 2026 loss is still ${abs(float(ibs_[(ibs_.run.str.startswith('monthly')) & (ibs_.spread == 'ho_rb')].y2026.iloc[0])) / 1e3:.0f}k")
+
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")
 for lab, s in missing:

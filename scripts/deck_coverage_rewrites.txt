@@ -1,0 +1,6 @@
+# old line<TAB>reason. Every line of the deck at 6e728ae that was reworded on purpose, with why.
+## Step 5a: can a holder earn the reversion? (the roll)	heading renumbered to Step 6a when the ARIMA step became Step 5
+## Step 5b: two horizons, ratios revert and outright prices persist	heading renumbered to Step 6b when the ARIMA step became Step 5
+**For a trade:** reversion in the **ratio over months** (mean reversion, tested on the next slides: it does not pay), persistence in **outright prices over a year** (trend). The trend rule is unchanged: the sign of the 252-day change in the log-ratio differs from the sign of the dollar change on only 6–12% of days.	the strategy slides are no longer the next slides
+| A moving-anchor model: deviations revert in 2 to 18 days around a drifting k | The slow half-life is mostly the anchor moving | A better anchor than a 3-year mean (not tested, see the twelve-month slide) | not carried forward |	the twelve-month slide is in Appendix D
+- Brent/WTI loses in the 2026 supply shock: a short entered in January with 65 units was stopped for −$190k. The half-life gate is open on 90–100% of days, so it does not screen anything out.	qualified: the 65 units are an artefact of the unrounded research stream; the integer book caps size at 3
