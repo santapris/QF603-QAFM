@@ -206,6 +206,7 @@ This matches the pre-registered choice to seasonally adjust only the crack and H
   - ADF rejects a unit root at 5% for WTI, Brent and gasoline over 2007–26 (p ≈ 0.025), because the sample swings between \$30 and \$140 several times. ULSD keeps its unit root (p = 0.44).
   - KPSS rejects stationarity for all four.
 - **Spreads.** Over the full sample, ADF says the crack (p = 0.001) and Brent–WTI (p = 0.003) are stationary; HO − RB is borderline (p = 0.07). KPSS rejects all three. This is the signature of a mean that shifts: structural breaks.
+- **On futures, the log-ratio.** A later exploratory study on Bloomberg futures finds the anchor is proportional: the log-ratio of the legs is stationary around a slowly moving mean, and at a monthly horizon it behaves like an AR(1) with a half-life of 2–4 months (Appendix E).
 
 ## 5.2 Rolling stationarity: the breaks
 
@@ -502,6 +503,7 @@ Reading the ladder (Figure 10):
 | GARCH(1,1) with Student-t errors, QLIKE | Time series (volatility) | Volatility forecast and sizing | 6.3 |
 | Logit and probit (expanding refits), AUC, Brier, calibration | Discrete choice | Regime filter | 7 |
 | Walk-forward backtest, Sharpe, drawdown | Applied | Strategy evaluation | 8 |
+| ACF, PACF, ADF, PP and KPSS at a monthly horizon, Benjamini–Hochberg | Time series | Log-ratio on futures: AR(1) levels, reverting changes | E |
 
 # Appendix B. Implementation choices not fixed by the pre-registration
 
@@ -566,3 +568,48 @@ scripts/build_report.sh                    # this report (Word and PDF)
 - Notebooks: `notebooks/01_data.ipynb` to `07_current_regime.ipynb`
 - Pre-registration: `config.yaml` and `PREREGISTRATION.md` (git tag `prereg-2026-10-24`), guarded by `tests/test_preregistration.py`
 - Bloomberg export specification: `data/raw/bloomberg/README.md`
+
+# Appendix E. Futures follow-up: the log-ratio at a monthly horizon
+
+*Exploratory, added 4 November 2026 after every registered result was seen. It uses Bloomberg futures, not the spot proxy of the main text, and changes no verdict. Script: `scripts/run_ratio_monthly.py`; tables and figures in `output/exploratory/ratio_monthly/`.*
+
+**Why the log-ratio.** If one leg is worth a constant multiple k of the other, P~A~ = k · P~B~ · e^u^ with u stationary, then the log-ratio ln P~A~ − ln P~B~ = ln k + u is stationary, while the dollar gap P~A~ − P~B~ ≈ (k − 1) · P~B~ inherits the random walk in prices. On futures the log slope of Brent on WTI is 1.009 and of HO on RB 0.991, the constant-k model. The crack uses A = 2 · RB + HO and B = 3 · CL.
+
+**Construction.**
+
+- **Levels** are the market log-ratio of the held contracts at the **last close of each month**, January 2010 to September 2026 (201 months). Monthly averages are not used: averaging a random walk gives a lag-1 autocorrelation of changes of about +0.25 (Working 1960).
+- **Changes** are the monthly sum of daily held-contract log-ratio returns: the first difference of the log-ratio without the jumps at contract rolls, which a holder does not earn.
+- The comparison is the back-adjusted dollar spread at month-end, the basis of the binding futures test.
+- ACF and PACF standard errors are robust to volatility clustering. The 95% white-noise band is ±1.96/√n = ±0.138.
+
+![Figure 14. ACF and PACF of levels: back-adjusted dollar spread (grey) against market log-ratio (colour). Top: daily ACF to 252 trading days. Middle and bottom: month-end ACF and PACF, 2010–26.](../output/exploratory/ratio_monthly/figures/acf_levels.png)
+
+| Month-end levels, 2010–26 | Dollar: AR(1) | Dollar: half-life | Dollar: ADF / KPSS p | Log-ratio: AR(1) | Log-ratio: half-life | Log-ratio: ADF / PP / KPSS p |
+|---|---|---|---|---|---|---|
+| 3-2-1 crack | 1.009 | none | 0.989 / 0.010 | 0.82 | 3.4 months | 0.001 / 0.001 / 0.010 |
+| Brent–WTI | 0.973 | 26 months | 0.029 / 0.010 | 0.83 | 3.7 months | 0.000 / 0.000 / 0.100 |
+| HO − RB | 0.973 | 25 months | 0.844 / 0.065 | 0.73 | 2.2 months | 0.539 / 0.000 / 0.011 |
+
+: Table 13. Monthly levels, futures. KPSS p-values are bounded to [0.01, 0.10] by the test's tables.
+
+- **The dollar spread looks like a unit root.** Its ACF barely decays (0.77, 0.81 and 0.60 after 252 trading days) and its PACF spike at lag 1 is 0.97 to 1.01.
+- **The log-ratio looks like a stationary AR(1).** Its ACF decays geometrically and its PACF has one spike at lag 1 (0.82, 0.83, 0.73) with little after it. The monthly half-lives agree with the daily ones (35–50 trading days, about 2 months).
+- **Unit roots.** Brent–WTI passes ADF, PP and KPSS. With a constant and trend, which stands in for the slowly drifting anchor, the crack (0.000 / 0.000 / 0.100) and Brent–WTI (0.001 / 0.001 / 0.100) pass all three. HO − RB passes once calendar-month effects are removed (ADF 0.000); its raw ADF is confused by the 6- and 12-month seasonal pattern. No dollar spread passes in any version. Monthly changes of every series pass all three tests, so one difference is always enough.
+- **The anchor moves.** KPSS with a constant still rejects for the crack and HO − RB because the mean drifts: the crack's implied premium rose from 14% in 2007–10 to 36% in 2020–26. Over 2007–26 the crack's deseasonalised ADF with a constant weakens to p = 0.378, and Brent–WTI with a trend fails KPSS (p = 0.012) because of its 2011–13 shift.
+
+![Figure 15. ACF and PACF of changes: dollar change (hollow dots) against held log-ratio return (bars). Top: daily ACF with robust bands. Middle and bottom: monthly ACF and PACF, 2010–26.](../output/exploratory/ratio_monthly/figures/acf_changes.png)
+
+| Monthly changes, 2010–26 | Dollar change: lag-1 ACF | Held log-ratio return: lag-1 ACF | AR(1) φ p-value | BIC / AIC order | Lags surviving Benjamini–Hochberg |
+|---|---|---|---|---|---|
+| 3-2-1 crack | +0.15 | −0.20 | 0.297 | AR(1) / AR(4) | 0 of 48 |
+| Brent–WTI | +0.13 | −0.15 | 0.273 | AR(0) / AR(1) | 0 of 48 |
+| HO − RB | −0.20 | −0.25 | 0.176 | AR(1) / AR(2) | 0 of 48 |
+
+: Table 14. Monthly changes, futures. 48 tests per spread: ACF and PACF at lags 1–24.
+
+- **Daily changes are white noise** on both bases: 0 of 120 daily ACF and PACF lags of the held log-ratio return survive the correction. A pull that closes 0.7% to 2% of the gap a day is invisible next to daily noise.
+- **Monthly, lag 1 turns negative for every log-ratio**, where the dollar changes of the crack and Brent–WTI were positive. An AR(1) level with φ ≈ 0.8 implies a lag-1 autocorrelation of changes of about −0.1, so the sign is what reversion predicts. None is significant.
+- **The month-end change of the market log-ratio**, roll jumps included, shows structure in HO − RB only (4 of 48 lags survive, robust Ljung–Box p = 0.000). The held return does not, so this is the seasonal roll, not an earnable pattern.
+- **Averaging would have reversed the reading.** The lag-1 autocorrelation of month-end log-ratio changes is −0.17, −0.12 and −0.15. For monthly-mean changes it is +0.15, +0.14 and +0.24 (HO − RB p = 0.013), which looks like persistence.
+
+**Reading.** The same process appears in daily and monthly data. Day to day, spread changes are close to a random walk. Measured as log-ratios at market prices, the spreads revert toward an anchor with a half-life of 2–4 months, and the anchor shifts between regimes. The reversion lives at the monthly horizon, but it is not a trading edge on its own. A pre-registered ratio mean-reversion rule on futures failed the gates (net Sharpe 0.055), and a version deciding monthly did worse (−0.13 on 22 trades). About 200 monthly observations give little power, so the change autocorrelations support the picture without confirming it.

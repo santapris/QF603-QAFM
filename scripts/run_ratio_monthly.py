@@ -219,7 +219,7 @@ def fig_changes(D: dict, inst: dict) -> None:
         axs[i, 0].set_ylabel("correlation")
     axs[0, 0].legend(loc="upper right", fontsize=8.5)
     fig.suptitle("Changes: white noise daily; monthly lag 1 turns negative for the log-ratio   "
-                 "(bars: held log-ratio return; daily band robust to clustering, monthly ±1.96/√n)",
+                 "(daily band robust to clustering; monthly ±1.96/√n)",
                  x=.01, ha="left", fontsize=10.5, fontweight="bold")
     fig.tight_layout()
     fig.savefig(OUT / "figures" / "acf_changes.png")
