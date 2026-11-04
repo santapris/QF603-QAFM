@@ -280,6 +280,46 @@ add("A3 month-end log", f"ADF p is {me_.loc[('crack321', 'log_ratio'), 'adf_p']:
                         f"and {me_.loc[('ho_rb', 'log_ratio'), 'adf_p']:.3f} for HO/RB ({me_.loc[('ho_rb', 'log_ratio_deseasonalised'), 'adf_p']:.3f} once")
 assert me_.loc[("brent_wti", "log_ratio"), "kpss_p"] >= 0.10
 
+# --- monthly log-ratio: ACF/PACF, unit roots (run_ratio_monthly.py)
+RMO = O / "exploratory" / "ratio_monthly" / "tables"
+ms_ = pd.read_csv(RMO / "monthly_summary.csv").set_index(["series", "form"])
+mu_ = pd.read_csv(RMO / "monthly_unit_roots.csv")
+mu_ = mu_[mu_.window == "2010-26"].set_index(["series", "form", "what", "regression"])
+ev_ = pd.read_csv(RMO / "month_end_vs_mean.csv").set_index(["series", "how"])
+LABR = {"crack321": "3-2-1 crack", "brent_wti": "Brent / WTI", "ho_rb": "HO / RB"}
+for s, lab in LABR.items():
+    lv, d0 = ms_.loc[(s, "log_ratio_level")], me.loc[s]
+    dhl = "none" if d0.level_b >= 1 else f"{d0.level_half_life_months:.0f} months"
+    add(f"step7 {s}", f"| {lab} | {d0.level_b:.3f}, {dhl} | **{lv.ar1_b:.2f}, {lv.half_life_months:.1f} months** | "
+                      f"{lv.adf_p:.3f} / {lv.pp_p:.3f} / {lv.kpss_p:.3f} |")
+    h = ms_.loc[(s, "held_return")]
+    add(f"A1b {s}", f"| {lab} | {m(h.acf1)} | {h.ar1_p:.3f} | AR({int(h.p_bic)}) | AR({int(h.p_aic)}) | "
+                    f"{int(h.bh_rejections)} of {int(h.bh_tests)} |")
+lvl = [ms_.loc[(s, "log_ratio_level"), "pacf1"] for s in LABR]
+add("step7 pacf", f"one spike at lag 1 ({lvl[0]:.2f}, {lvl[1]:.2f}, {lvl[2]:.2f})")
+hr = [ms_.loc[(s, "held_return"), "acf1"] for s in LABR]
+add("step7 held lag1", f"({m(hr[0])}, {m(hr[1])}, {m(hr[2])})")
+add("step7 dollar lag1", f"(+{me.loc['crack321', 'acf1']:.2f}, +{me.loc['brent_wti', 'acf1']:.2f})")
+hp = [ms_.loc[(s, "held_return"), "ar1_p"] for s in LABR]
+add("step7 ar1 p", f"AR(1) p = {min(hp):.2f} to {max(hp):.2f}")
+assert all(ms_.loc[(s, "held_return"), "bh_rejections"] == 0 for s in LABR)
+add("step7 ho ds", f"calendar-month effects are removed (ADF {mu_.loc[('ho_rb', 'log_ratio_ds', 'level', 'c'), 'adf_p']:.3f})")
+for s in ["crack321", "brent_wti"]:
+    r = mu_.loc[(s, "log_ratio", "level", "ct")]
+    assert r.stationary_all, s
+    add(f"A3 trend {s}", f"({r.adf_p:.3f} / {r.pp_p:.3f} / {r.kpss_p:.3f})")
+assert mu_.loc[("ho_rb", "log_ratio_ds", "level", "ct"), "stationary_all"]
+assert not mu_.xs("level", level="what").loc[lambda t: t.index.get_level_values("form").str.startswith("dollar")].stationary_all.any()
+assert mu_.xs("change", level="what").stationary_all.all()
+hl_ = [ms_.loc[(s, "log_ratio_level"), "half_life_months"] for s in LABR]
+add("A3 log half-lives", f"half-lives of {hl_[0]:.1f}, {hl_[1]:.1f} and {hl_[2]:.1f} months")
+e_end = [ev_.loc[(s, "month_end"), "change_acf1"] for s in LABR]
+e_mean = [ev_.loc[(s, "month_mean"), "change_acf1"] for s in LABR]
+add("A2 log averaging", f"{m(e_end[0])}, {m(e_end[1])} and {m(e_end[2])}; of the monthly-mean change "
+                        f"{sg(e_mean[0])}, {sg(e_mean[1])} and {sg(e_mean[2])} (HO/RB p = {ev_.loc[('ho_rb', 'month_mean'), 'change_ar1_p']:.3f})")
+mk = ms_.loc[("ho_rb", "market_log_ratio_change")]
+add("A1b market horb", f"({int(mk.bh_rejections)} of {int(mk.bh_tests)} lags survive, robust Ljung–Box p = {mk.lb_robust_p_12:.3f})")
+
 # --- ratio mean reversion (pre-registered 2026-11-04)
 rmj = json.loads((RM / "summary.json").read_text())
 V, SP, CO = rmj["verdicts"], rmj["spreads"], rmj["comparisons"]

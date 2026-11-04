@@ -192,6 +192,27 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 
 ---
 
+## Step 7: month by month, the log-ratio is an AR(1) and the dollar spread a random walk
+
+Month-end values, January 2010 to September 2026 (201 months). Month-end, not the monthly average: averaging creates echoes (Appendix E, A2).
+
+![ACF and PACF of levels: dollar spread against log-ratio](deck_figures/17_monthly_acf_levels.png)
+
+| Month-end levels, 2010–26 | Dollar spread (back-adjusted): AR(1), half-life | **Log-ratio: AR(1), half-life** | Log-ratio: ADF / PP / KPSS p |
+|---|---|---|---|
+| 3-2-1 crack | 1.009, none | **0.82, 3.4 months** | 0.001 / 0.001 / 0.010 |
+| Brent / WTI | 0.973, 26 months | **0.83, 3.7 months** | 0.000 / 0.000 / 0.100 |
+| HO / RB | 0.973, 25 months | **0.73, 2.2 months** | 0.539 / 0.000 / 0.011 |
+
+- **Levels.** The dollar ACF barely decays (0.77, 0.81 and 0.60 after a year of trading days). The log-ratio ACF decays geometrically, and the PACF has one spike at lag 1 (0.82, 0.83, 0.73) and little after: the textbook AR(1). The dollar PACF spike is 0.97 to 1.01, a unit root.
+- **Unit roots.** Brent/WTI passes all three tests. With a trend term (the drifting anchor) the crack passes too, and HO/RB passes once calendar-month effects are removed (ADF 0.000). The dollar spreads pass in no version.
+- **Changes.** Monthly held log-ratio returns have a negative lag 1 for every spread (−0.20, −0.15, −0.25), where the dollar changes of the crack and Brent − WTI were positive (+0.15, +0.13). Negative is what reversion predicts. None is significant (AR(1) p = 0.18 to 0.30; 0 of 48 lags per spread survive the correction).
+- The half-lives agree with the daily ones (35 to 50 trading days is about 2 months). Same process: too slow to see day to day, visible month to month.
+
+**For a trade:** the reversion lives at the monthly horizon, around a mean that drifts. That is the horizon the slower ratio rule tested, and it still failed (Appendix D).
+
+---
+
 ## What the tests allow
 
 | Finding | What it means | Strategy it motivates | Judged on |
@@ -201,6 +222,7 @@ A 6% premium is $1.20 a barrel when the benchmark is $20 and $8.40 when it is $1
 | **Ratios are stationary** (ADF, PP, Zivot–Andrews), half-life 35–50 days, but k moves between eras | The anchor is proportional, and it drifts | **Mean reversion on the log-ratio**, against a rolling mean | G1 to G5 |
 | A moving-anchor model: deviations revert in 2 to 18 days around a drifting k | The slow half-life is mostly the anchor moving | A better anchor than a 3-year mean (not tested, see Appendix D) | not carried forward |
 | Variance ratios: log-ratios below 1, outright prices above 1 | Two horizons: reversion in months, persistence over a year | Mean reversion (short horizon) and trend (long horizon) | G1 to G5 |
+| Monthly: the log-ratio is an AR(1) (half-life 2 to 4 months), the dollar spread a random walk | The pull shows month to month, not day to day | Ratio mean reversion with monthly decisions | G1 to G5 |
 | Volatility clusters (ARCH p < 0.001) | Risk is forecastable | Volatility-based sizing in every strategy | G5 |
 | Daily tests cannot see 12-month moves or the futures curve | A gap in the evidence | Trend and carry, tested directly (appendix) | G1 to G5 |
 
@@ -356,6 +378,7 @@ The pull sheet, with the fields to download and the tickers still to be verified
 | Variance ratio | Log-ratios 0.4–0.5 at one year, outrights 1.1–1.5 | Two horizons | Mean reversion months, trend a year; but a monthly-decision version fails (−0.13) |
 | Cointegration | Link in 8–11% of windows | Arbitrage works, but regimes shift | Reversion needs a stability check |
 | ACF, PACF | 0 of 280 lags survive | Markets absorb yesterday's news | No daily forecasting |
+| Monthly ACF, PACF, unit roots | Log-ratio levels AR(1) with φ 0.73–0.83, half-life 2–4 months; monthly changes lag 1 negative but not significant | The pull is visible at the horizon it works on | Reversion is a monthly story, and it still did not pay |
 | AIC, BIC, Ljung–Box | AR(0) for 6 of 7 | No short-term memory to exploit | Drop AR and SARIMA |
 | ARCH, GARCH | Volatility clusters | Shocks arrive in bursts | Size by forecast volatility |
 | Gates on strategies | Mean reversion fails (dollar gap and ratio), trend and carry near-miss | Reversion exists but is too slow and breaks in crises; curve and shock persistence pay | Paper trade trend and carry |
@@ -500,6 +523,7 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 - Bars outside the grey band are "significant". By chance about 1 in 20 will be, and these tests look at 280 lags.
 - After correcting for testing many lags, **0 of 280** survive.
 - The same holds for daily changes of the log-ratio: no lag survives the correction.
+- Daily ACF of changes cannot see a pull that closes 0.7% to 2% of the gap a day. On month-end **levels** the log-ratio shows it (Step 7); monthly changes are in Appendix E, A1.
 
 **For a trade:** no daily forecasting edge. Yesterday does not tell us today.
 
@@ -769,6 +793,22 @@ Two follow-up checks: whether the conclusions change at a monthly horizon, and d
 
 ---
 
+## A1b. The same check on the log-ratio
+
+![ACF and PACF of daily and monthly changes: held log-ratio return against dollar change](deck_figures/18_monthly_acf_changes.png)
+
+| Monthly held log-ratio return, 2010–26 | Lag-1 ACF | AR(1) φ p-value | BIC picks | AIC picks | Lags surviving the correction |
+|---|---|---|---|---|---|
+| 3-2-1 crack | −0.20 | 0.297 | AR(1) | AR(4) | 0 of 48 |
+| Brent / WTI | −0.15 | 0.273 | AR(0) | AR(1) | 0 of 48 |
+| HO / RB | −0.25 | 0.176 | AR(1) | AR(2) | 0 of 48 |
+
+- The held return is the monthly sum of daily held-contract log-ratio returns: the first difference of the log-ratio without roll jumps.
+- **Lag 1 turns negative for all three**, against +0.15 and +0.13 for the dollar changes of the crack and Brent − WTI. An AR(1) level with φ about 0.8 implies about −0.1. Beyond lag 1 the bars scatter inside the band.
+- The month-end change of the market log-ratio (roll jumps included) shows structure in HO/RB only (4 of 48 lags survive, robust Ljung–Box p = 0.000). The held return does not, so it is the seasonal roll, which a holder does not earn.
+
+---
+
 ## A2. Is it AR(1), AR(4), or neither?
 
 | Monthly changes, month-end | Lag-1 ACF | AR(1) φ p-value | BIC picks | AIC picks |
@@ -781,6 +821,7 @@ Two follow-up checks: whether the conclusions change at a monthly horizon, and d
 - **AR(1)** is not significant for any spread at 5%.
 - **Averaging creates echoes.** If you average daily prices into a monthly mean, a pure random walk gets a lag-1 autocorrelation of about +0.25 (simulated: 0.24). Monthly means here give +0.20, +0.31 and +0.23. Month-end sampling avoids this.
 - HO − RB's negative lag 1 is short-term reversal of changes, not a stable mean for the level.
+- **On the log-ratio, averaging flips the sign.** Lag 1 of the month-end change is −0.17, −0.12 and −0.15; of the monthly-mean change +0.15, +0.14 and +0.24 (HO/RB p = 0.013). The average would have read reversion as persistence.
 
 ---
 
@@ -797,6 +838,7 @@ Two follow-up checks: whether the conclusions change at a monthly horizon, and d
 - Brent − WTI rejects a unit root on ADF but KPSS also rejects stationarity, so the tests disagree.
 - **Reading:** close to a random walk at trading horizons. This supports the failed mean-reversion gates, but does not prove them: about 200 monthly points is low power, and the backtest uses daily data.
 - **Month-end log-ratios of market prices (2007–26):** ADF p is 0.000 for the crack, 0.001 for Brent/WTI and 0.251 for HO/RB (0.000 once calendar-month effects are removed). Brent/WTI passes all three tests (KPSS p ≥ 0.10), the other two fail KPSS.
+- **Month-end log-ratios, 2010–26:** half-lives of 3.4, 3.7 and 2.2 months against none, 26 and 25 for the dollar spreads. With a constant and trend, the crack (0.000 / 0.000 / 0.100) and Brent/WTI (0.001 / 0.001 / 0.100) pass all three tests, and HO/RB passes once calendar-month effects are removed. Monthly changes of every series pass all three, so d = 1 is enough everywhere.
 
 ---
 
@@ -875,6 +917,6 @@ Daily sleeve P&L regressed on daily WTI and Brent price changes. The intercept i
 
 - **Low power.** Roughly 200 monthly points: a slow reversion or a small trend would not be detected.
 - **Different horizons.** Tests on monthly changes and a backtest on daily data answer related, not identical, questions.
-- **Several tests, few corrections.** Daily lags are corrected for multiple testing. The monthly lags are not.
+- **Several tests, few corrections.** Daily lags are corrected for multiple testing. The monthly lags of the dollar spreads are not; those of the log-ratio are (0 of 48 per spread survive for the held return).
 - **Unregistered extras.** RBOB and ULSD carry and the beta regressions were run after seeing the results, so they describe, and do not change any verdict.
 - **Ratio studies.** The variance ratios, the roll decomposition and the forward-return regressions on log-ratios are descriptive and were run after the other results. No variance ratio on a log-ratio is significant (robust p from 0.15 to 0.98).
