@@ -639,6 +639,36 @@ add("power ladder", f"only {100 * pwr_.adf_fails_to_reject_if_truly_stationary.m
 add("power kpss", f"KPSS rejects a stationary series {pct1(pwr_.kpss_rejects_if_truly_stationary.min())} to {pct1(pwr_.kpss_rejects_if_truly_stationary.max())} of the time at 238 points, against {pct1(dk_.min())} to {pct1(dk_.max())} for the log-ratios at daily frequency")
 assert (pwr_.n == 238).all()
 
+# =============================================================================== Steps 8-9: GARCH and VECM in the main deck (added 2026-11-05)
+GV = ROOT / "output" / "exploratory" / "garch_vecm" / "tables"
+gb_ = pd.read_csv(GV / "garch_band.csv")
+gw_, gg_ = gb_[gb_.sigma == "frozen window sd"], gb_[gb_.sigma == "GARCH"]
+assert 0.135 <= gw_.outside_stress.min() and gw_.outside_stress.max() < 0.155 and 0.06 <= gg_.outside_stress.min() and gg_.outside_stress.max() < 0.075
+assert gw_.outside_calm.between(0.015, 0.025).all() and gg_.outside_calm.between(0.03, 0.04).all()
+add("garch band", "the frozen ±2 sd band **14% to 15%** of the time, and the GARCH band **6% to 7%**")
+gs_ = pd.read_csv(GV / "garch_sizing.csv")
+gsg, gsw = gs_[gs_.sigma == "GARCH"], gs_[gs_.sigma == "frozen window sd"]
+add("garch risk", f"on **{100 * gsg.share_over_2R.min():.1f}% to {100 * gsg.share_over_2R.max():.1f}%** of days with GARCH, against **{100 * gsw.share_over_2R.min():.1f}% to {100 * gsw.share_over_2R.max():.1f}%** "
+                  f"with the frozen sd ({100 * gsw.share_over_2R_stress.min():.0f}% to {100 * gsw.share_over_2R_stress.max():.0f}% of stress days)")
+add("garch risk max", f"reaches **${gsw.set_index('spread').loc['HO − RB', 'max_risk'] / 1e3:.0f}k a day** in 2022")
+pm_ = pd.read_csv(O / "tables" / "04_param_medians_by_period.csv").set_index(["key", "period"])
+vhl = {s: np.log(.5) / np.log(pm_.loc[(f"fixed|{s}", "2020–2026"), "garch_a"] + pm_.loc[(f"fixed|{s}", "2020–2026"), "garch_b"]) for s in NAMES}
+add("garch vol half-life", f"**{vhl['crack321']:.0f}, {vhl['brent_wti']:.0f} and {vhl['ho_rb']:.0f} trading days**")
+vfq = pd.read_csv(O / "tables" / "04_vol_forecast_test.csv", index_col=0)
+add("garch qlike t", f"t = {m(vfq.loc['fixed|crack321', 't_stat'], 1)}, {m(vfq.loc['fixed|brent_wti', 't_stat'], 1)} and {m(vfq.loc['fixed|ho_rb', 't_stat'], 1)})")
+lad_ = pd.read_csv(O / "tables" / "06_ladder_summary.csv").set_index(["key", "step"])
+add("garch ladder HORB", f"| HO − RB | {m(lad_.loc[('fixed|ho_rb', 'core'), 'sharpe'])} → +{lad_.loc[('fixed|ho_rb', 'garch_sizing'), 'sharpe']:.2f} | "
+                         f"**−${abs(lad_.loc[('fixed|ho_rb', 'core'), 'max_dd']) / 1e3:.0f}k → −${abs(lad_.loc[('fixed|ho_rb', 'garch_sizing'), 'max_dd']) / 1e3:.0f}k** |")
+lp_ = pd.read_csv(GV / "local_projection.csv").set_index(["spread", "h"])
+add("lp crack 63", f"crude closes about **{100 * lp_.loc[('crack321', 63), 'closed_by_B']:.0f}%** of a crack gap within 63 days while the products move about **{-100 * lp_.loc[('crack321', 63), 'closed_by_A']:.0f}% further away**")
+add("lp t 63", "(t = " + ", ".join(f"{lp_.loc[(s, 63), 'closed_total'] / lp_.loc[(s, 63), 'se_total']:.1f}" for s in ("crack321", "brent_wti")) +
+               f" and {lp_.loc[('ho_rb', 63), 'closed_total'] / lp_.loc[('ho_rb', 63), 'se_total']:.1f})")
+gd_ = pd.read_csv(GV / "gap_decay.csv").set_index("spread")
+for s_, lab_ in (("crack321", "3-2-1 crack"), ("brent_wti", "Brent / WTI"), ("ho_rb", "HO / RB")):
+    r_ = gd_.loc[s_]
+    add(f"gap decay {s_}", f"| {lab_} | {r_.half_life:.0f} days | {100 * r_.open_at_exit:.0f}% ({dh[s_]:.0f} days) / {100 * r_.lp_open_21:.0f}% | "
+                           f"{100 * r_.open_63:.0f}% / {100 * r_.lp_open_63:.0f}% | {100 * r_.open_252:.0f}% / {100 * r_.lp_open_252:.0f}% |")
+
 missing = [(lab, s) for lab, s in checks if s not in DECK]
 print(f"{len(checks) - len(missing)} of {len(checks)} quoted numbers match")
 for lab, s in missing:

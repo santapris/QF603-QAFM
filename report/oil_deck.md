@@ -213,6 +213,89 @@ Month-end values, January 2010 to September 2026 (201 months). Month-end, not th
 
 ---
 
+<!-- Added 2026-11-05: Steps 8, 8b, 9 and 9b bring GARCH and VECM into the main pipeline. Steps 1–7 answer "is there an anchor, and can we forecast direction?".
+     Step 8 answers "how big?", Step 9 "which leg, and how long?". Figures 19–22: scripts/build_garch_vecm_figures.py (numbers in output/exploratory/garch_vecm/tables/).
+     The band check, the risk-taken check and the local projection are new and descriptive, run after every result was seen. Nothing else is refitted. -->
+
+## Step 8: we cannot forecast the direction, but we can forecast the size (GARCH)
+
+**In plain English.** Like the weather: we cannot say whether tomorrow's move is up or down, but after a stormy day another stormy day is likely. GARCH turns that into one number, **σ̂, tomorrow's expected move size in $/bbl**.
+
+σ̂²<sub>t+1</sub> = ω + **a** · (today's surprise)² + **b** · σ̂²<sub>t</sub>
+
+![HO − RB daily moves with the GARCH ±2σ̂ band and the frozen 3-year band, and how often a day breaks each band](deck_figures/19_garch_band.png)
+
+- **What the chart shows.** On 24 February 2022 the frozen 3-year band is still set by calm years, and for months HO − RB breaks it almost daily (red dots). The GARCH band widens the day after the first big move and narrows as the storm fades.
+- **Across all three spreads,** on stress days a move breaks the frozen ±2 sd band **14% to 15%** of the time, and the GARCH band **6% to 7%**. A normal curve would give 4.6%. On calm days the frozen band is too wide (2%), and GARCH is close to right (3% to 4%).
+- **a** (0.08 to 0.15) is how much one big day raises tomorrow's forecast, and **b** (0.83 to 0.89) how much of today's forecast carries over. With **a + b of 0.97 to 0.98** (2020–26), a volatility shock halves in about **26, 36 and 38 trading days** (crack, Brent − WTI, HO − RB).
+- **It forecasts and it absorbs.** Out of sample, GARCH beats the 3-year sd on all three spreads (QLIKE loss lower, t = −4.9, −2.6 and −2.7). Each day's move divided by σ̂ has a kurtosis of 5.4 to 6.2, against 13, 102 and 79 when divided by the window sd.
+- **Limits.** Refit monthly on the previous 756 days with Student-t errors. In 14% to 22% of months the fit fails and σ̂ falls back to the window sd (the flat stretch from April 2023). Some clustering remains (Ljung–Box on squared moves still rejects).
+
+**For a trade:** σ̂ is the input to every position size, in every strategy in this deck.
+
+---
+
+## Step 8b: size on the forecast, so every day risks about the same dollars
+
+**The rule.** units = R / (σ̂ · M), with R = $6,000 of risk a day and M the dollars per $1/bbl per unit ($3,000 for the crack, $1,000 for the others). The integer book also applies a $40k stop limit, floors, and caps at 3.
+
+![HO − RB: forecast volatility, the units it implies, and the risk actually taken, GARCH against the frozen 3-year sd](deck_figures/20_garch_sizing_chain.png)
+
+- **Read it top to bottom.** (1) The forecast jumps in March 2022 and the frozen sd climbs a step a month. (2) So GARCH cuts the units in half within **6 trading days** of 24 February 2022; the frozen sd takes **89**. (3) If the rule's position were held every day, its 21-day risk with GARCH stays near the $6k budget, and with the frozen sd it reaches **$51k a day** in 2022.
+- **Across all three spreads,** that 21-day risk exceeds twice the budget on **0.4% to 0.9%** of days with GARCH, against **5.7% to 6.3%** with the frozen sd (15% to 18% of stress days).
+
+| Registered ladder: same trades, only the sizing changes (net) | Sharpe, window sd → GARCH | Max drawdown, window sd → GARCH |
+|---|---|---|
+| 3-2-1 crack | 0.36 → 0.32 | −$159k → −$156k |
+| Brent − WTI | −0.55 → −0.47 | −$321k → −$307k |
+| HO − RB | −0.07 → +0.02 | **−$356k → −$182k** |
+| Crack, Johansen weights | −0.27 → −0.17 | −$224k → −$159k |
+
+- **Risk control, not a signal.** GARCH sizing halves HO − RB's drawdown and improves three of four Sharpes, and costs the crack 0.04. It cannot turn a losing signal into a winner.
+- **Today (26 October).** σ̂ is at the 96th, 57th and 97th percentile of its history, so the rule allows 1.0, 16.2 and 1.4 units (crack, Brent − WTI, HO − RB), against roughly 2 to 5 for the crack and 5 to 10 for HO − RB in calm years.
+
+**For a trade:** the size falls automatically when markets get wild, and today it is near its minimum on the crack and HO − RB.
+
+---
+
+## Step 9: when the gap opens, which leg closes it, and how fast? (VECM)
+
+**In plain English.** Two dogs on one leash. When the leash goes tight, one of them has to step back. A **VECM** (vector error-correction model) measures, for each leg, how much of yesterday's gap it closes today. That share is **α**. A leg with α near zero leads, and the other follows.
+
+Δ ln P<sub>i,t</sub> = **α<sub>i</sub>** · ℓ<sub>t−1</sub> + (lagged changes) + ε<sub>i,t</sub>, where ℓ is the log-ratio, the gap, with the weights fixed at the traded ones.
+
+![What a VECM measures, which leg closes the gap in the VECM, and who closed it within 63 days in the data](deck_figures/21_vecm_who_moves.png)
+
+- **The crack: crude closes the gap.** In logs, on held-contract returns, the leg that adjusts is **crude** (WTI α = +0.017 a day, t = 2.6, in the crack; t = 1.3 in Brent/WTI). Gasoline and diesel have the wrong sign. In the data (panel c), crude closes about **53%** of a crack gap within 63 days while the products move about **30% further away**: shocks start in the products, and crude follows.
+- **HO − RB: diesel closes it.** ULSD has the right sign (t = 1.5) and RBOB none. In the data ULSD closes about 27% within 63 days, RBOB about 11%.
+- **Brent − WTI: no clear leader.** WTI leans toward correcting (t = 1.3, 22% in 63 days) and Brent does nothing, but the bands in panel c cover zero for both legs.
+- **The rolling fits agree.** With the traded dollar weights and a 3-year window, crude is the significant corrector in **16%** of crack windows and **29%** of Brent − WTI windows, and diesel in **24%** of HO − RB windows. The other legs rarely are (0.5% to 9% of windows). The unrestricted Johansen VECM in dollars picks **RBOB** (t = −2.9), but its fitted vectors are not the 3-2-1 crack.
+- Panel (c) bands are wide (±33 to ±75 points): it confirms the direction, not the split.
+
+**For a trade:** trade the spread as one unit, not one leg. Who moves is clear only for the crack, and the pull is slow.
+
+---
+
+## Step 9b: what the VECM means for a trade: the gap is still mostly open when we exit
+
+![Share of a gap still open by days held: the VECM curve, the measured path, and how fast a volatility shock fades](deck_figures/22_vecm_gap_decay.png)
+
+| Spread | Gap half-life (VECM, held) | Still open at the average exit: VECM / measured at 21 days | After 3 months: VECM / measured | After 1 year: VECM / measured |
+|---|---|---|---|---|
+| 3-2-1 crack | 70 days | 74% (31 days) / 90% | 54% / 77% | 8% / 19% |
+| Brent / WTI | 77 days | 81% (23 days) / 90% | 57% / 74% | 10% / 57% |
+| HO / RB | 96 days | 83% (26 days) / 80% | 64% / 62% | 16% / 8% |
+
+- **Measured** is a local projection: the held-contract log-ratio return over the next h days, regressed on today's gap (HAC errors). It is the VECM's α read at every horizon, with no AR(1) shape imposed. Closure at 63 days is significant for all three (t = 2.2, 2.6 and 3.1).
+- **The exit comes too early.** At the daily ratio strategy's average exit (23 to 31 days), **74% to 90%** of the gap is still open (VECM curve and measured). Collecting most of it takes most of a year.
+- **The VECM curve is optimistic for two of three.** HO/RB follows it, or runs slightly ahead. The crack closes more slowly throughout (19% still open after a year, against 8%), and Brent/WTI still has **57%** of the gap open after a year: the moving anchor of Step 4b.
+- **What a holder earns is slower than the market ratio suggests.** The VECM uses held-contract returns: half-lives of 70 to 96 days, against 35 to 50 on the market ratio. The difference is the roll (Step 6).
+- **The two models meet in the size.** Volatility halves in 26 to 38 days (dashed line), the gap in 70 to 96. A trade held for the gap sits through more than one volatility cycle, so its size is set by σ̂, not by how wide the gap is.
+
+**For a trade:** the VECM explains the horizon problem in one number. Daily mean reversion exits too early, and GARCH sizing keeps the long wait affordable.
+
+---
+
 ## What the tests allow
 
 | Finding | What it means | Strategy it motivates | Judged on |
@@ -224,6 +307,8 @@ Month-end values, January 2010 to September 2026 (201 months). Month-end, not th
 | Variance ratios: log-ratios below 1, outright prices above 1 | Two horizons: reversion in months, persistence over a year | Mean reversion (short horizon) and trend (long horizon) | G1 to G5 |
 | Monthly: the log-ratio is an AR(1) (half-life 2 to 4 months), the dollar spread a random walk | The pull shows month to month, not day to day | Ratio mean reversion with monthly decisions | G1 to G5 |
 | Volatility clusters (ARCH p < 0.001) | Risk is forecastable | Volatility-based sizing in every strategy | G5 |
+| GARCH beats the window sd out of sample; GARCH sizing halves HO − RB's drawdown (Step 8) | Size, not direction, is what the data forecast | units = R / (σ̂ · M) in every strategy | G5 |
+| VECM: crude closes the crack's gap, diesel HO − RB's; held half-life 70–96 days, 74–90% still open at the average exit (Step 9) | The pull is slow, and only the crack has a clear leader | Trade the spread as a unit, hold for months; no single-leg strategy | not carried forward |
 | Daily tests cannot see 12-month moves or the futures curve | A gap in the evidence | Trend and carry, tested directly (appendix) | G1 to G5 |
 
 **The tests rule things out. They cannot pick a winner, so the shortlist goes to the backtest.**
@@ -381,6 +466,8 @@ The pull sheet, with the fields to download and the tickers still to be verified
 | Monthly ACF, PACF, unit roots | Log-ratio levels AR(1) with φ 0.73–0.83, half-life 2–4 months; monthly changes lag 1 negative but not significant | The pull is visible at the horizon it works on | Reversion is a monthly story, and it still did not pay |
 | AIC, BIC, Ljung–Box | AR(0) for 6 of 7 | No short-term memory to exploit | Drop AR and SARIMA |
 | ARCH, GARCH | Volatility clusters | Shocks arrive in bursts | Size by forecast volatility |
+| GARCH(1,1)-t sizing | Beats the window sd out of sample (t −2.6 to −4.9); a vol shock halves in 26–38 days; HO − RB drawdown −$356k → −$182k | Storms last weeks, and the frozen sd sizes into them | Every strategy sizes on σ̂; it controls risk and adds no signal |
+| VECM, local projection | Crude closes the crack's gap (WTI t = 2.6), diesel HO − RB's; held half-life 70–96 days, and 74–90% of the gap is still open at the average exit | Products take the shock, crude follows, slowly; Brent/WTI's anchor moves | Trade the spread as a unit; daily mean reversion exits too early |
 | Gates on strategies | Mean reversion fails (dollar gap and ratio), trend and carry near-miss | Reversion exists but is too slow and breaks in crises; curve and shock persistence pay | Paper trade trend and carry |
 
 ---
@@ -653,6 +740,31 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 
 ---
 
+## Test 6b: GARCH in full: parameters, checks and the forecast race
+
+| Median fit, by era | 3-2-1 crack: a / b / ν | Brent − WTI: a / b / ν | HO − RB: a / b / ν | Vol-shock half-life (crack / B−W / HO−RB) |
+|---|---|---|---|---|
+| 2007–13 | 0.14 / 0.85 / 113 | 0.15 / 0.84 / 10 | 0.11 / 0.87 / 26 | 99 / 48 / 40 days |
+| 2014–19 | 0.09 / 0.83 / 18 | 0.08 / 0.88 / 21 | 0.08 / 0.89 / 14 | 9 / 16 / 20 days |
+| 2020–26 | 0.11 / 0.87 / 10 | 0.15 / 0.83 / 10 | 0.10 / 0.88 / 12 | 26 / 36 / 38 days |
+
+| Each day's move divided by the forecast | Kurtosis: window sd → GARCH | Lag-1 ACF of squared move: window sd → GARCH (converged fits) | QLIKE, GARCH minus window sd (t) |
+|---|---|---|---|
+| 3-2-1 crack | 13.4 → 5.4 | 0.31 → 0.04 | −0.43 (−4.9) |
+| Brent − WTI | 101.6 → 6.2 | 0.19 → 0.04 | −1.15 (−2.6) |
+| HO − RB | 79.2 → 5.9 | 0.39 → 0.11 | −0.76 (−2.7) |
+
+![GARCH forecast against the frozen window sd and realised volatility, 2020–22](deck_figures/23_garch_forecast_vs_realised.png)
+<!-- Copied by scripts/build_garch_vecm_figures.py from output/exploratory/horizon_tests/figures/garch_forecast_vs_realised.png -->
+
+- a + b near 1 means storms are persistent. ν of 10 to 26 means fat tails (ν = 113 in the crack's first era is close to normal).
+- **Fits do not always converge.** The fit is usable in 86%, 78% and 84% of months for the spreads. Otherwise σ̂ falls back to the window sd, which is why Brent − WTI has flat stretches in 2020–21.
+- **Clustering is reduced, not removed.** On the spreads, Ljung–Box on squared standardised moves still rejects (p < 0.001). The products (Brent p = 0.27) are absorbed better than the spreads.
+- Vol-shock half-life = ln 2 / (−ln(a + b)), from the era medians of a and b.
+- The ladder table in Step 8b changes only the sizing. A version that keeps the gated trades and swaps only the units (gross of costs) gives the same picture: HO − RB's drawdown falls from −$330k to −$157k, the crack's rises slightly (−$139k to −$158k).
+
+---
+
 ## Test 7: when the gap is off, who moves? (VECM)
 
 **In plain English.** If two legs are tied by a rope, one of them must give. A VECM estimates how fast each leg pulls back.
@@ -664,6 +776,36 @@ Forward held-contract return regressed on today's z-score (756-day window), slop
 - Who moves depends on the specification (dollars: RBOB, logs: WTI), so we do not build a strategy on it.
 
 **For a trade:** any reversion is slow (median half-lives of 92 to 125 days in the rolling fits), so trades are held for weeks and costs and risk limits matter.
+
+---
+
+## Test 7b: VECM in full: three specifications, one reading
+
+| Spread, leg | Logs, full sample: α a day (t) | Dollars, traded weights, rolling 3 years: share of windows the leg corrects (t beyond ±2, right sign) |
+|---|---|---|
+| Crack: WTI | **+0.017 (2.6)** | **16%** |
+| Crack: RBOB | +0.007 (1.6), wrong sign | 0.5% |
+| Crack: ULSD | +0.007 (1.8), wrong sign | 2% |
+| Brent / WTI: WTI | +0.012 (1.3) | **29%** |
+| Brent / WTI: Brent | +0.003 (0.4), wrong sign | 5% |
+| HO / RB: ULSD | −0.007 (−1.5) | **24%** |
+| HO / RB: RBOB | −0.000 (−0.0), wrong sign | 9% |
+| **Gap on itself** (crack / B−W / HO−RB) | −0.010 / −0.009 / −0.007 (t −2.3 / −1.8 / −1.2) | |
+
+| Unrestricted Johansen VECM, crack legs in dollars, rank 2 | α on vector 1 (t) | α on vector 2 (t) |
+|---|---|---|
+| WTI | −0.0008 (−1.2) | −0.0017 (−1.1) |
+| RBOB | **−0.0022 (−2.9)** | −0.0046 (−2.6) |
+| ULSD | −0.0008 (−1.0) | −0.0007 (−0.4) |
+| Fitted vectors | CL − 1.74 HO | RB − 0.05 HO |
+
+![Rolling VECM loadings on the crack, and the Johansen vector](deck_figures/24_vecm_rolling.png)
+<!-- Copied by scripts/build_garch_vecm_figures.py from output/figures/04_vecm_and_johansen_weights.png -->
+
+- **Right sign:** in logs the gap is ln A − ln B, so the first leg corrects with α < 0 and the second with α > 0. In dollars the same rule applies to the spread.
+- **Two of three specifications say crude** (and diesel in HO − RB). The unrestricted VECM says RBOB, but its vectors are not the traded spread, so it answers a different question.
+- **Local projection, 63 days** (Step 9, panel c): share of a gap closed by each side, ±95%. Crack: products −30% (±45), crude +53% (±53). Brent − WTI: Brent +3% (±71), WTI +22% (±75). HO − RB: ULSD +27% (±33), RBOB +11% (±39). Full table in `output/exploratory/garch_vecm/tables/local_projection.csv`.
+- **Roll-clean.** The log VECM uses held-contract returns, so its half-lives (70 to 96 days) are what a position earns. The market ratio's 35 to 50 days include the roll.
 
 ---
 
