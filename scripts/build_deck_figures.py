@@ -2,7 +2,7 @@
 
 Usage:  .venv/bin/python scripts/build_deck_figures.py
 Requires build_data.py, run_backtest.py (futures), run_trend_carry.py, run_ar_acf_pacf.py and
-run_monthly_acf.py outputs. Every figure is drawn from data/ or output/ tables, with plain titles and no
+run_monthly_acf.py and run_ratio_monthly.py outputs. Every figure is drawn from data/ or output/ tables, with plain titles and no
 commentary inside the plot. Shaded bands are the stress windows in config.yaml.
 """
 from __future__ import annotations
@@ -346,6 +346,17 @@ def fig_model_worlds():
     save(fig, "16_model_worlds.png")
 
 
+def fig_ratio_monthly():
+    """Monthly ACF/PACF of the log-ratio against the dollar spread, drawn by run_ratio_monthly.py (they need the
+    daily series, not a table), copied here under the deck's numbering."""
+    import shutil
+    src = T / "exploratory" / "ratio_monthly" / "figures"
+    OUT.mkdir(parents=True, exist_ok=True)
+    for a, b in [("acf_levels.png", "17_monthly_acf_levels.png"), ("acf_changes.png", "18_monthly_acf_changes.png")]:
+        shutil.copyfile(src / a, OUT / b)
+        print("wrote", b)
+
+
 if __name__ == "__main__":
     fig_adjustment()
     fig_spreads()
@@ -363,3 +374,4 @@ if __name__ == "__main__":
     fig_horizon_vs_hold()
     fig_moving_anchor()
     fig_model_worlds()
+    fig_ratio_monthly()
