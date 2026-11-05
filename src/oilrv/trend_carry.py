@@ -77,13 +77,26 @@ def carry_signal(f: pd.DataFrame, slope: str) -> pd.Series:
     return np.sign(f["m1"] - f[f"m{SLOPE_K[slope]}"])
 
 
+def hold_between_decisions(s: pd.Series, decision_months: int) -> pd.Series:
+    """`s` read on the first trading day of every `decision_months`-th month and held until the next one."""
+    month = s.index.to_period("M")
+    first = np.r_[True, month[1:] != month[:-1]] & ((s.index.month - 1) % decision_months == 0)
+    return s.where(first).ffill()
+
+
 def simulate(f: pd.DataFrame, signal: pd.Series, sigma: pd.Series, start: pd.Timestamp,
-             cfg: dict | None = None) -> pd.DataFrame:
+             cfg: dict | None = None, decision_months: int | None = None, hold_sigma: bool = False) -> pd.DataFrame:
     """Daily P&L of one instrument from `start`.
 
+    `decision_months` slows the signal (None = every close, as registered); `hold_sigma` slows sigma with it, so units are
+    held between decisions (PREREGISTRATION_TREND_CARRY_MONTHLY.md).
     Columns: pnl, gross, cost, roll, pos, target, and the inputs x, signal, sigma (as of close t)."""
     tc = (cfg or load_config())["exploratory_trend_carry"]
     M, R = float(f["M"].iloc[0]), float(tc["risk_per_day_usd"])
+    if decision_months is not None:
+        signal = hold_between_decisions(signal, decision_months)
+        if hold_sigma:
+            sigma = hold_between_decisions(sigma, decision_months)
     target = (signal * R / (sigma * M)).where(f.index >= start).fillna(0.0)
     pos = target.shift(2).fillna(0.0)                   # decided at t, filled at t+1, held over (t+1, t+2]
     dx = f["x"].diff().fillna(0.0)
@@ -109,7 +122,8 @@ def sigmas(inst: dict[str, pd.DataFrame], cfg: dict | None = None) -> dict[str, 
 
 
 def run_sleeves(inst: dict[str, pd.DataFrame], cfg: dict | None = None, lookback: int | None = None,
-                slope: str | None = None, sig: dict[str, pd.Series] | None = None) -> dict:
+                slope: str | None = None, sig: dict[str, pd.Series] | None = None,
+                decision_months: int | None = None, hold_sigma: bool = False) -> dict:
     """Trend and carry sleeves and the combined book for one (lookback, slope) setting.
 
     Returns {'instruments': {sleeve|name: daily}, 'trend', 'carry', 'combined': daily P&L series,
@@ -123,7 +137,7 @@ def run_sleeves(inst: dict[str, pd.DataFrame], cfg: dict | None = None, lookback
     res, books, changes = {}, {}, {}
     for sleeve, names, make in [("trend", tc["trend"]["instruments"], lambda f: trend_signal(f["x"], lookback)),
                                 ("carry", tc["carry"]["instruments"], lambda f: carry_signal(f, slope))]:
-        ds = {n: simulate(inst[n], make(inst[n]), sig[n], start, cfg) for n in names}
+        ds = {n: simulate(inst[n], make(inst[n]), sig[n], start, cfg, decision_months, hold_sigma) for n in names}
         res.update({f"{sleeve}|{n}": d for n, d in ds.items()})
         books[sleeve] = pd.DataFrame({n: d["pnl"] for n, d in ds.items()}).mean(axis=1)
         changes[sleeve] = sum(position_changes(d["target"]) for d in ds.values())

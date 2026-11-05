@@ -315,3 +315,16 @@ exploratory_ratio_slow:
   single_spread_min_t: 2.39       # Bonferroni: two-sided 5% over three tests
   book_min_t_to_call_evidence: 3.0    # a pass is only called evidence above this, after six looks at one sample
   variants_tried_on_sample: 6     # mean reversion, pairs, trend, carry, ratio mean reversion, this one
+
+# EXPLORATORY strategy, registered 2026-11-05 AFTER the registered daily trend and carry result was seen, and BEFORE this code
+# computed any monthly signal or P&L. It is the same strategy with one change: signal and units update on the first trading day
+# of a month. It never changes the registered verdict. Rationale and rules: PREREGISTRATION_TREND_CARRY_MONTHLY.md.
+# tests/test_preregistration.py guards this block. Everything not listed here comes from `exploratory_trend_carry`.
+exploratory_trend_carry_monthly:
+  registered_on: "2026-11-05"
+  base: exploratory_trend_carry
+  decision_months: 1              # read the signal and sigma on the first trading day of every month; fills one close later
+  hold_sigma: true                # base: units held between decisions
+  reported: [monthly_signal_daily_size]   # not gated: monthly signal, sigma and units update every close
+  reference_decision: daily       # the registered result, re-run as the reference (book Sharpe 0.447, 1,150 position changes)
+  pass_needs_t: 3.0               # seventh look: below this, a pass is "passes after multiple looks, needs a forward test"

@@ -1,0 +1,233 @@
+{
+  "status": "EXPLORATORY, seventh look (PREREGISTRATION_TREND_CARRY_MONTHLY.md); does not change the registered verdict",
+  "reference_reproduced": true,
+  "gates_passed": false,
+  "t": 1.523329144523012,
+  "called_evidence": false,
+  "verdicts": {
+    "combined": {
+      "G1_sharpe": false,
+      "G1_value": 0.3725617732193239,
+      "G2_changes": true,
+      "G2_value": 268,
+      "G3_subperiods": true,
+      "G3_value": 3,
+      "G4_grid": true,
+      "G4_value": {
+        "trend lookback=126": 0.32521136676229473,
+        "trend lookback=252": 0.3725617732193239,
+        "trend lookback=504": 0.438342208409761,
+        "carry slope=m1_m2": 0.3725617732193239,
+        "carry slope=m1_m3": 0.3856111402202326,
+        "carry slope=m1_m6": 0.39955183337325656
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 146711.35669176176,
+        "hormuz": 231422.15294551023
+      },
+      "PASS": false
+    },
+    "trend": {
+      "G1_sharpe": false,
+      "G1_value": 0.24853133175893416,
+      "G2_changes": true,
+      "G2_value": 226,
+      "G3_subperiods": true,
+      "G3_value": 2,
+      "G4_grid": true,
+      "G4_value": {
+        "lookback=126": 0.15523815279259337,
+        "lookback=252": 0.24853133175893416,
+        "lookback=504": 0.4150090960056988
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 165054.08205889232,
+        "hormuz": 230473.1880014593
+      },
+      "PASS": false
+    },
+    "carry": {
+      "G1_sharpe": false,
+      "G1_value": 0.3697521623256756,
+      "G2_changes": true,
+      "G2_value": 42,
+      "G3_subperiods": true,
+      "G3_value": 3,
+      "G4_grid": true,
+      "G4_value": {
+        "slope=m1_m2": 0.3697521623256756,
+        "slope=m1_m3": 0.3851594785198423,
+        "slope=m1_m6": 0.3998334472896779
+      },
+      "G5_stress": true,
+      "G5_value": {
+        "ukraine": 128368.6313246311,
+        "hormuz": 232371.1178895612
+      },
+      "PASS": false
+    }
+  },
+  "comparison": {
+    "daily|trend": {
+      "sharpe": 0.269,
+      "sharpe_t": 1.1,
+      "total": 272399.8925,
+      "ann_mean": 16293.5611,
+      "ann_sd": 60564.9506,
+      "max_dd": -235501.3673,
+      "years": 16.7183,
+      "position_changes": 971.0,
+      "share_2026": 0.8574
+    },
+    "daily|carry": {
+      "sharpe": 0.4472,
+      "sharpe_t": 1.8285,
+      "total": 631011.5264,
+      "ann_mean": 37743.8653,
+      "ann_sd": 84400.4412,
+      "max_dd": -233507.576,
+      "years": 16.7183,
+      "position_changes": 179.0,
+      "share_2026": 0.3359
+    },
+    "daily|combined": {
+      "sharpe": 0.4396,
+      "sharpe_t": 1.7974,
+      "total": 451705.7094,
+      "ann_mean": 27018.7132,
+      "ann_sd": 61463.5928,
+      "max_dd": -214809.9326,
+      "years": 16.7183,
+      "position_changes": 1150.0,
+      "share_2026": 0.4932
+    },
+    "monthly|trend": {
+      "sharpe": 0.2485,
+      "sharpe_t": 1.0162,
+      "total": 272476.8428,
+      "ann_mean": 16298.1639,
+      "ann_sd": 65577.9042,
+      "max_dd": -191034.5446,
+      "years": 16.7183,
+      "position_changes": 226.0,
+      "share_2026": 0.8458
+    },
+    "monthly|carry": {
+      "sharpe": 0.3698,
+      "sharpe_t": 1.5118,
+      "total": 543690.4213,
+      "ann_mean": 32520.7658,
+      "ann_sd": 87952.8751,
+      "max_dd": -183635.983,
+      "years": 16.7183,
+      "position_changes": 42.0,
+      "share_2026": 0.4274
+    },
+    "monthly|combined": {
+      "sharpe": 0.3726,
+      "sharpe_t": 1.5233,
+      "total": 408083.6321,
+      "ann_mean": 24409.4648,
+      "ann_sd": 65517.8995,
+      "max_dd": -167079.8818,
+      "years": 16.7183,
+      "position_changes": 268.0,
+      "share_2026": 0.5671
+    },
+    "monthly_signal_daily_size|trend": {
+      "sharpe": 0.1682,
+      "sharpe_t": 0.6877,
+      "total": 167444.9496,
+      "ann_mean": 10015.696,
+      "ann_sd": 59552.1488,
+      "max_dd": -211281.0186,
+      "years": 16.7183,
+      "position_changes": 226.0,
+      "share_2026": 1.1834
+    },
+    "monthly_signal_daily_size|carry": {
+      "sharpe": 0.4083,
+      "sharpe_t": 1.6695,
+      "total": 565235.9868,
+      "ann_mean": 33809.5107,
+      "ann_sd": 82805.7133,
+      "max_dd": -157693.0035,
+      "years": 16.7183,
+      "position_changes": 42.0,
+      "share_2026": 0.3597
+    },
+    "monthly_signal_daily_size|combined": {
+      "sharpe": 0.3641,
+      "sharpe_t": 1.4886,
+      "total": 366340.4682,
+      "ann_mean": 21912.6034,
+      "ann_sd": 60189.039,
+      "max_dd": -161342.2001,
+      "years": 16.7183,
+      "position_changes": 268.0,
+      "share_2026": 0.5479
+    }
+  },
+  "costs": {
+    "daily|trend": {
+      "gross": 457201.549,
+      "cost": 163450.352,
+      "roll": 21351.304,
+      "cost_share_of_gross": 0.404
+    },
+    "daily|carry": {
+      "gross": 703887.903,
+      "cost": 63879.942,
+      "roll": 8996.435,
+      "cost_share_of_gross": 0.104
+    },
+    "monthly|trend": {
+      "gross": 332020.262,
+      "cost": 37890.336,
+      "roll": 21653.083,
+      "cost_share_of_gross": 0.179
+    },
+    "monthly|carry": {
+      "gross": 568536.605,
+      "cost": 15762.382,
+      "roll": 9083.802,
+      "cost_share_of_gross": 0.044
+    },
+    "monthly_signal_daily_size|trend": {
+      "gross": 274521.561,
+      "cost": 85725.307,
+      "roll": 21351.304,
+      "cost_share_of_gross": 0.39
+    },
+    "monthly_signal_daily_size|carry": {
+      "gross": 608671.058,
+      "cost": 34438.636,
+      "roll": 8996.435,
+      "cost_share_of_gross": 0.071
+    }
+  },
+  "stress_windows": {
+    "brent_wti_break": {
+      "daily": 26068.0,
+      "monthly": 68645.0,
+      "monthly_signal_daily_size": 54854.0
+    },
+    "covid": {
+      "daily": -26776.0,
+      "monthly": -91519.0,
+      "monthly_signal_daily_size": -88917.0
+    },
+    "ukraine": {
+      "daily": 112120.0,
+      "monthly": 146711.0,
+      "monthly_signal_daily_size": 131030.0
+    },
+    "hormuz": {
+      "daily": 222777.0,
+      "monthly": 231422.0,
+      "monthly_signal_daily_size": 200723.0
+    }
+  }
+}

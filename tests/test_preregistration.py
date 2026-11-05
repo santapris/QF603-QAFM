@@ -186,3 +186,14 @@ def test_exploratory_ratio_slow_unchanged():
     assert load_config()["exploratory_ratio_slow"] == REGISTERED_RATIO_SLOW
     # the gates are the ones registered for the daily ratio strategy
     assert load_config()["exploratory_ratio_slow"]["gates"] == load_config()["exploratory_ratio"]["gates"]
+
+
+REGISTERED_TREND_CARRY_MONTHLY = {
+    "registered_on": "2026-11-05", "base": "exploratory_trend_carry", "decision_months": 1, "hold_sigma": True,
+    "reported": ["monthly_signal_daily_size"], "reference_decision": "daily", "pass_needs_t": 3.0,
+}
+
+
+def test_exploratory_trend_carry_monthly_unchanged():
+    """PREREGISTRATION_TREND_CARRY_MONTHLY.md: registered before this code computed any monthly signal or P&L."""
+    assert load_config()["exploratory_trend_carry_monthly"] == REGISTERED_TREND_CARRY_MONTHLY

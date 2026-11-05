@@ -97,3 +97,13 @@ def test_daily_paths_and_current_book_cover_every_instrument():
     now = TC.current_book(res, cfg)
     u = now.loc["trend|crack321", "target_units"]
     assert now.loc["trend|crack321", "contracts"] == f"CL {-3 * u:+.2f}, RB {2 * u:+.2f}, HO {u:+.2f}"  # 3:2:1
+
+
+def test_hold_between_decisions_only_reads_month_starts():
+    idx = pd.bdate_range("2024-01-29", "2024-03-05")
+    s = pd.Series(np.arange(len(idx), dtype=float), index=idx)
+    h = TC.hold_between_decisions(s, 1)
+    assert h.loc["2024-01-31"] == s.loc["2024-01-29"]          # first row of the sample is a decision
+    assert h.loc["2024-02-01"] == s.loc["2024-02-01"]
+    assert h.loc["2024-02-29"] == s.loc["2024-02-01"]
+    assert h.loc["2024-03-01"] == s.loc["2024-03-01"]
