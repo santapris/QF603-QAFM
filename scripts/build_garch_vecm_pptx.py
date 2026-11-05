@@ -2,7 +2,8 @@
 
 Usage:  PYTHONPATH=<dir with python-pptx> .venv/Scripts/python.exe scripts/build_garch_vecm_pptx.py
         (python-pptx is not in requirements.txt; install it anywhere, e.g. pip install --target <dir> python-pptx)
-Writes report/garch_vecm_slides.pptx: 4 presentation slides (Steps 8, 8b, 9, 9b) and 4 appendix slides.
+Writes report/garch_vecm_slides.pptx: 4 presentation slides (Steps 8, 8b, 9, 9b), 2 replacement slides
+(What the tests allow, Summary) and 4 appendix slides.
 
 The file is built FROM report/oil_deck.pptx (its theme, slide master and "CONTENT" layout, with the footer and slide number),
 with that deck's own slides removed, and copies its look: white page, navy serif title, Calibri 14 body with bullets, navy-header
@@ -172,6 +173,14 @@ def section(heading: str) -> str:
     return "\n".join(ln for ln in body.splitlines() if ln.strip())
 
 
+def md_table(heading: str):
+    """Rows of the first markdown table under the heading, as lists of cell strings (** kept for bold)."""
+    i = DECK.index(heading)
+    j = DECK.find("\n---", i)
+    rows = [ln for ln in DECK[i:j].splitlines() if ln.startswith("|")]
+    return [[c.strip() for c in ln.strip().strip("|").split("|")] for k, ln in enumerate(rows) if k != 1]
+
+
 # --------------------------------------------------------------------------- slides
 def build():
     p, sldnum = fresh_from_base()
@@ -243,6 +252,17 @@ def build():
                           ["Brent / WTI", "77 days", "81% / 90%", "57% / 74%", "10% / **57%**"],
                           ["HO / RB", "96 days", "83% / 80%", "64% / 62%", "16% / 8%"]], [1.6, 1.2, 1.5, 1.5, 1.4], size=12, row_h=0.34)
     callout(s, "daily mean reversion exits too early. Volatility fades faster than the gap, so size by σ̂, not by how wide the gap is.")
+
+    # ---- Replacement: "What the tests allow" (oil_deck.pptx slide 17) -------------------------------------
+    s = new_slide("What the tests allow", "REPLACES slide 17 of oil_deck.pptx: the same table with two new rows (GARCH, VECM).\n"
+                  + section("## What the tests allow"))
+    table(s, X0, 1.3, W, md_table("## What the tests allow"), [4.2, 3.0, 3.6, 1.3], size=11, row_h=0.42)
+    textbox(s, X0, 6.45, W, 0.4, ["**The tests rule things out. They cannot pick a winner, so the shortlist goes to the backtest.**"],
+            size=14, bullets=False, space_after=0)
+
+    # ---- Replacement: "Summary" (oil_deck.pptx slide 30) --------------------------------------------------
+    s = new_slide("Summary: test, finding, economics, consequence", "REPLACES slide 30 of oil_deck.pptx: the same table with two new rows (GARCH sizing, VECM).")
+    table(s, X0, 1.2, W, md_table("## Summary: test, finding, economics"), [2.0, 4.6, 3.0, 2.9], size=9.5, row_h=0.3)
 
     # ---- Appendix: GARCH in full --------------------------------------------------------------------------
     s = new_slide("Test 6b: GARCH in full, parameters and checks", section("## Test 6b: GARCH in full"))
